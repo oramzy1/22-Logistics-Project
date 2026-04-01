@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  INDIVIDUAL
+  BUSINESS
+  DRIVER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(INDIVIDUAL)
+  phone     String?
+  isVerified          Boolean  @default(false)
+  verificationToken   String?
+  verificationExpiry  DateTime?
+  resetToken          String?
+  resetTokenExpiry    DateTime?
+  businessProfile BusinessProfile?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  avatarUrl String?
+
+  pushToken String? // for Expo push notifications
+
+  bookingsAsCustomer Booking[]      @relation("CustomerBookings")
+  bookingsAsDriver   Booking[]      @relation("DriverBookings")
+  notifications      Notification[]
+}
+
+model BusinessProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  companyName    String
+  companyEmail   String
+  companyAddress String
+  companyPhone   String
+  adminName      String
+  adminEmail     String
+  department     String?
+  adminPhone     String
+  scheduleType   String   @default("others")
+  cacNumber      String?
+  logoUrl        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  customerId    String
+  customer      User          @relation("CustomerBookings", fields: [customerId], references: [id])
+  driverId      String?
+  driver        User?         @relation("DriverBookings", fields: [driverId], references: [id])
+
+  pickupAddress  String
+  dropoffAddress String
+  pickupLat      Float?
+  pickupLng      Float?
+  dropoffLat     Float?
+  dropoffLng     Float?
+
+  scheduledAt   DateTime
+  duration      Int?
+  packageType   String?
+
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentRef    String?       @unique
+  paystackAccessCode String?
+
+  totalAmount   Float
+  notes         String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  title     String
+  body      String
+  type      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+
+enum BookingStatus {
+  PENDING         // just created, unpaid
+  AWAITING_DRIVER // paid, waiting for driver assignment
+  ACCEPTED        // driver assigned/accepted
+  IN_PROGRESS     // ride started
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}

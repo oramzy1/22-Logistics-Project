@@ -1,98 +1,197 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { router } from "expo-router";
+import React from "react";
+import {
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { Text } from "../../components/AppText";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useAuth } from "@/context/AuthContext";
+import { useSchedule } from "@/context/ScheduleContext";
+import { AppHeader } from "@/src/ui/AppHeader";
+import { BusinessHome } from "@/src/ui/BusinessHome";
+import { colors, radius, spacing, text } from "@/src/ui/theme";
+import { PackageId } from "@/src/ui/timeSlots";
+import { Clock } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function HomeScreen() {
+const packages = [
+  { title: "3 Hours", price: "₦24,000" },
+  { title: "6 Hours", price: "₦34,000" },
+  { title: "10 Hours", price: "₦54,000" },
+  { title: "Multi-day", price: "Schedule" },
+  { title: "Airport", price: "Schedule" },
+];
+
+export default function HomeTabScreen() {
+  const { isBusiness, user } = useAuth();
+  const { setSelectedPackage } = useSchedule();
+
+  const titleToId: Record<string, PackageId> = {
+    "3 Hours": "3h",
+    "6 Hours": "6h",
+    "10 Hours": "10h",
+    "Multi-day": "multi",
+    "Airport": "airport",
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView edges={["top"]} style={[{ flex: 1 }, styles.origin]}>
+      <View style={styles.root}>
+        <View style={styles.top}>
+          <AppHeader
+            title={
+              <View>
+                <Text
+                  style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}
+                >
+                  Hello {user?.name}
+                </Text>
+                <Text style={{ color: "#B7C3D0", marginTop: 2, fontSize: 12 }}>
+                  Plan Your Next Ride
+                </Text>
+              </View>
+            }
+            rightIcons
+            leftAvatar
+          />
+        </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {isBusiness ? (
+          <BusinessHome />
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.h1}>Your Ride, On Schedule</Text>
+
+            <Text style={styles.section}>Special Offers</Text>
+            <ImageBackground
+              source={{
+                uri: "https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1200&q=60",
+              }}
+              style={styles.offer}
+              imageStyle={{ borderRadius: radius.xl }}
+            >
+              <View style={styles.offerOverlay} />
+              <Text style={styles.offerDiscount}>20% OFF</Text>
+              <Text style={styles.offerTitle}>Rent Smart, Save More</Text>
+              <Text style={styles.offerSubtitle}>
+                Save big on rentals with limited\ntime promotions.
+              </Text>
+              <Pressable style={styles.offerBtn}>
+                <Text style={{ fontWeight: "700" }}>Claim Offer</Text>
+              </Pressable>
+            </ImageBackground>
+
+            <View style={styles.dots}>
+              <View style={[styles.dot, styles.dotInactive]} />
+              <View style={styles.dot} />
+              <View style={[styles.dot, styles.dotInactive]} />
+            </View>
+
+            <Text style={styles.section}>Schedule Your Ride</Text>
+            <View style={styles.grid}>
+              {packages.map((p) => (
+                <Pressable
+                  key={p.title}
+                  style={styles.pkg}
+                  onPress={() => {
+                    setSelectedPackage(titleToId[p.title] ?? "3h");
+                    router.push("/(tabs)/schedule");
+                  }}
+                  android_ripple={{ color: "#0000000C" }}
+                >
+                  <Clock color={"#3B82F6"} size={10} />
+                  <Text
+                    style={{
+                      fontWeight: "800",
+                      fontSize: 18,
+                      marginTop: 6,
+                      margin: "auto",
+                    }}
+                  >
+                    {p.title}
+                  </Text>
+                  {!!p.price && (
+                    <Text
+                      style={{
+                        fontWeight: "900",
+                        fontSize: 18,
+                        marginTop: 6,
+                        margin: "auto",
+                      }}
+                    >
+                      {p.price}
+                    </Text>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  origin: { backgroundColor: colors.navy },
+  root: { backgroundColor: colors.background, height: "100%" },
+  top: { backgroundColor: colors.navy, paddingBottom: spacing.md },
+  content: { padding: spacing.lg, paddingBottom: 40 },
+  h1: { ...text.h1, marginBottom: spacing.lg },
+  section: { ...text.h2, marginTop: spacing.lg, marginBottom: spacing.md },
+  offer: {
+    height: 180,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    overflow: "hidden",
+  },
+  offerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  offerDiscount: { color: "#fff", fontWeight: "900", fontSize: 18 },
+  offerTitle: { color: "#fff", fontWeight: "900", fontSize: 18, marginTop: 10 },
+  offerSubtitle: { color: "#E5E7EB", marginTop: 6, lineHeight: 18 },
+  offerBtn: {
+    marginTop: 14,
+    alignSelf: "flex-start",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  dots: {
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  dot: { width: 18, height: 4, borderRadius: 3, backgroundColor: "#F59E0B" },
+  dotInactive: { width: 6, backgroundColor: "#D1D5DB" },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  pkg: {
+    width: "47%",
+    minHeight: 120,
+    borderRadius: radius.xl,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: colors.softBorder,
+    padding: spacing.lg,
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
 });

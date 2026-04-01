@@ -1,33 +1,94 @@
-import { Tabs } from 'expo-router';
 import React from 'react';
+import { SymbolView } from 'expo-symbols';
+import { Tabs } from 'expo-router';
+import { useColorScheme } from '@/components/useColorScheme';
+import { Home, CalendarRange, Calendar, MapPin, User } from 'lucide-react-native'
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { colors } from '@/src/ui/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+
+function TabBarIcon({ name, focused }: { name: string; focused: boolean }) {
+  const icons: { [key: string]: React.ReactNode } = {
+    index: <Home color={focused ? "#061A33" : "gray"} size={20} />,
+    schedule: <CalendarRange color={focused ? "#061A33" : "gray"} size={20} />,
+    bookings: <Calendar color={focused ? "#061A33" : "gray"} size={20} />,
+    live: <MapPin color={focused ? "#061A33" : "gray"} size={20} />,
+    account: <User color={focused ? "#061A33" : "gray"} size={20} />,
+  };
+
+  return icons[name] || <Home color="gray" size={20} />;
+}
+
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+
+  void colorScheme;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
+        animation: "shift",
+        tabBarStyle: {
+          backgroundColor: "white",
+          borderTopWidth: 1,
+          borderTopColor: "#e5e7eb",
+          height: 52 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          paddingTop: 5,
+        },
+        tabBarActiveTintColor: "#061A33",
+        tabBarInactiveTintColor: "gray",
       }}>
       <Tabs.Screen
         name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+       options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="index" focused={focused} />
+          ),
+          tabBarLabel: "Home",
         }}
       />
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+        name="schedule"
+      options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="schedule" focused={focused} />
+          ),
+          tabBarLabel: "Schedule",
+        }}
+      />
+
+      <Tabs.Screen
+        name="bookings"
+       options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="bookings" focused={focused} />
+          ),
+          tabBarLabel: "Bookings",
+        }}
+      />
+
+      <Tabs.Screen
+        name="live"
+       options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="live" focused={focused} />
+          ),
+          tabBarLabel: "Live",
+        }}
+      />
+
+      <Tabs.Screen
+        name="account"
+       options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="account" focused={focused} />
+          ),
+          tabBarLabel: "Account",
         }}
       />
     </Tabs>
