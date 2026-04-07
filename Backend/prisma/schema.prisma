@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -27,6 +28,7 @@ model User {
   resetToken          String?
   resetTokenExpiry    DateTime?
   businessProfile BusinessProfile?
+  driverProfile   DriverProfile?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -37,6 +39,8 @@ model User {
   bookingsAsCustomer Booking[]      @relation("CustomerBookings")
   bookingsAsDriver   Booking[]      @relation("DriverBookings")
   notifications      Notification[]
+  reviewsAsDriver    DriverReview[] @relation("DriverReviews") 
+  reviewsAsCustomer  DriverReview[] @relation("CustomerReviews")
 }
 
 model BusinessProfile {
@@ -83,11 +87,41 @@ model Booking {
 
   totalAmount   Float
   notes         String?
+  cancellationReason  String?
+  refundRequested     Boolean  @default(false)
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  rideRequests  RideRequest[]
   notifications Notification[]
+  extensions    TripExtension[]
+  review        DriverReview?
+}
+
+model TripExtension {
+  id            String   @id @default(uuid())
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id])
+  hours         Int
+  amount        Int
+  paymentRef    String   @unique
+  paymentStatus String   @default("UNPAID") // UNPAID | PAID
+  paystackAccessCode String?
+  createdAt     DateTime @default(now())
+}
+
+model DriverReview {
+  id         String   @id @default(uuid())
+  bookingId  String   @unique  // one review per booking
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  driverId   String
+  driver     User     @relation("DriverReviews", fields: [driverId], references: [id])
+  customerId String
+  customer   User     @relation("CustomerReviews", fields: [customerId], references: [id])
+  rating     Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
 }
 
 model Notification {
@@ -101,6 +135,51 @@ model Notification {
   type      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+
+model DriverProfile {
+  id                String              @id @default(uuid())
+  userId            String              @unique
+  user              User                @relation(fields: [userId], references: [id])
+  licenseNumber     String?
+  licenseImageUrl   String?
+  licenseStatus     LicenseStatus       @default(PENDING)
+  isOnline          Boolean             @default(false)
+  isAvailable       Boolean             @default(false) // online AND ready for assignment
+  currentLat        Float?
+  currentLng        Float?
+  totalTrips        Int                 @default(0)
+  acceptanceRate    Float               @default(0)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  rideRequests      RideRequest[]
+}
+
+model RideRequest {
+  id              String            @id @default(uuid())
+  bookingId       String
+  booking         Booking           @relation(fields: [bookingId], references: [id])
+  driverProfileId String
+  driverProfile   DriverProfile     @relation(fields: [driverProfileId], references: [id])
+  status          RideRequestStatus @default(PENDING)
+  expiresAt       DateTime          // request expires after 30s if no response
+  respondedAt     DateTime?
+  createdAt       DateTime          @default(now())
+}
+
+enum LicenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RideRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
 }
 
 

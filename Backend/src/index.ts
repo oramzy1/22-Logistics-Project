@@ -7,11 +7,19 @@ import path from 'path'
 import bookingRoutes from './routes/booking.routes';
 import notificationRoutes from './routes/notification.routes';
 import paymentRoutes from './routes/payment.routes';
+import extensionRoutes from './routes/extension.route';
+import { cleanupStaleBookings, expireRideRequests } from './lib/cleanup';
+import { createServer } from 'http';
+import { initSocket } from './lib/socket';
+import driverRoutes from './routes/driver.routes';
 
 dotenv.config();
 
 
 const app = express();
+const httpServer = createServer(app);
+const io = initSocket(httpServer);
+
 app.use(cors());
 
 app.use('/api/payments', paymentRoutes);
@@ -23,10 +31,16 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/bookings/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/extensions', extensionRoutes)
+app.use('/api/driver', driverRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Logistics API is running' });
 });
+
+cleanupStaleBookings();
+setInterval(cleanupStaleBookings, 60 * 60 * 1000);
+setInterval(expireRideRequests, 10 * 1000);
 
 const PORT = process.env.PORT || 5000;
 
