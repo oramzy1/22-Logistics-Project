@@ -1,12 +1,13 @@
 import { useAuth } from "@/context/AuthContext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 import { Image, StyleSheet, View } from "react-native";
 
 export default function SplashScreen() {
   const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
+
 
   useEffect(() => {
     if (isLoading) return;
