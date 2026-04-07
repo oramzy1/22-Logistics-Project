@@ -35,7 +35,7 @@ app.use('/api/extensions', extensionRoutes)
 app.use('/api/driver', driverRoutes);
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Logistics API is running' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Logistics API is running' });
 });
 
 cleanupStaleBookings();
