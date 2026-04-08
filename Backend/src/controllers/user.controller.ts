@@ -25,6 +25,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         role: true,
         phone: true,
         isActive: true,
+        isVerified: true,
         businessProfile: {
           select: { logoUrl: true },
         },
@@ -38,7 +39,6 @@ export const getMe = async (req: AuthRequest, res: Response) => {
             onlineStatus: true,
             licenseImageUrl: true,
             licenseStatus: true,
-            isVerified: true,
           }
         },
         avatarUrl: true,
