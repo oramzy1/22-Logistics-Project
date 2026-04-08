@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { sendVerificationEmail } from '../lib/email.service';
 import { getIO } from '../lib/socket';
 import prisma from '../lib/prisma';
