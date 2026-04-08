@@ -128,7 +128,9 @@ export const getBookings = async (req: AuthRequest, res: Response) => {
       },
       orderBy: { createdAt: "desc" },
       include: {
-        driver: { select: { name: true, phone: true, avatarUrl: true } },
+        driver: { select: { name: true, phone: true, avatarUrl: true,
+          driverProfile: { select: { brandModel: true, vehicleColor: true, plateNumber: true } } 
+         } },
         extensions: { 
           orderBy: { createdAt: "asc" },
         },
@@ -146,7 +148,9 @@ export const getBookingById = async (req: AuthRequest, res: Response) => {
     const booking = await prisma.booking.findFirst({
       where: { id, customerId: req.user!.id },
       include: {
-        driver: { select: { name: true, phone: true, avatarUrl: true } },
+        driver: { select: { name: true, phone: true, avatarUrl: true,
+          driverProfile: { select: { brandModel: true, vehicleColor: true, plateNumber: true } } 
+         } },
         extensions:{
           orderBy: { createdAt: "asc" },
         }
@@ -175,6 +179,14 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { status: "CANCELLED" },
     });
+
+     if (booking.driverId) {
+      await prisma.driverProfile.update({
+        where: { userId: booking.driverId },
+        data: { isAvailable: true }
+      });
+      // Optionally emit a socket event here if you track driver state live
+    }
 
     await createNotification(
       req.user!.id,
@@ -379,6 +391,14 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
       data: { status: 'COMPLETED' },
     });
 
+     if (booking.driverId) {
+      await prisma.driverProfile.update({
+        where: { userId: booking.driverId },
+        data: { isAvailable: true }
+      });
+      // Optionally emit a socket event here if you track driver state live
+    }
+
     await createNotification(
       booking.customerId,
       'Trip Completed',
@@ -449,6 +469,14 @@ export const cancelBookingWithReason = async (req: AuthRequest, res: Response) =
         refundRequested: requestRefund && booking.paymentStatus === 'PAID',
       },
     });
+
+    if (booking.driverId) {
+      await prisma.driverProfile.update({
+        where: { userId: booking.driverId },
+        data: { isAvailable: true }
+      });
+      // Optionally emit a socket event here if you track driver state live
+    }
 
     await createNotification(
       req.user!.id,

@@ -351,17 +351,18 @@ export default function LiveTabScreen() {
                   {/* Quick Driver Card */}
                   <View style={styles.quickDriverCard}>
                     <View style={styles.qdTop}>
-                      <Image
-                        source={{ uri: DRIVER_IMAGE }}
-                        style={styles.qdAvatar}
-                      />
+                        <Image source={{ uri: activeBooking.driver?.avatarUrl || "https://ui-avatars.com/api/?name=Driver" }} style={styles.qdAvatar} />
                       <View style={{ flex: 1, marginLeft: 12 }}>
                         <Text style={styles.qdName}>
                           {activeBooking.driver?.name ?? "Assigning driver..."}
                         </Text>
-                        <Text style={styles.qdBio}>Black Toyota Corolla</Text>
-                        <Text style={styles.qdBio}>2008 Model</Text>
-                      </View>
+                         {(activeBooking.driver as any)?.driverProfile && (
+                           <>
+                             <Text style={styles.qdBio}>{(activeBooking.driver as any).driverProfile.vehicleColor} {(activeBooking.driver as any).driverProfile.brandModel}</Text>
+                             <Text style={styles.qdBio}>Plate: {(activeBooking.driver as any).driverProfile.plateNumber}</Text>
+                           </>
+                        )}
+                      </View>   
                       <View style={{ alignItems: "flex-end" }}>
                         <Image
                           source={{ uri: CAR_THUMB }}
@@ -514,16 +515,15 @@ export default function LiveTabScreen() {
                 </>
               ) : (
                 // =============== DRIVER DETAILS VIEW ===============
-                <>
+                 <>
                   <Text style={styles.sectionTitle}>Driver's details</Text>
-
                   {/* Driver Image Avatar */}
                   <View style={styles.driverAvatarContainer}>
                     <Image
-                      source={{ uri: DRIVER_IMAGE }}
+                      source={{ uri: activeBooking.driver?.avatarUrl || "https://ui-avatars.com/api/?name=Driver" }}
                       style={styles.driverAvatarProfile}
                     />
-                    <Text style={styles.driverName}>Jack Soon</Text>
+                    <Text style={styles.driverName}>{activeBooking.driver?.name ?? "Unknown Driver"}</Text>
                     <View style={styles.driverMetaRow}>
                       <View style={styles.driverMetaPill}>
                         <MapPin size={12} color="#D97706" />
@@ -535,7 +535,6 @@ export default function LiveTabScreen() {
                       </View>
                     </View>
                   </View>
-
                   {/* Ratings Segment */}
                   <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
                     Rating overview
@@ -557,7 +556,6 @@ export default function LiveTabScreen() {
                       </View>
                       <Text style={styles.ratingCount}>1,215 ratings</Text>
                     </View>
-
                     <View style={styles.barsContainer}>
                       {[5, 4, 3, 2, 1].map((lvl, idx) => (
                         <View key={lvl} style={styles.barRow}>
@@ -577,14 +575,14 @@ export default function LiveTabScreen() {
                       ))}
                     </View>
                   </View>
-
                   <View style={styles.phoneBox}>
                     <View style={styles.phoneIconBox}>
                       <Phone size={14} color="#D97706" />
                     </View>
-                    <Text style={styles.phoneNumber}>08021626619</Text>
+                    <Text style={styles.phoneNumber}>
+                      {activeBooking.driver?.phone || "No phone number"}
+                    </Text>
                   </View>
-
                   {/* Spacer for bottom actions */}
                   <View style={{ height: 80 }} />
                 </>
