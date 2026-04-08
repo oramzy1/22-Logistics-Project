@@ -2,7 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_controller_1 = require("../controllers/auth.controller");
+const upload_1 = require("../lib/upload");
 const router = (0, express_1.Router)();
-router.post('/register', auth_controller_1.register);
+router.post('/register', upload_1.upload.single('logo'), auth_controller_1.register);
 router.post('/login', auth_controller_1.login);
+router.post('/verify-email', auth_controller_1.verifyEmail);
+router.post('/forgot-password', auth_controller_1.forgotPassword);
+router.post('/reset-password', auth_controller_1.resetPassword);
 exports.default = router;
