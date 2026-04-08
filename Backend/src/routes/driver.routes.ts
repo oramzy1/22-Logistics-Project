@@ -20,7 +20,7 @@ import {
 const router = Router();
 
 // Public
-router.post('/register', registerDriver);
+router.post('/register', upload.single('logo'), registerDriver);
 
 // Driver only
 router.use(authenticate);

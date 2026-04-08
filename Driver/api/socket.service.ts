@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = process.env.API_URL || 'http://10.199.154.123:5000';
+const API_URL = process.env.API_URL || 'https://two2-logistics-project.onrender.com';
 
 class SocketService {
   private socket: Socket | null = null;

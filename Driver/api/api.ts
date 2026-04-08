@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_URL = process.env.API_URL || "http://10.199.154.123:5000/api";
+const API_URL = process.env.API_URL || "https://two2-logistics-project.onrender.com/api";
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -14,7 +14,8 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
+    // delete config.headers["Content-Type"];
+      config.headers["Content-Type"] = "multipart/form-data";
   }
   return config;
 });

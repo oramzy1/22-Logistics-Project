@@ -10,6 +10,10 @@ export const AuthService = {
     const response = await apiClient.post("/auth/register", formData);
     return response.data;
   },
+  registerDriver: async (formData: FormData) => {
+    const response = await apiClient.post("/auth/register", formData);
+    return response.data;
+  },
 
   login: async (credentials: any) => {
     const response = await apiClient.post("/auth/login", credentials);

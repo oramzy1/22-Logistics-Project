@@ -18,7 +18,7 @@ const generateCode = () => {
 // ── REGISTRATION ──────────────────────────────────────────────
 export const registerDriver = async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, phone, password, licenseNumber } = req.body;
+    const { name, email, phone, password, licenseNumber } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(400).json({ message: 'Email already registered' });
@@ -26,11 +26,12 @@ export const registerDriver = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const { code, hashed, expiry } = generateCode();
 
+    const licenseImageUrl = req.file ? req.file.path : null;
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        name: `${firstName} ${lastName}`,
+        name,
         role: 'DRIVER',
         phone,
         verificationToken: hashed,
@@ -38,6 +39,8 @@ export const registerDriver = async (req: Request, res: Response) => {
         driverProfile: {
           create: {
             licenseNumber: licenseNumber ?? null,
+            licenseImageUrl: licenseImageUrl, // 3. Store the image instantly!
+            licenseStatus: licenseImageUrl ? 'PENDING' : 'REJECTED',
           },
         },
       },

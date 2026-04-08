@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "./api";
+import { Platform } from "react-native";
 
-const API_URL = process.env.API_URL || "http://10.199.154.123:5000/api"
+const API_URL = process.env.API_URL || "https://two2-logistics-project.onrender.com/api"
 
 export const UserService = {
   getMe: async () => {
@@ -32,6 +33,8 @@ export const UserService = {
 
   uploadAvatar: async (imageUri: string) => {
     const token = await AsyncStorage.getItem("token");
+
+     const safeUri = Platform.OS === 'ios' ? imageUri.replace('file://', '') : imageUri;
 
     const formData = new FormData();
     formData.append("avatar", {
