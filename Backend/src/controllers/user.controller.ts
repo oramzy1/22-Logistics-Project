@@ -36,7 +36,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
             vehicleColor: true,
             workingHours: true,
             onlineStatus: true,
-            licenseUrl: true,
+            licenseImageUrl: true,
             licenseStatus: true,
             isVerified: true,
           }

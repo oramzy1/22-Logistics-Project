@@ -99,6 +99,7 @@ useEffect(() => {
 
   // Fetch fresh data from API and sync to storage + state
   const refreshUser = useCallback(async () => {
+    setIsLoading(true);
     try {
       const { UserService } = await import("../api/user.service");
       const freshUser = await UserService.getMe();
@@ -106,6 +107,8 @@ useEffect(() => {
       setUser(freshUser);
     } catch (error) {
       console.error("Failed to refresh user:", error);
+    }finally {
+      setIsLoading(false);
     }
   }, []);
 

@@ -413,7 +413,7 @@ export default function AccountTabScreen() {
                        : "#F59E0B", 
                   fontSize: 13, fontWeight: "600"
               }}>
-                ● {user?.driverProfile?.licenseStatus || "UNVERIFIED"}
+                ● {user?.driverProfile?.licenseStatus || "PENDING"}
               </Text>
             }
           />
