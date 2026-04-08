@@ -15,6 +15,7 @@ import {
   verifyDriverLicense,
   assignDriverToBooking,
   getAvailableDrivers,
+  updateDriverProfile,
 } from '../controllers/driver.controller';
 
 const router = Router();
@@ -26,6 +27,7 @@ router.post('/register', upload.single('logo'), registerDriver);
 router.use(authenticate);
 router.post('/license', authorize(['DRIVER']), upload.single('license'), uploadLicense);
 router.get('/profile', authorize(['DRIVER']), getDriverProfile);
+router.patch('/profile', authorize(['DRIVER']), updateDriverProfile);
 router.patch('/status', authorize(['DRIVER']), setOnlineStatus);
 router.patch('/availability', authorize(['DRIVER']), setAvailability);
 router.get('/requests', authorize(['DRIVER']), getMyRideRequests);

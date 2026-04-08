@@ -18,6 +18,7 @@ interface AuthUser {
   role: Role;
   avatarUrl?: string;
   businessProfile?: { logoUrl?: string } | null;
+  driverProfile?: any;
 }
 
 interface AuthContextType {

@@ -8,6 +8,7 @@ import {
   Bell,
   Calendar,
   Car,
+  Clock,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -51,6 +52,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { showToast } from "../utils/toast";
 import { AccountSkeleton } from "@/src/ui/skeletons/AccountSkeleton";
+import { DriverService } from "@/api/driver.service";
 
 // Enable LayoutAnimation for Android
 if (
@@ -61,7 +63,7 @@ if (
 }
 
 // Custom Reusable Components
-const ListItem = ({
+const ListItem: React.FC<any> = ({
   icon: Icon,
   title,
   subtitle,
@@ -92,7 +94,7 @@ const ListItem = ({
   </TouchableOpacity>
 );
 
-const AccordionItem = ({
+const AccordionItem: React.FC<any> = ({
   title,
   icon: Icon,
   children,
@@ -145,7 +147,13 @@ export default function AccountTabScreen() {
   const { user, clearAuthData, updateUser, signOut, isBusiness } = useAuth();
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<
-    "editProfile" | "changeEmail" | "changePassword" | "deleteAccount" | null
+    | "editProfile"
+    | "changeEmail"
+    | "changePassword"
+    | "deleteAccount"
+    | "editVehicle"
+    | "editWorkingHours"
+    | null
   >(null);
   const [modalValues, setModalValues] = useState({
     name: "",
@@ -156,6 +164,11 @@ export default function AccountTabScreen() {
     newPassword: "",
     confirmPassword: "",
     deletePassword: "",
+    vehicleType: "",
+    brandModel: "",
+    plateNumber: "",
+    vehicleColor: "",
+    workingHours: "",
   });
 
   const handleEditProfile = () => {
@@ -250,23 +263,41 @@ export default function AccountTabScreen() {
     });
 
     if (!result.canceled) {
-    try {
-      const data = await UserService.uploadAvatar(result.assets[0].uri);
-      
-      if (isBusiness && data.logoUrl) {
-        await updateUser({
-          businessProfile: { logoUrl: data.logoUrl },
-        });
-      } else if (data.avatarUrl) {
-        await updateUser({ avatarUrl: data.avatarUrl });
-      }
+      try {
+        const data = await UserService.uploadAvatar(result.assets[0].uri);
 
-      showToast.success('Profile photo updated');
-    } catch (err) {
-      console.log('Error:', err);
-      showToast.error('Failed to upload photo');
+        if (isBusiness && data.logoUrl) {
+          await updateUser({
+            businessProfile: { logoUrl: data.logoUrl },
+          });
+        } else if (data.avatarUrl) {
+          await updateUser({ avatarUrl: data.avatarUrl });
+        }
+
+        showToast.success("Profile photo updated");
+      } catch (err) {
+        console.log("Error:", err);
+        showToast.error("Failed to upload photo");
+      }
     }
-  }
+  };
+
+   const handleEditVehicle = () => {
+    setModalValues((v) => ({
+      ...v,
+      vehicleType: user?.driverProfile?.vehicleType || "",
+      brandModel: user?.driverProfile?.brandModel || "",
+      plateNumber: user?.driverProfile?.plateNumber || "",
+      vehicleColor: user?.driverProfile?.vehicleColor || "",
+    }));
+    setActiveModal("editVehicle");
+  };
+  const handleEditWorkingHours = () => {
+    setModalValues((v) => ({
+      ...v,
+      workingHours: user?.driverProfile?.workingHours || "8:00 AM - 5:00 PM",
+    }));
+    setActiveModal("editWorkingHours");
   };
 
   if (!user) return <AccountSkeleton />;
@@ -341,21 +372,81 @@ export default function AccountTabScreen() {
           />
         </AccordionItem>
 
-        <AccordionItem title="BOOKING & TRIPS" icon={Calendar}>
-          <ListItem
-            icon={Calendar}
-            title="Active Bookings"
-            subtitle="View your current bookings"
+        <AccordionItem title="VEHICLE INFORMATION" icon={Car}>
+          <ListItem 
+            icon={Car} 
+            title={`Type: ${user?.driverProfile?.vehicleType || "Not Set"}`}
+            onPress={handleEditVehicle}
           />
-          <ListItem icon={History} title="Trip History" />
-          <ListItem icon={UserX} title="Cancelled Trips" />
-          <ListItem icon={Download} title="Download Trip Receipt" isLast />
+          <ListItem 
+            icon={Car} 
+            title={`Brand & Model: ${user?.driverProfile?.brandModel || "Not Set"}`} 
+            onPress={handleEditVehicle}
+          />
+          <ListItem 
+            icon={CheckCircle} 
+            title={`Plate Number: ${user?.driverProfile?.plateNumber || "Not Set"}`} 
+            onPress={handleEditVehicle}
+          />
+          <ListItem 
+            icon={Edit3} 
+            title={`Color: ${user?.driverProfile?.vehicleColor || "Not Set"}`} 
+            isLast 
+            onPress={handleEditVehicle}
+          />
         </AccordionItem>
-
-        <AccordionItem title="PAYMENT" icon={CreditCard}>
-          <ListItem icon={CreditCard} title="Payment Method" />
-          <ListItem icon={History} title="Transaction History" />
-          <ListItem icon={FileText} title="Download Invoice" isLast />
+        {/* DOCUMENTS */}
+        <AccordionItem title="DOCUMENT INFORMATION" icon={FileText}>
+          <ListItem 
+            icon={FileText} 
+            title="Driver's License" 
+            isLast
+            rightElement={
+              <Text style={{
+                  color: user?.driverProfile?.licenseStatus === "APPROVED" ? "#10B981" 
+                       : user?.driverProfile?.licenseStatus === "REJECTED" ? "#EF4444" 
+                       : "#F59E0B", 
+                  fontSize: 13, fontWeight: "600"
+              }}>
+                ● {user?.driverProfile?.licenseStatus || "UNVERIFIED"}
+              </Text>
+            }
+          />
+        </AccordionItem>
+        {/* AVAILABILITY */}
+        <AccordionItem title="AVAILABILITY" icon={User}>
+          <ListItem
+            icon={Globe}
+            title="Online Status"
+            rightElement={
+              <Switch
+                value={user?.driverProfile?.onlineStatus !== "OFFLINE"}
+                onValueChange={async (v) => {
+                   const newStatus = v ? "ONLINE" : "OFFLINE";
+                   try {
+                     await DriverService.setOnlineStatus(newStatus);
+                     await updateUser({ 
+                       driverProfile: { ...user?.driverProfile, onlineStatus: newStatus } 
+                     });
+                   } catch (err) {
+                     Alert.alert("Error", "Could not update status");
+                   }
+                }}
+                trackColor={{ true: "#111827" }}
+              />
+            }
+          />
+          <ListItem 
+            icon={Clock} 
+            title="Working Hours" 
+            onPress={handleEditWorkingHours}
+            isLast
+            rightElement={
+              <Text style={{color: "#6B7280", fontSize: 12}}>
+                 {user?.driverProfile?.workingHours || "8:00 AM - 5:00 PM"}
+              </Text>
+            }
+          />
         </AccordionItem>
 
         <AccordionItem title="NOTIFICATIONS" icon={Bell}>
@@ -528,6 +619,7 @@ export default function AccountTabScreen() {
                           setActiveModal(null);
                           Alert.alert("Success", "Profile updated");
                         } catch (err: any) {
+
                           Alert.alert(
                             "Error",
                             err?.response?.data?.message || "Update failed",
@@ -719,7 +811,7 @@ export default function AccountTabScreen() {
                           setActiveModal(null);
                           await clearAuthData();
                           router.replace("/(auth)/sign-in");
-                        } catch (err: any) {
+                        } catch (err) {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
                           );
@@ -729,6 +821,119 @@ export default function AccountTabScreen() {
                       <Text style={[styles.modalSaveText, { color: "#fff" }]}>
                         Delete Forever
                       </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+                {activeModal === "editVehicle" && (
+                <>
+                  <Text style={styles.modalTitle}>Vehicle Information</Text>
+                  
+                  <Text style={styles.modalLabel}>Vehicle Type</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.vehicleType}
+                    onChangeText={(t) => setModalValues((v) => ({ ...v, vehicleType: t }))}
+                    placeholder="e.g. Sedan, SUV, Truck"
+                  />
+                  <Text style={styles.modalLabel}>Brand & Model</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.brandModel}
+                    onChangeText={(t) => setModalValues((v) => ({ ...v, brandModel: t }))}
+                    placeholder="e.g. Toyota Camry 2022"
+                  />
+                  <Text style={styles.modalLabel}>Plate Number</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.plateNumber}
+                    onChangeText={(t) => setModalValues((v) => ({ ...v, plateNumber: t }))}
+                    placeholder="e.g. ACCA-1784"
+                  />
+                  <Text style={styles.modalLabel}>Color</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.vehicleColor}
+                    onChangeText={(t) => setModalValues((v) => ({ ...v, vehicleColor: t }))}
+                    placeholder="e.g. Red, Blue, Black"
+                  />
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setActiveModal(null)}>
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalSaveBtn}
+                      onPress={async () => {
+                        try {
+                          await DriverService.updateProfile({
+                            vehicleType: modalValues.vehicleType,
+                            brandModel: modalValues.brandModel,
+                            plateNumber: modalValues.plateNumber,
+                            vehicleColor: modalValues.vehicleColor,
+                          });
+                          await updateUser({
+                            driverProfile: {
+                              ...user?.driverProfile,
+                              vehicleType: modalValues.vehicleType,
+                              brandModel: modalValues.brandModel,
+                              plateNumber: modalValues.plateNumber,
+                              vehicleColor: modalValues.vehicleColor,
+                            }
+                          });
+                          setActiveModal(null);
+                          showToast.success("Vehicle details updated");
+                        } catch (err: any) {
+                           console.error('Cancel error:', JSON.stringify({
+      status: err?.response?.status,
+      data: err?.response?.data,
+      message: err?.message,
+    }));
+                          Alert.alert("Error", err?.response?.data?.message || "Update failed");
+                        }
+                      }}
+                    >
+                      <Text style={styles.modalSaveText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+              {/* EDIT WORKING HOURS */}
+              {activeModal === "editWorkingHours" && (
+                <>
+                  <Text style={styles.modalTitle}>Set Working Hours</Text>
+                  
+                  <Text style={styles.modalLabel}>Available Hours</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.workingHours}
+                    onChangeText={(t) => setModalValues((v) => ({ ...v, workingHours: t }))}
+                    placeholder="e.g. 8:00 AM - 5:00 PM"
+                  />
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setActiveModal(null)}>
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalSaveBtn}
+                      onPress={async () => {
+                        try {
+                          await DriverService.updateProfile({ workingHours: modalValues.workingHours });
+                          await updateUser({
+                            driverProfile: { ...user?.driverProfile, workingHours: modalValues.workingHours }
+                          });
+                          setActiveModal(null);
+                          showToast.success("Working hours updated");
+                        } catch (err: any) {
+                         console.error('Cancel error:', JSON.stringify({
+      status: err?.response?.status,
+      data: err?.response?.data,
+      message: err?.message,
+    }));
+                          Alert.alert("Error", err?.response?.data?.message || "Update failed");
+                        }
+                      }}
+                    >
+                      <Text style={styles.modalSaveText}>Save</Text>
                     </TouchableOpacity>
                   </View>
                 </>

@@ -31,8 +31,13 @@ export const DriverService = {
     return res.data;
   },
 
-  setOnlineStatus: async (isOnline: boolean) => {
-    const res = await apiClient.patch('/driver/status', { isOnline });
+  updateProfile: async (data: any) => {
+    const res = await apiClient.patch('/driver/profile', data);
+    return res.data;
+  },
+  
+  setOnlineStatus: async (status: "ONLINE" | "AWAY" | "OFFLINE") => {
+    const res = await apiClient.patch('/driver/status', { status });
     return res.data;
   },
 
