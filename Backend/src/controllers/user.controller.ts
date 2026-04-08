@@ -28,6 +28,19 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         businessProfile: {
           select: { logoUrl: true },
         },
+        driverProfile: {
+          select: {
+            vehicleType: true,
+            brandModel: true,
+            plateNumber: true,
+            vehicleColor: true,
+            workingHours: true,
+            onlineStatus: true,
+            licenseUrl: true,
+            licenseStatus: true,
+            isVerified: true,
+          }
+        },
         avatarUrl: true,
       },
     });

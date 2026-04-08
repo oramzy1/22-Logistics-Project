@@ -47,6 +47,7 @@ import {
   TouchableOpacity,
   UIManager,
   View,
+  RefreshControl
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
@@ -144,7 +145,7 @@ export default function AccountTabScreen() {
   });
   const [darkMode, setDarkMode] = useState(false);
 
-  const { user, clearAuthData, updateUser, signOut, isBusiness } = useAuth();
+  const { user, clearAuthData, updateUser, signOut, refreshUser, isLoading, isBusiness } = useAuth();
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<
     | "editProfile"
@@ -308,7 +309,11 @@ export default function AccountTabScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl onRefresh={refreshUser} refreshing={isLoading} />
+        }
       >
+
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <TouchableOpacity

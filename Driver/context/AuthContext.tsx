@@ -118,6 +118,9 @@ useEffect(() => {
       businessProfile: updates.businessProfile
         ? { ...prev.businessProfile, ...updates.businessProfile }
         : prev.businessProfile,
+        driverProfile: updates.driverProfile
+        ? { ...prev.driverProfile, ...updates.driverProfile }
+        : prev.driverProfile,
     };
     AsyncStorage.setItem('user', JSON.stringify(updated));
     return updated;

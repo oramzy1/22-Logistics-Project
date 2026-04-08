@@ -50,7 +50,7 @@ export default function HomeTabScreen() {
     rating: 5.0,
     acceptance: 0,
   });
-  const { user, isLoading, updateUser } = useAuth();
+  const { user, isLoading, updateUser,  } = useAuth();
 
   const fetchData = async () => {
     try {
