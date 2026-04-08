@@ -10,8 +10,10 @@ export const AuthService = {
     const response = await apiClient.post("/auth/register", formData);
     return response.data;
   },
-  registerDriver: async (formData: FormData) => {
-    const response = await apiClient.post("/auth/register", formData);
+ registerDriver: async (formData: FormData) => {
+    const response = await apiClient.post("/driver/register", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
 

@@ -101,17 +101,30 @@ export const getDriverProfile = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const updateDriverProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const { vehicleType, brandModel, plateNumber, vehicleColor, workingHours } = req.body;
+    const profile = await prisma.driverProfile.update({
+      where: { userId: req.user!.id },
+      data: { vehicleType, brandModel, plateNumber, vehicleColor, workingHours },
+    });
+    res.json({ message: 'Profile updated', profile });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 // ── TOGGLE ONLINE STATUS ────────────────────────────────────────
 export const setOnlineStatus = async (req: AuthRequest, res: Response) => {
   try {
-    const { isOnline } = req.body;
+    const { status } = req.body;
 
     const profile = await prisma.driverProfile.update({
       where: { userId: req.user!.id },
       data: {
-        isOnline,
-        // Going offline also makes them unavailable
-        isAvailable: isOnline ? undefined : false,
+        onlineStatus: status,
+        isOnline: status !== 'OFFLINE',
+        isAvailable: status === 'ONLINE',
       },
     });
 
@@ -122,7 +135,7 @@ export const setOnlineStatus = async (req: AuthRequest, res: Response) => {
       isAvailable: profile.isAvailable,
     });
 
-    res.json({ message: `Driver is now ${isOnline ? 'online' : 'offline'}`, profile });
+     res.json({ message: `Status updated to ${status}`, profile });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

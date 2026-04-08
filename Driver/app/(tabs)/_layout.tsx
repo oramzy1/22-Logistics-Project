@@ -2,7 +2,7 @@ import React from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from '@/components/useColorScheme';
-import { Home, CalendarRange, Calendar, MapPin, User } from 'lucide-react-native'
+import { Home, CalendarRange, Calendar, MapPin, User, Clock } from 'lucide-react-native'
 
 import { colors } from '@/src/ui/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,8 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 function TabBarIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: { [key: string]: React.ReactNode } = {
     index: <Home color={focused ? "#061A33" : "gray"} size={20} />,
-    schedule: <CalendarRange color={focused ? "#061A33" : "gray"} size={20} />,
-    bookings: <Calendar color={focused ? "#061A33" : "gray"} size={20} />,
+    activeTrip: <MapPin color={focused ? "#061A33" : "gray"} size={20} />,
+    history: <Clock color={focused ? "#061A33" : "gray"} size={20} />,
     live: <MapPin color={focused ? "#061A33" : "gray"} size={20} />,
     account: <User color={focused ? "#061A33" : "gray"} size={20} />,
   };
@@ -53,32 +53,22 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="schedule"
+        name="active-trip"
       options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="schedule" focused={focused} />
+            <TabBarIcon name="activeTrip" focused={focused} />
           ),
-          tabBarLabel: "Schedule",
+          tabBarLabel: "Active Trip",
         }}
       />
 
       <Tabs.Screen
-        name="bookings"
+        name="history"
        options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="bookings" focused={focused} />
+            <TabBarIcon name="history" focused={focused} />
           ),
-          tabBarLabel: "Bookings",
-        }}
-      />
-
-      <Tabs.Screen
-        name="live"
-       options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="live" focused={focused} />
-          ),
-          tabBarLabel: "Live",
+          tabBarLabel: "History",
         }}
       />
 

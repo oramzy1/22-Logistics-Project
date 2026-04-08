@@ -154,6 +154,13 @@ model DriverProfile {
   acceptanceRate    Float               @default(0)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  vehicleType       String?
+  brandModel        String?
+  plateNumber       String?
+  vehicleColor      String?
+
+  workingHours      String? @default("8:00 AM - 5:00 PM")
+  onlineStatus      String  @default("OFFLINE") // "ONLINE", "AWAY", "OFFLINE"
 
   rideRequests      RideRequest[]
 }
