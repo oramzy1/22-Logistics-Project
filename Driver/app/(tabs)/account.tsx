@@ -343,6 +343,22 @@ export default function AccountTabScreen() {
           <Text style={styles.name}>{user?.name ?? "—"}</Text>
           <Text style={styles.contact}>{user?.phone ?? "No phone added"}</Text>
           <Text style={styles.email}>{user?.email ?? "—"}</Text>
+
+             <View style={{
+                backgroundColor: user?.driverProfile?.licenseStatus === "APPROVED" ? "#baf8e3" 
+                       : user?.driverProfile?.licenseStatus === "REJECTED" ? "#ebb9b9" 
+                       : "#f5ddb5", borderRadius: 5, marginBottom: 10
+             }}>
+              <Text style={{
+                  color: user?.driverProfile?.licenseStatus === "APPROVED" ? "#10B981" 
+                       : user?.driverProfile?.licenseStatus === "REJECTED" ? "#EF4444" 
+                       : "#F59E0B", 
+                  fontSize: 13, fontWeight: "600", padding: 3
+              }}>
+                ● {user?.driverProfile?.licenseStatus || "PENDING"}
+              </Text>
+              </View>
+
           <TouchableOpacity
             style={styles.editProfileBtn}
             onPress={handleEditProfile}

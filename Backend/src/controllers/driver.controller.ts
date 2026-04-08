@@ -171,135 +171,194 @@ export const setAvailability = async (req: AuthRequest, res: Response) => {
 };
 
 // ── GET AVAILABLE RIDE REQUESTS ─────────────────────────────────
+// export const getMyRideRequests = async (req: AuthRequest, res: Response) => {
+//   try {
+//     const profile = await prisma.driverProfile.findUnique({
+//       where: { userId: req.user!.id },
+//     });
+//     if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+//     const requests = await prisma.rideRequest.findMany({
+//       where: {
+//         driverProfileId: profile.id,
+//         status: 'PENDING',
+//         expiresAt: { gt: new Date() }, // not expired
+//       },
+//       include: {
+//         booking: {
+//           include: {
+//             customer: { select: { name: true, phone: true } },
+//           },
+//         },
+//       },
+//       orderBy: { createdAt: 'desc' },
+//     });
+
+//     res.json(requests);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error });
+//   }
+// };
+
 export const getMyRideRequests = async (req: AuthRequest, res: Response) => {
   try {
-    const profile = await prisma.driverProfile.findUnique({
-      where: { userId: req.user!.id },
-    });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-
-    const requests = await prisma.rideRequest.findMany({
+    // 1. Fetch ALL bookings that are paid but have no driver assigned yet
+    const pool = await prisma.booking.findMany({
       where: {
-        driverProfileId: profile.id,
-        status: 'PENDING',
-        expiresAt: { gt: new Date() }, // not expired
+        status: 'AWAITING_DRIVER', 
       },
       include: {
-        booking: {
-          include: {
-            customer: { select: { name: true, phone: true } },
-          },
-        },
+        customer: { select: { name: true, phone: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
-
-    res.json(requests);
+    res.json(pool); // Send the raw bookings directly
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
 
+
 // ── RESPOND TO RIDE REQUEST ─────────────────────────────────────
+// export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
+//   try {
+//     const { requestId } = req.params;
+//     const { action } = req.body; // 'ACCEPTED' | 'DECLINED'
+
+//     const profile = await prisma.driverProfile.findUnique({
+//       where: { userId: req.user!.id },
+//       include: { user: {select: {name: true}}, rideRequests: { where: { id: requestId } } },
+//     });
+
+//     if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+//     const request = await prisma.rideRequest.findFirst({
+//       where: { id: requestId, driverProfileId: profile.id },
+//       include: { booking: true },
+//     });
+
+//     if (!request) return res.status(404).json({ message: 'Ride request not found' });
+//     if (request.status !== 'PENDING') {
+//       return res.status(400).json({ message: 'Request already responded to' });
+//     }
+//     if (new Date() > request.expiresAt) {
+//       await prisma.rideRequest.update({
+//         where: { id: requestId },
+//         data: { status: 'EXPIRED' },
+//       });
+//       return res.status(400).json({ message: 'Request has expired' });
+//     }
+
+//     // Check if driver is already on an active trip
+//     if (action === 'ACCEPTED') {
+//       const activeTrip = await prisma.booking.findFirst({
+//         where: {
+//           driverId: profile.userId,
+//           status: { in: ['ACCEPTED', 'IN_PROGRESS'] },
+//         },
+//       });
+
+//       if (activeTrip) {
+//         // Don't block — just warn. Frontend shows the prompt.
+//         // Let driver confirm via a separate flag if needed.
+//         // For now we include the warning in the response.
+//         console.warn(`Driver ${profile.id} accepted ride while on active trip`);
+//       }
+//     }
+
+//     const updatedRequest = await prisma.rideRequest.update({
+//       where: { id: requestId },
+//       data: {
+//         status: action as 'ACCEPTED' | 'DECLINED',
+//         respondedAt: new Date(),
+//       },
+//     });
+
+//     if (action === 'ACCEPTED') {
+//       // Assign driver to booking
+//       await prisma.booking.update({
+//         where: { id: request.bookingId },
+//         data: {
+//           driverId: profile.userId,
+//           status: 'ACCEPTED',
+//         },
+//       });
+
+//       // Update driver stats
+//       await prisma.driverProfile.update({
+//         where: { id: profile.id },
+//         data: {
+//           isAvailable: false, // no longer available for new rides
+//           totalTrips: { increment: 1 },
+//         },
+//       });
+
+//       // Notify customer in real-time
+//       getIO().to(`user:${request.booking.customerId}`).emit('booking:driver_assigned', {
+//         bookingId: request.bookingId,
+//         driverName: profile.user?.name,
+//       });
+
+//       await createNotification(
+//         request.booking.customerId,
+//         'Driver Assigned!',
+//         `A driver has been assigned to your booking.`,
+//         'DRIVER_ASSIGNED',
+//         request.bookingId,
+//       );
+//     }
+
+//     // Notify admin of response
+//     getIO().emit('driver:request_responded', {
+//       requestId,
+//       action,
+//       driverProfileId: profile.id,
+//       bookingId: request.bookingId,
+//     });
+
+//     res.json({ message: `Ride ${action.toLowerCase()}`, request: updatedRequest });
+//   } catch (error) {
+//     console.error('Respond to ride request error:', error);
+//     res.status(500).json({ message: 'Server error', error });
+//   }
+// };
+
 export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const { requestId } = req.params;
-    const { action } = req.body; // 'ACCEPTED' | 'DECLINED'
-
+    const { requestId } = req.params; // In this case, requestId is actually the Booking ID
+    const { action } = req.body; 
     const profile = await prisma.driverProfile.findUnique({
       where: { userId: req.user!.id },
-      include: { user: {select: {name: true}}, rideRequests: { where: { id: requestId } } },
+      include: { user: { select: { name: true } } },
     });
-
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
-
-    const request = await prisma.rideRequest.findFirst({
-      where: { id: requestId, driverProfileId: profile.id },
-      include: { booking: true },
-    });
-
-    if (!request) return res.status(404).json({ message: 'Ride request not found' });
-    if (request.status !== 'PENDING') {
-      return res.status(400).json({ message: 'Request already responded to' });
+    
+    // If they decline, we don't modify the database. We just let them ignore it on the frontend so other drivers can still see it.
+    if (action === 'DECLINED') {
+       return res.json({ message: 'Ride ignored locally' });
     }
-    if (new Date() > request.expiresAt) {
-      await prisma.rideRequest.update({
-        where: { id: requestId },
-        data: { status: 'EXPIRED' },
-      });
-      return res.status(400).json({ message: 'Request has expired' });
-    }
-
-    // Check if driver is already on an active trip
     if (action === 'ACCEPTED') {
-      const activeTrip = await prisma.booking.findFirst({
-        where: {
-          driverId: profile.userId,
-          status: { in: ['ACCEPTED', 'IN_PROGRESS'] },
-        },
-      });
-
-      if (activeTrip) {
-        // Don't block — just warn. Frontend shows the prompt.
-        // Let driver confirm via a separate flag if needed.
-        // For now we include the warning in the response.
-        console.warn(`Driver ${profile.id} accepted ride while on active trip`);
+      // 1. Check if the ride was literally just snatched by another driver 2 seconds ago
+      const booking = await prisma.booking.findUnique({ where: { id: requestId } });
+      if (!booking || booking.status !== 'AWAITING_DRIVER') {
+         return res.status(400).json({ message: 'Sorry! Another driver just accepted this ride.' });
       }
-    }
-
-    const updatedRequest = await prisma.rideRequest.update({
-      where: { id: requestId },
-      data: {
-        status: action as 'ACCEPTED' | 'DECLINED',
-        respondedAt: new Date(),
-      },
-    });
-
-    if (action === 'ACCEPTED') {
-      // Assign driver to booking
-      await prisma.booking.update({
-        where: { id: request.bookingId },
+      // 2. Assign this driver to the booking!
+      const updated = await prisma.booking.update({
+        where: { id: requestId }, 
         data: {
           driverId: profile.userId,
           status: 'ACCEPTED',
         },
       });
-
-      // Update driver stats
+      // 3. Mark the driver as unavailable since they are now on a trip
       await prisma.driverProfile.update({
         where: { id: profile.id },
-        data: {
-          isAvailable: false, // no longer available for new rides
-          totalTrips: { increment: 1 },
-        },
+        data: { isAvailable: false, totalTrips: { increment: 1 } },
       });
-
-      // Notify customer in real-time
-      getIO().to(`user:${request.booking.customerId}`).emit('booking:driver_assigned', {
-        bookingId: request.bookingId,
-        driverName: profile.user?.name,
-      });
-
-      await createNotification(
-        request.booking.customerId,
-        'Driver Assigned!',
-        `A driver has been assigned to your booking.`,
-        'DRIVER_ASSIGNED',
-        request.bookingId,
-      );
+      res.json({ message: 'Ride accepted successfully', booking: updated });
     }
-
-    // Notify admin of response
-    getIO().emit('driver:request_responded', {
-      requestId,
-      action,
-      driverProfileId: profile.id,
-      bookingId: request.bookingId,
-    });
-
-    res.json({ message: `Ride ${action.toLowerCase()}`, request: updatedRequest });
   } catch (error) {
-    console.error('Respond to ride request error:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
