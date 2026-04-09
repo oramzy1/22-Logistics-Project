@@ -10,6 +10,7 @@ import { BookingService, BookingPayload } from "../api/booking.service";
 export type BookingStatus =
   | "PENDING"
   | "AWAITING_DRIVER"
+  | "ACCEPTED"
   | "IN_PROGRESS"
   | "COMPLETED"
   | "CANCELLED";
@@ -55,6 +56,7 @@ type BookingContextType = {
   isLoading: boolean;
   error: string | null;
   fetchBookings: () => Promise<void>;
+  patchBooking: (booking: Booking) => void;
   createBooking: (payload: BookingPayload) => Promise<{
     booking: Booking;
     payment: {
@@ -75,7 +77,7 @@ const BookingContext = createContext<BookingContextType>(
   {} as BookingContextType
 );
 
-const ACTIVE_STATUSES: BookingStatus[] = ["AWAITING_DRIVER", "IN_PROGRESS"];
+const ACTIVE_STATUSES: BookingStatus[] = ["AWAITING_DRIVER", "IN_PROGRESS", "ACCEPTED"];
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -121,6 +123,12 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   }
 }, []);
 
+  const patchBooking = useCallback((updated: Booking) => {
+  setBookings((prev) =>
+    prev.map((b) => (b.id === updated.id ? updated : b))
+  );
+}, []);
+
   const reinitializeBooking = useCallback(async (bookingId: string, channel: 'card' | 'bank_transfer') => {
   const data = await BookingService.reinitialize(bookingId, channel);
   return data; // { authorizationUrl, reference }
@@ -146,6 +154,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         cancelBooking,
         verifyPayment,
         reinitializeBooking,
+        patchBooking,
       }}
     >
       {children}

@@ -30,15 +30,8 @@ import { AppHeader } from "@/src/ui/AppHeader";
 import { router } from "expo-router";
 import { Text } from "../../components/AppText";
 import { HomeSkeleton } from "@/src/ui/skeletons/HomeSkeleton";
-import { colors, radius, spacing, text } from "@/src/ui/theme";
-
-const packages = [
-  { title: "3 Hours", price: "₦24,000" },
-  { title: "6 Hours", price: "₦34,000" },
-  { title: "10 Hours", price: "₦54,000" },
-  { title: "Multi-day", price: "Schedule" },
-  { title: "Airport", price: "Schedule" },
-];
+import { colors, spacing } from "@/src/ui/theme";
+import { useBookingSocket } from "@/hooks/useBookingSocket";
 
 export default function HomeTabScreen() {
   const [isOnline, setIsOnline] = useState(false);
@@ -53,6 +46,21 @@ export default function HomeTabScreen() {
     acceptance: 0,
   });
   const { user, isLoading, updateUser, signOut } = useAuth();
+
+  useBookingSocket({
+  onNewRideRequest: (data) => {
+    // New booking available — add to requests if not already there
+    const incoming = data.booking ?? data;
+    setRequests((prev) => {
+      if (prev.find((r) => r.id === incoming.id)) return prev;
+      return [incoming, ...prev];
+    });
+  },
+  onRideRemoved: (bookingId) => {
+    // Another driver accepted — remove from this driver's list
+    setRequests((prev) => prev.filter((r) => r.id !== bookingId));
+  },
+});
 
   const fetchData = async () => {
     try {
@@ -98,21 +106,23 @@ export default function HomeTabScreen() {
       Alert.alert("Error", "Could not update status");
     }
   };
-  const respondToRide = async (id: string, action: "ACCEPTED" | "DECLINED") => {
-    setActionLoading(true)
-    try {
-      await DriverService.respondToRequest(id, action);
-      if (action === "ACCEPTED") {
-        router.push("/(tabs)/active-trip");
-      } else {
-        fetchData();
-      }
-    } catch (error: any) {
-      Alert.alert("Error", error?.response?.data?.message || "Action failed");
-    }finally{
-      setActionLoading(false);
-    }
-  };
+
+  const respondToRide = async (id: string, action: 'ACCEPTED' | 'DECLINED') => {
+  if (action === 'DECLINED') {
+    // Just hide locally — no API call needed, other drivers still see it
+    setRequests((prev) => prev.filter((r) => r.id !== id));
+    return;
+  }
+  setActionLoading(true);
+  try {
+    await DriverService.respondToRequest(id, action);
+    router.push('/(tabs)/active-trip');
+  } catch (error: any) {
+    Alert.alert('Error', error?.response?.data?.message || 'Action failed');
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   if (!user || isLoading) {
     return <HomeSkeleton />;

@@ -19,9 +19,15 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
     });
 
     // Driver joins driver room for broadcast ride requests
-    socket.on('join_driver', (driverProfileId: string) => {
-      socket.join(`driver:${driverProfileId}`);
-    });
+  socket.on('join_driver', (driverProfileId: string) => {
+  socket.join(`driver:${driverProfileId}`);
+  socket.join('drivers:available'); // ✅ auto-join pool on connect
+  console.log(`Driver ${driverProfileId} joined driver room + available pool`);
+});
+    socket.on('join_pool', () => {
+      socket.join('drivers:available');
+      console.log(`Driver ${socket.id} joined available pool`);
+    })
 
     socket.on('disconnect', () => {
       console.log('🔌 Socket disconnected:', socket.id);

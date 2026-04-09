@@ -338,26 +338,52 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
        return res.json({ message: 'Ride ignored locally' });
     }
     if (action === 'ACCEPTED') {
-      // 1. Check if the ride was literally just snatched by another driver 2 seconds ago
-      const booking = await prisma.booking.findUnique({ where: { id: requestId } });
-      if (!booking || booking.status !== 'AWAITING_DRIVER') {
-         return res.status(400).json({ message: 'Sorry! Another driver just accepted this ride.' });
-      }
-      // 2. Assign this driver to the booking!
-      const updated = await prisma.booking.update({
-        where: { id: requestId }, 
-        data: {
-          driverId: profile.userId,
-          status: 'ACCEPTED',
-        },
-      });
-      // 3. Mark the driver as unavailable since they are now on a trip
-      await prisma.driverProfile.update({
-        where: { id: profile.id },
-        data: { isAvailable: false, totalTrips: { increment: 1 } },
-      });
-      res.json({ message: 'Ride accepted successfully', booking: updated });
-    }
+  // Atomic update — only succeeds if status is STILL 'AWAITING_DRIVER'
+  // If two drivers hit this simultaneously, only ONE will get count=1
+  const result = await prisma.booking.updateMany({
+    where: {
+      id: requestId,
+      status: 'AWAITING_DRIVER', // guard — atomic check+update in one query
+      driverId: null,             // double guard — not yet assigned
+    },
+    data: {
+      driverId: profile.userId,
+      status: 'ACCEPTED',
+    },
+  });
+
+  // If count is 0, another driver beat this one to it
+  if (result.count === 0) {
+    return res.status(409).json({
+      message: 'Sorry! Another driver just accepted this ride.',
+    });
+  }
+
+  // Fetch updated booking for socket emit
+  const updated = await prisma.booking.findUnique({ where: { id: requestId } });
+
+  try {
+    // Notify the customer their driver is assigned
+    getIO().to(`user:${updated!.customerId}`).emit('booking:updated', updated);
+    // Remove from all drivers' available pool
+    getIO().emit('ride:removed', updated!.id);
+  } catch (err) { console.log('Socket emit failed', err); }
+
+  await prisma.driverProfile.update({
+    where: { id: profile.id },
+    data: { isAvailable: false, totalTrips: { increment: 1 } },
+  });
+
+  await createNotification(
+    updated!.customerId,
+    'Driver Assigned!',
+    'A driver has accepted your booking and is on the way.',
+    'DRIVER_ASSIGNED',
+    requestId,
+  );
+
+  return res.json({ message: 'Ride accepted successfully', booking: updated });
+}
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -543,5 +569,35 @@ export const getAvailableDrivers = async (req: AuthRequest, res: Response) => {
     res.json(drivers);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+export const endTrip = async (req: AuthRequest, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, driverId: req.user!.id, status: 'IN_PROGRESS' },
+    })
+    if (!booking) return res.status(404).json({message: "Trip not found or not running."});
+    
+    const updated = await prisma.booking.update({
+      where: {id: bookingId },
+      data: {status: 'COMPLETED'},
+    });
+
+    await prisma.driverProfile.update({
+      where: { userId: req.user!.id },
+      data: { isAvailable: true },
+    });
+
+    getIO().to(`user:${booking.customerId}`).emit('booking:update', updated);
+
+    await createNotification(
+      booking.customerId, 'Trip completed', 'Your driver has completed the trip. Thank you for rideing with us!', 'TRIP_COMPLETED', bookingId
+    )
+    res.json({message: "Trip ended successfully", booking: updated});
+  } catch (error) {
+    res
   }
 };

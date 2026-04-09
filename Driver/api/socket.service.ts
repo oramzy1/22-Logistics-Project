@@ -27,6 +27,11 @@ class SocketService {
     });
   }
 
+   onRideRemoved(callback: (bookingId: string) => void) {
+    this.socket?.on('ride:removed', callback);
+    return () => this.socket?.off('ride:removed', callback);
+  }
+
   disconnect() {
     this.socket?.disconnect();
     this.socket = null;
@@ -47,6 +52,11 @@ class SocketService {
   isConnected() {
     return this.socket?.connected ?? false;
   }
+
+  onBookingUpdated(callback: (booking: any) => void) {
+  this.socket?.on('booking:updated', callback);
+  return () => this.socket?.off('booking:updated', callback);
+}
 }
 
 export const socketService = new SocketService();

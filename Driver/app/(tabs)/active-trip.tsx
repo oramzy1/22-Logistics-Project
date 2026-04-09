@@ -5,9 +5,19 @@ import { Phone, MapPin } from "lucide-react-native";
 import { DriverService } from "@/api/driver.service";
 import { useFocusEffect } from "expo-router";
 import { Text } from "../../components/AppText";
+import { useBookingSocket } from "@/hooks/useBookingSocket";
 
 export default function ActiveTripScreen() {
   const [activeTrip, setActiveTrip] = useState<any>(null);
+
+
+  useBookingSocket({
+  onBookingUpdated: (updated) => {
+    if (activeTrip && updated.id === activeTrip.id) {
+      setActiveTrip(updated); // reflect status changes instantly
+    }
+  },
+});
 
   const fetchActiveTrip = async () => {
     try {

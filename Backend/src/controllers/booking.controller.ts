@@ -4,6 +4,7 @@ import { createNotification } from "../lib/notifications";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { getIO } from "../lib/socket";
 
 // Package pricing in Naira
 const PACKAGE_PRICES: Record<string, number> = {
@@ -175,7 +176,7 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Cannot cancel this booking" });
     }
 
-    await prisma.booking.update({
+    const updated = await prisma.booking.update({
       where: { id },
       data: { status: "CANCELLED" },
     });
@@ -184,8 +185,10 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
       await prisma.driverProfile.update({
         where: { userId: booking.driverId },
         data: { isAvailable: true }
-      });
-      // Optionally emit a socket event here if you track driver state live
+       });
+      getIO().to(`user:${booking.driverId}`).emit('booking:updated', updated);
+    } else {
+      getIO().to(`drivers:available`).emit('ride:removed', booking.id)
     }
 
     await createNotification(
@@ -295,6 +298,12 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
         data: { paymentStatus: "PAID", status: "AWAITING_DRIVER" },
       });
 
+      try {
+        getIO().to('drivers:available').emit('ride:new_request', {booking: updated})
+      }catch(err){
+        console.log("Socket emit failed:", err);
+      }
+
       await createNotification(
         booking.customerId,
         "Payment Confirmed",
@@ -396,7 +405,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
         where: { userId: booking.driverId },
         data: { isAvailable: true }
       });
-      // Optionally emit a socket event here if you track driver state live
+      getIO().to(`driver:${booking.customerId}`).emit('booking:updated', updated);
     }
 
     await createNotification(
@@ -461,7 +470,7 @@ export const cancelBookingWithReason = async (req: AuthRequest, res: Response) =
       return res.status(400).json({ message: 'Cannot cancel this booking' });
     }
 
-    await prisma.booking.update({
+    const updated = await prisma.booking.update({
       where: { id },
       data: {
         status: 'CANCELLED',
@@ -470,12 +479,16 @@ export const cancelBookingWithReason = async (req: AuthRequest, res: Response) =
       },
     });
 
+
+
     if (booking.driverId) {
       await prisma.driverProfile.update({
         where: { userId: booking.driverId },
         data: { isAvailable: true }
       });
-      // Optionally emit a socket event here if you track driver state live
+      getIO().to(`user:${booking.driverId}`).emit('booking:updated', updated);
+    } else {
+      getIO().to(`drivers:available`).emit('ride:removed', booking.id)
     }
 
     await createNotification(

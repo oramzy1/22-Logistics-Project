@@ -16,6 +16,7 @@ import {
   assignDriverToBooking,
   getAvailableDrivers,
   updateDriverProfile,
+  endTrip,
 } from '../controllers/driver.controller';
 
 const router = Router();
@@ -35,6 +36,7 @@ router.patch('/requests/:requestId/respond', authorize(['DRIVER']), respondToRid
 router.get('/trips/history', authorize(['DRIVER']), getDriverTripHistory);
 router.get('/trips/active', authorize(['DRIVER']), getActiveTrip);
 router.patch('/trips/:bookingId/start', authorize(['DRIVER']), startTrip);
+router.patch('/trips/:bookingId/end', authorize(['DRIVER']), endTrip);
 
 // Admin only
 router.post('/admin/verify-license', authorize(['ADMIN']), verifyDriverLicense);

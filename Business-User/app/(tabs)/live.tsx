@@ -29,6 +29,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { BookingsSkeleton } from "@/src/ui/skeletons/BookingsSkeleton";
+import { useBookingSocket } from "@/hooks/useBookingSocket";
 
 // Simulated Images
 const MAP_IMAGE =
@@ -44,7 +45,7 @@ export default function LiveTabScreen() {
   const [selectedExtension, setSelectedExtension] = useState<string | null>(
     null,
   );
-  const { activeBookings, isLoading } = useBookings();
+  const { activeBookings, isLoading, fetchBookings, patchBooking } = useBookings();
 
   const [isExtending, setIsExtending] = useState(false);
   const [showEndFlow, setShowEndFlow] = useState(false);
@@ -61,6 +62,12 @@ export default function LiveTabScreen() {
       activeBooking?.scheduledAt ?? "",
     ),
   );
+
+useBookingSocket({
+  onBookingUpdated: (updatedBooking) => {
+    patchBooking(updatedBooking); // instant UI update, no refetch
+  },
+});
 
   const handleExtendTrip = async () => {
     if (!selectedExtension) return;
@@ -241,6 +248,8 @@ export default function LiveTabScreen() {
                 >
                   {item.status === "IN_PROGRESS"
                     ? "🟢 In Progress"
+                    : item.status === "ACCEPTED"
+                    ? "🟡 Driver en route"
                     : "🕐 Awaiting Driver"}
                 </Text>
                 <Text style={{ fontSize: 13, fontWeight: "700" }}>
@@ -263,6 +272,8 @@ export default function LiveTabScreen() {
     const m = Math.floor((elapsedMs % 3600000) / 60000);
     return h > 0 ? `${h}h ${m}m used` : `${m}m used`;
   })();
+
+  const bookingStatus = activeBooking?.status;
 
   if (!activeBooking && !isLoading) {
     return <BookingsSkeleton />;
@@ -398,7 +409,13 @@ export default function LiveTabScreen() {
 
                   <View style={styles.statusRow}>
                     <Text style={styles.statusLabel}>Status</Text>
-                    <Text style={styles.statusVal}>🧾 Trip in progress</Text>
+                    <Text style={styles.statusVal}>{
+                  bookingStatus === "IN_PROGRESS" ?
+                  'Trip In Progress'
+                  : bookingStatus === "ACCEPTED" ?
+                  'Driver en route'
+                  : 'Looking for a driver'
+                  }</Text>
                   </View>
 
                   {/* Extend Trip Section */}
