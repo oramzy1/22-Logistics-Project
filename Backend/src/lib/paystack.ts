@@ -8,6 +8,8 @@ const paystackClient = axios.create({
   },
 });
 
+const API_URL=process.env.API_URL || 'https://two2-logistics-project.onrender.com';
+
 export const initializeTransaction = async (
   email: string,
   amountInKobo: number,
@@ -20,7 +22,7 @@ export const initializeTransaction = async (
     amount: amountInKobo,
     reference,
     metadata,
-    callback_url: `${process.env.BASE_URL}/api/payments/callback`,
+    callback_url: `${API_URL}/api/payments/callback`,
     ...(channels && { channels }),
   });
   return response.data.data;

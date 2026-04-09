@@ -8,6 +8,7 @@ import {
   Image,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -42,6 +43,7 @@ const packages = [
 export default function HomeTabScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ actionLoading, setActionLoading ] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [stats, setStats] = useState({
@@ -50,7 +52,7 @@ export default function HomeTabScreen() {
     rating: 5.0,
     acceptance: 0,
   });
-  const { user, isLoading, updateUser,  } = useAuth();
+  const { user, isLoading, updateUser, signOut } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -68,6 +70,12 @@ export default function HomeTabScreen() {
       const trips = await DriverService.getTripHistory();
       setHistory(trips.slice(0, 3)); // Show only recent 3
     } catch (err: any) {
+      if(err?.response?.status === 401){
+        Alert.alert("Session Expired", "Please log in again.");
+        signOut();
+        router.push('/(auth)/sign-in')
+        return;
+      }
       console.log("Error fetching home data:", err?.message);
     } finally {
       setLoading(false);
@@ -91,6 +99,7 @@ export default function HomeTabScreen() {
     }
   };
   const respondToRide = async (id: string, action: "ACCEPTED" | "DECLINED") => {
+    setActionLoading(true)
     try {
       await DriverService.respondToRequest(id, action);
       if (action === "ACCEPTED") {
@@ -100,6 +109,8 @@ export default function HomeTabScreen() {
       }
     } catch (error: any) {
       Alert.alert("Error", error?.response?.data?.message || "Action failed");
+    }finally{
+      setActionLoading(false);
     }
   };
 
@@ -202,15 +213,29 @@ export default function HomeTabScreen() {
                     <View style={styles.actionRow}>
                       <TouchableOpacity 
                         style={styles.btnReject} 
-                        // Declining just hides it visually for this specific driver without affecting the DB pool
                         onPress={() => setRequests((prev) => prev.filter(r => r.id !== req.id))}
                       >
-                        <X size={18} color="#EF4444" style={{marginRight: 6}}/>
+                       {
+                        actionLoading ? (
+                          <ActivityIndicator size="small" color="#EF4444" />
+                        ) : (
+                          <>
+                           <X size={18} color="#EF4444" style={{marginRight: 6}}/>
                         <Text style={styles.rejectText}>Ignore</Text>
+                          </>
+                        )
+                       }
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.btnAccept} onPress={() => respondToRide(req.id, "ACCEPTED")}>
-                        <Check size={18} color="#3E2723" style={{marginRight: 6}}/>
-                        <Text style={styles.acceptText}>Accept Ride</Text>
+                        {
+                          actionLoading ? (
+                            <ActivityIndicator size="small" color="#3E2723" />
+                          ) : (
+                            <>
+                            <Check size={18} color="#3E2723" style={{marginRight: 6}}/>
+                        <Text style={styles.acceptText}>Accept Ride</Text></>
+                          )
+                        }
                       </TouchableOpacity>
                     </View>
                  </View>

@@ -364,10 +364,6 @@ export default function LiveTabScreen() {
                         )}
                       </View>   
                       <View style={{ alignItems: "flex-end" }}>
-                        <Image
-                          source={{ uri: CAR_THUMB }}
-                          style={styles.qdCar}
-                        />
                         <TouchableOpacity
                           style={styles.viewDetailsBtn}
                           onPress={() => setShowDriverDetails(true)}
