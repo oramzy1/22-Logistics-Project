@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { socketService } from "@/api/socket.service";
 
 type Role = "INDIVIDUAL" | "BUSINESS" | "DRIVER" | "ADMIN" | null;
 
@@ -65,9 +66,13 @@ useEffect(() => {
       const storedToken = await AsyncStorage.getItem('token');
       const storedUser = await AsyncStorage.getItem('user');
       if (storedToken && storedUser) {
+        const parsedUser: AuthUser = JSON.parse(storedUser);
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        setUser(parsedUser);
         setIsAuthenticated(true);
+         if (parsedUser.role === 'DRIVER' && parsedUser.driverProfile?.id) {
+           socketService.connect(parsedUser.id, parsedUser.driverProfile.id);
+        }
       }
     } catch (error) {
       console.error('Failed to load auth from storage:', error);
@@ -79,11 +84,16 @@ useEffect(() => {
 }, []);
   const setAuthData = useCallback(
     async (newToken: string, newUser: AuthUser) => {
+      setIsLoading(true);
       await AsyncStorage.setItem("token", newToken);
       await AsyncStorage.setItem("user", JSON.stringify(newUser));
       setToken(newToken);
       setIsAuthenticated(true);
       setUser(newUser);
+       if (newUser.role === 'DRIVER' && newUser.driverProfile?.id) {
+         socketService.connect(newUser.id, newUser.driverProfile.id);
+      }
+      setIsLoading(false);
     },
     [],
   );

@@ -70,4 +70,8 @@ export const DriverService = {
     const res = await apiClient.patch(`/driver/trips/${bookingId}/start`);
     return res.data;
   },
+  endTrip: async (bookingId: string) => {
+    const res = await apiClient.patch(`/driver/trips/${bookingId}/end`);
+    return res.data;
+  },
 }; 

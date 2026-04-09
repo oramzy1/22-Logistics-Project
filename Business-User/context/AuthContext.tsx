@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { socketService } from "@/api/socket.service";
 
 type Role = "INDIVIDUAL" | "BUSINESS" | "DRIVER" | "ADMIN" | null;
 
@@ -64,9 +65,11 @@ useEffect(() => {
       const storedToken = await AsyncStorage.getItem('token');
       const storedUser = await AsyncStorage.getItem('user');
       if (storedToken && storedUser) {
+        const parsedUser: AuthUser = JSON.parse(storedUser);
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        setUser(parsedUser);
         setIsAuthenticated(true);
+        socketService.connect(parsedUser.id);
       }
     } catch (error) {
       console.error('Failed to load auth from storage:', error);
@@ -83,6 +86,7 @@ useEffect(() => {
       setToken(newToken);
       setIsAuthenticated(true);
       setUser(newUser);
+      socketService.connect(newUser.id)
     },
     [],
   );

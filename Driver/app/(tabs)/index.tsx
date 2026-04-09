@@ -199,60 +199,150 @@ export default function HomeTabScreen() {
           </View>
         )}
           {/* Pending Requests */}
-           {requests.length > 0 && isOnline && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Available Rides</Text>
-            {requests.map((req) => (
-              <View key={req.id} style={styles.requestCard}>
-                 <View style={styles.reqHeader}>
-                    <Car color="#FFF" size={16} style={{marginRight: 8}}/>
-                    <Text style={styles.reqHeaderText}>New Ride Request</Text>
-                 </View>
-                 <View style={styles.reqBody}>
-                    {/* 👇 Notice we removed .booking here and use req directly 👇 */}
-                    <Text style={styles.rideId}>Ride ID: {req.id.slice(0,8)}</Text>
-                    
-                    <View style={styles.locationRow}>
-                      <MapPin size={18} color="#10B981" />
-                      <Text style={styles.locationText}>{req.pickupAddress}</Text>
-                    </View>
-                    <View style={styles.locationRow}>
-                      <MapPin size={18} color="#EF4444" />
-                      <Text style={styles.locationText}>{req.dropoffAddress}</Text>
-                    </View>
-                    <View style={styles.actionRow}>
-                      <TouchableOpacity 
-                        style={styles.btnReject} 
-                        onPress={() => setRequests((prev) => prev.filter(r => r.id !== req.id))}
-                      >
-                       {
-                        actionLoading ? (
-                          <ActivityIndicator size="small" color="#EF4444" />
-                        ) : (
-                          <>
-                           <X size={18} color="#EF4444" style={{marginRight: 6}}/>
-                        <Text style={styles.rejectText}>Ignore</Text>
-                          </>
-                        )
-                       }
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.btnAccept} onPress={() => respondToRide(req.id, "ACCEPTED")}>
-                        {
-                          actionLoading ? (
-                            <ActivityIndicator size="small" color="#3E2723" />
-                          ) : (
-                            <>
-                            <Check size={18} color="#3E2723" style={{marginRight: 6}}/>
-                        <Text style={styles.acceptText}>Accept Ride</Text></>
-                          )
-                        }
-                      </TouchableOpacity>
-                    </View>
-                 </View>
+          {requests.length > 0 && isOnline && (
+  <View style={styles.section}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+      <Text style={styles.sectionTitle}>Ride Request</Text>
+      <Text style={{ color: '#3B82F6', fontSize: 13, fontWeight: '600' }}>
+        {requests.length} available
+      </Text>
+    </View>
+
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: 12, paddingRight: 4 }}
+      decelerationRate="fast"
+      snapToInterval={300} // card width + gap
+      snapToAlignment="start"
+    >
+      {requests.map((req) => {
+        const scheduledDate = req.scheduledAt
+          ? new Date(req.scheduledAt).toLocaleDateString('en-NG', {
+              month: 'short', day: 'numeric', year: 'numeric',
+            })
+          : '—';
+        const scheduledTime = req.scheduledAt
+          ? new Date(req.scheduledAt).toLocaleTimeString('en-NG', {
+              hour: '2-digit', minute: '2-digit',
+            })
+          : '—';
+        const isBusinessType = req.customer?.role === 'BUSINESS';
+
+        return (
+          <View key={req.id} style={styles.rideCard}>
+            {/* Orange header */}
+            <View style={styles.rideCardHeader}>
+              <View style={styles.rideCardHeaderLeft}>
+                <Bell size={14} color="#FFF" style={{ marginRight: 6 }} />
+                <Text style={styles.rideCardHeaderText}>New Ride Request</Text>
+                <Text style={styles.rideCardHeaderSub}>
+                  {'\n'}Respond within 30 seconds
+                </Text>
               </View>
-            ))}
+              <View style={styles.rideTimerBadge}>
+                <Text style={styles.rideTimerText}>00:30</Text>
+              </View>
+            </View>
+
+            <View style={styles.rideCardBody}>
+              {/* Meta row: Ride ID | Ride Type */}
+              <View style={styles.rideMetaRow}>
+                <View style={styles.rideMetaCol}>
+                  <Text style={styles.rideMetaLabel}>Ride ID</Text>
+                  <Text style={styles.rideMetaValue}>Log-{req.id?.slice(0, 5)}</Text>
+                </View>
+                <View style={styles.rideMetaCol}>
+                  <Text style={styles.rideMetaLabel}>Ride Type</Text>
+                  <View style={[
+                    styles.rideTypeBadge,
+                    { backgroundColor: isBusinessType ? '#DBEAFE' : '#FEF3C7' }
+                  ]}>
+                    <Text style={[
+                      styles.rideTypeBadgeText,
+                      { color: isBusinessType ? '#1D4ED8' : '#92400E' }
+                    ]}>
+                      {isBusinessType ? 'Business' : 'Individual'}
+                    </Text>
+                  </View>
+                </View>
+                {/* <View style={styles.rideMetaCol}>
+                  <Text style={styles.rideMetaLabel}>Hours</Text>
+                  <Text style={styles.rideMetaValue}>
+                    {req.packageType ?? '—'}
+                  </Text>
+                </View> */}
+              </View>
+
+              {/* Pickup */}
+              <View style={styles.rideLocRow}>
+                <View style={[styles.rideLocDot, { backgroundColor: '#10B981' }]}>
+                  <MapPin size={12} color="#FFF" />
+                </View>
+                <View>
+                  <Text style={styles.rideLocLabel}>PICKUP LOCATION</Text>
+                  <Text style={styles.rideLocValue}>{req.pickupAddress}</Text>
+                </View>
+              </View>
+
+              {/* Dropoff */}
+              <View style={styles.rideLocRow}>
+                <View style={[styles.rideLocDot, { backgroundColor: '#EF4444' }]}>
+                  <MapPin size={12} color="#FFF" />
+                </View>
+                <View>
+                  <Text style={styles.rideLocLabel}>DROP-OFF LOCATION</Text>
+                  <Text style={styles.rideLocValue}>{req.dropoffAddress}</Text>
+                </View>
+              </View>
+
+              {/* Scheduled date + duration */}
+              <View style={styles.rideFooterRow}>
+                <View style={styles.rideFooterCol}>
+                  <Text style={styles.rideMetaLabel}>SCHEDULED DATE</Text>
+                  <Text style={styles.rideFooterVal}>{scheduledDate}</Text>
+                  <Text style={styles.rideFooterSub}>{scheduledTime}</Text>
+                </View>
+                <View style={styles.rideFooterCol}>
+                  <Text style={styles.rideMetaLabel}>ESTIMATED DURATION</Text>
+                  <Text style={styles.rideFooterVal}>{req.packageType ?? '—'}</Text>
+                  <Text style={styles.rideFooterSub}>Round Trip</Text>
+                </View>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.rideActionRow}>
+                <TouchableOpacity
+                  style={styles.rideBtnReject}
+                  onPress={() => setRequests((prev) => prev.filter((r) => r.id !== req.id))}
+                  disabled={actionLoading}
+                >
+                  <X size={15} color="#EF4444" style={{ marginRight: 6 }} />
+                  <Text style={styles.rideBtnRejectText}>Reject Ride</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.rideBtnAccept, actionLoading && { opacity: 0.6 }]}
+                  onPress={() => respondToRide(req.id, 'ACCEPTED')}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator size="small" color="#3E2723" />
+                  ) : (
+                    <>
+                      <Check size={15} color="#3E2723" style={{ marginRight: 6 }} />
+                      <Text style={styles.rideBtnAcceptText}>Accept Ride</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        )}
+        );
+      })}
+    </ScrollView>
+  </View>
+)}
           {/* Dashboard Overview */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Overview</Text>
@@ -545,4 +635,123 @@ emptyIconCircle: {
 },
 emptyTitle: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 6 },
 emptySubtitle: { color: '#9CA3AF', fontSize: 12, textAlign: 'center', paddingHorizontal: 20, lineHeight: 18 },
+rideCard: {
+  width: 300,
+  backgroundColor: '#FFF',
+  marginBottom: 10,
+  borderRadius: 14,
+  overflow: 'hidden',
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.07,
+  shadowRadius: 6,
+  elevation: 3,
+},
+rideCardHeader: {
+  backgroundColor: '#F97316',
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+},
+rideCardHeaderLeft: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' },
+rideCardHeaderText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+rideCardHeaderSub: { color: 'rgba(255,255,255,0.85)', fontSize: 10, marginTop: 2 },
+rideTimerBadge: {
+  backgroundColor: 'rgba(0,0,0,0.25)',
+  paddingHorizontal: 10,
+  paddingVertical: 5,
+  borderRadius: 20,
+  marginLeft: 8,
+},
+rideTimerText: { color: '#FFF', fontSize: 12, fontWeight: '800' },
+
+rideCardBody: { padding: 14 },
+
+rideMetaRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  paddingBottom: 12,
+  marginBottom: 12,
+  width: '100%',
+  borderBottomWidth: 1,
+  borderBottomColor: '#F3F4F6',
+},
+// rideMetaCol: { flex: 1 },
+rideMetaLabel: {
+  fontSize: 9,
+  color: '#9CA3AF',
+  fontWeight: '600',
+  textTransform: 'uppercase',
+  marginBottom: 4,
+},
+rideMetaValue: { fontSize: 12, fontWeight: '700', color: '#111827' },
+rideTypeBadge: {
+  paddingHorizontal: 7,
+  paddingVertical: 3,
+  borderRadius: 6,
+  alignSelf: 'flex-start',
+},
+rideTypeBadgeText: { fontSize: 10, fontWeight: '700' },
+
+rideLocRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
+rideLocDot: {
+  width: 17,
+  height: 17,
+  padding: 2,
+  borderRadius: 50,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 8,
+  marginTop: 4,
+},
+rideLocLabel: {
+  fontSize: 9,
+  color: '#9CA3AF',
+  fontWeight: '600',
+  textTransform: 'uppercase',
+  marginBottom: 2,
+},
+rideLocValue: { fontSize: 13, fontWeight: '600', color: '#111827' },
+
+rideFooterRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  padding: 5,
+  marginTop: 4,
+  borderTopWidth: 1,
+  borderTopColor: '#F3F4F6',
+  borderRadius: 3,
+  marginBottom: 14,
+  backgroundColor: '#F6F6F6'
+},
+// rideFooterCol: { flex: 1 },
+rideFooterVal: { fontSize: 12, fontWeight: '700', color: '#111827', marginBottom: 2 },
+rideFooterSub: { fontSize: 10, color: '#6B7280' },
+
+rideActionRow: { flexDirection: 'row', gap: 10 },
+rideBtnReject: {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 11,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+},
+rideBtnRejectText: { color: '#EF4444', fontWeight: '600', fontSize: 13 },
+rideBtnAccept: {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 11,
+  borderRadius: 8,
+  backgroundColor: '#E4C77B',
+},
+rideBtnAcceptText: { color: '#3E2723', fontWeight: '700', fontSize: 13 },
 });

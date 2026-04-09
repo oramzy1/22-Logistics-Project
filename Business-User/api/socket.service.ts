@@ -1,6 +1,9 @@
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://two2-logistics-project.onrender.com';
+const RAW_URL = process.env.EXPO_PUBLIC_API_URL || 'https://two2-logistics-project.onrender.com';
+
+const API_URL = RAW_URL.replace(/\/api$/, '');
+
 
 class SocketService {
   private socket: Socket | null = null;

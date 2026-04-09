@@ -6,9 +6,12 @@ import { DriverService } from "@/api/driver.service";
 import { useFocusEffect } from "expo-router";
 import { Text } from "../../components/AppText";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
+import { useRouter } from "expo-router";
+
 
 export default function ActiveTripScreen() {
   const [activeTrip, setActiveTrip] = useState<any>(null);
+  const router = useRouter();
 
 
   useBookingSocket({
@@ -41,6 +44,16 @@ export default function ActiveTripScreen() {
       fetchActiveTrip();
     } catch (error) {
       console.log("Failed to start trip");
+    }
+  };
+  const handleEndTrip = async () => {
+    if (!activeTrip) return;
+    try {
+      await DriverService.endTrip(activeTrip.id);
+      router.push("/(tabs)/history");
+      fetchActiveTrip();
+    } catch (error) {
+      console.log("Failed to end trip");
     }
   };
 
@@ -101,7 +114,7 @@ export default function ActiveTripScreen() {
                 <Text style={styles.primaryBtnText}>Arrived at Pickup</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={[styles.primaryBtn, {backgroundColor: "#F97316"}]}>
+              <TouchableOpacity onPress={handleEndTrip} style={[styles.primaryBtn, {backgroundColor: "#F97316"}]}>
                  <Text style={[styles.primaryBtnText, {color: "#FFF"}]}>End Trip</Text>
               </TouchableOpacity>
             )}
