@@ -266,12 +266,6 @@ export default function HomeTabScreen() {
                     </Text>
                   </View>
                 </View>
-                {/* <View style={styles.rideMetaCol}>
-                  <Text style={styles.rideMetaLabel}>Hours</Text>
-                  <Text style={styles.rideMetaValue}>
-                    {req.packageType ?? '—'}
-                  </Text>
-                </View> */}
               </View>
 
               {/* Pickup */}

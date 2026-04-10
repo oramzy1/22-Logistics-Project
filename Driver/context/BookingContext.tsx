@@ -95,6 +95,25 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+   useEffect(() => {
+    const { socketService } = require("../api/socket.service");
+    
+    const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
+      console.log("⚡ Driver Global Socket Update:", updatedBooking.id, updatedBooking.status);
+      
+      setBookings((prev) => {
+        const exists = prev.find((b) => b.id === updatedBooking.id);
+        if (exists) {
+          return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
+        }
+        return [updatedBooking, ...prev];
+      });
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
   const createBooking = useCallback(async (payload: BookingPayload) => {
     const data = await BookingService.create(payload);
     // Optimistically add the new booking to state

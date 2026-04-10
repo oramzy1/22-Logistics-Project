@@ -53,7 +53,7 @@ export default function ActiveTripScreen() {
       router.push("/(tabs)/history");
       fetchActiveTrip();
     } catch (error) {
-      console.log("Failed to end trip");
+      console.log("Failed to end trip", error);
     }
   };
 

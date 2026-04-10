@@ -405,6 +405,8 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
         where: { userId: booking.driverId },
         data: { isAvailable: true }
       });
+      const { getIO } = require('../lib/socket')
+      getIO().to(`user:${booking.driverId}`).emit('booking:updated', { ...booking, status: 'COMPLETED' });
       getIO().to(`driver:${booking.customerId}`).emit('booking:updated', updated);
     }
 

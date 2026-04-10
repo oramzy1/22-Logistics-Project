@@ -97,6 +97,30 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    // Require dynamically so it boots safely
+    const { socketService } = require("../api/socket.service");
+    
+    // When the backend yells that a booking changed (Driver accepted it, ended it, etc.)
+    const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
+      console.log("⚡ Global Socket Update:", updatedBooking.id, updatedBooking.status);
+      
+      setBookings((prev) => {
+        const exists = prev.find((b) => b.id === updatedBooking.id);
+        if (exists) {
+          // Replace the old booking with the newly updated one instantly
+          return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
+        } else {
+          // If it wasn't there before, add it to the top
+          return [updatedBooking, ...prev];
+        }
+      });
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
   const createBooking = useCallback(async (payload: BookingPayload) => {
     const data = await BookingService.create(payload);
     // Optimistically add the new booking to state
