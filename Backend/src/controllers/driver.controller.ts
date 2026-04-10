@@ -349,6 +349,7 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
     data: {
       driverId: profile.userId,
       status: 'ACCEPTED',
+      acceptedByDriverAt: new Date(),
     },
   });
 

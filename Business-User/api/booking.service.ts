@@ -9,7 +9,7 @@ export type BookingPayload = {
   dropoffLng: number;
   scheduledAt: string; // ISO string
   packageType: string;
-  duration?: number;
+  duration?: string;
   notes?: string;
   paymentMethod?: "card" | "bank_transfer";
 };

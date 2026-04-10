@@ -78,8 +78,15 @@ model Booking {
   dropoffLng     Float?
 
   scheduledAt   DateTime
-  duration      Int?
+  duration      String?
   packageType   String?
+  trackingId    String?       @unique
+  pickupDate    String?
+  pickupTime    String?
+  outsidePH     Boolean?      @default(false)
+  addOns        String[]
+  acceptedByDriverAt  DateTime?
+
 
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(UNPAID)

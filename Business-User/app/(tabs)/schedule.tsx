@@ -140,6 +140,7 @@ export default function ScheduleTabScreen() {
         pickupLng: 0,
         dropoffLat: 0,
         dropoffLng: 0,
+        duration: selectedPackage === 'multi' ? 'Multi-Day' : timeSlot,
         scheduledAt: scheduleDateTime.toISOString(),
         pickupAt: combinedPickup.toISOString(),
         packageType: packageTypeMap[pkg],
@@ -236,7 +237,7 @@ export default function ScheduleTabScreen() {
             ) : (
               <Text style={styles.h2}>Trip Details Form ({selectedTitle})</Text>
             ))}
-          {isBusiness && (
+          {isBusiness || isAirportSchedule && (
             <DropdownInput
               label="Select Interstate Location (outside Rivers State)"
               placeholder="Choose your destination"
@@ -264,7 +265,7 @@ export default function ScheduleTabScreen() {
           />
           <DropdownInput
             label={
-              pkg === "multi" ? "Select Day" : `Time slot (8:00 AM – 10:00 PM)`
+              pkg === "multi" ? "Time slot (10+ hours)" : `Time slot (8:00 AM – 10:00 PM)`
             }
             placeholder="Select Your Ride Time"
             value={timeSlot}

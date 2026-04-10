@@ -9,8 +9,11 @@ function fmt(h: number) {
 export function generateTimeSlots(pkgId: PackageId): string[] {
   if (pkgId === "multi") {
     return [
-      "Day 1 — 8:00 AM start",
-      "Day 2 — 8:00 AM start",
+      "10-20 hours",
+      "20-30 hours",
+      "30-40 hours",
+      "40-50 hours",
+      "50-60 hours",
       "Custom start time (contact support)",
     ];
   }

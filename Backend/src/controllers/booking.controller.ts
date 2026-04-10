@@ -29,51 +29,68 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       duration,
       notes,
       totalAmount: clientTotal,
+      // -- NEW PARAMS --
+      pickupDate,
+      pickupTime,
+      outsidePH,
+      addOns,
     } = req.body;
 
     const customerId = req.user!.id;
 
-    // Get customer for email
     const customer = await prisma.user.findUnique({
       where: { id: customerId },
       select: { email: true, name: true },
     });
     if (!customer) return res.status(404).json({ message: "User not found" });
 
-    const basePrice = PACKAGE_PRICES[packageType] ?? 0;
-    if (!basePrice)
-      return res
-        .status(400)
-        .json({ message: "Invalid package type or custom pricing required" });
+    // ── INTERSTATE PRICE EVALUATION ──
+    let finalAmount = 0;
+    if (outsidePH) {
+      // If interstate, we trust the dynamic price passed by the frontend
+      if (!clientTotal)
+        return res
+          .status(400)
+          .json({ message: "Interstate trips require a dynamic total amount" });
+      finalAmount = clientTotal;
+    } else {
+      // Local PH pricing evaluation
+      const basePrice = PACKAGE_PRICES[packageType] ?? 0;
+      if (!basePrice)
+        return res
+          .status(400)
+          .json({ message: "Invalid package type or custom pricing required" });
 
-    const MAX_EXTRAS = 20000;
-    const totalAmount =
-      clientTotal &&
-      clientTotal >= basePrice &&
-      clientTotal <= basePrice + MAX_EXTRAS
-        ? clientTotal
-        : basePrice;
+      const MAX_EXTRAS = 20000;
+      finalAmount =
+        clientTotal &&
+        clientTotal >= basePrice &&
+        clientTotal <= basePrice + MAX_EXTRAS
+          ? clientTotal
+          : basePrice;
+    }
 
-    // Generate unique payment reference
     const paymentRef = `22LOG-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+
+    // ── UTILITY: Generate Unique Tracking ID ──
+    // e.g. LOG-849201
+    const trackingId = `LOG-${Math.random().toString().substring(2, 8)}`;
 
     let paystackData: any;
     try {
       paystackData = await initializeTransaction(
         customer.email,
-        totalAmount * 100,
+        finalAmount * 100, // Paystack uses Kobo
         { customerId, packageType },
         paymentRef,
         ["card"],
       );
     } catch (paystackError: any) {
       console.error("Paystack init failed:", paystackError?.message);
-      return res.status(502).json({
-        message: "Payment gateway unavailable. Please try again.",
-      });
+      return res.status(502).json({ message: "Payment gateway unavailable." });
     }
 
-    // Create booking first
+    // Create booking
     const booking = await prisma.booking.create({
       data: {
         customerId,
@@ -83,18 +100,22 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         pickupLng,
         dropoffLat,
         dropoffLng,
-        scheduledAt: new Date(scheduledAt),
+        scheduledAt: new Date(scheduledAt), // Frontend passes full ISO Date string here
         packageType,
-        duration,
+        duration: duration ? String(duration) : null,
         notes,
-        totalAmount,
+        totalAmount: finalAmount,
         paymentRef,
         status: "PENDING",
         paymentStatus: "UNPAID",
+        trackingId,
+        pickupDate,
+        pickupTime,
+        outsidePH: outsidePH || false,
+        addOns: addOns || [],
       },
     });
 
-    // Save access code for verification
     await prisma.booking.update({
       where: { id: booking.id },
       data: { paystackAccessCode: paystackData.access_code },
@@ -109,7 +130,6 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Create booking error:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
@@ -129,10 +149,21 @@ export const getBookings = async (req: AuthRequest, res: Response) => {
       },
       orderBy: { createdAt: "desc" },
       include: {
-        driver: { select: { name: true, phone: true, avatarUrl: true,
-          driverProfile: { select: { brandModel: true, vehicleColor: true, plateNumber: true } } 
-         } },
-        extensions: { 
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            driverProfile: {
+              select: {
+                brandModel: true,
+                vehicleColor: true,
+                plateNumber: true,
+              },
+            },
+          },
+        },
+        extensions: {
           orderBy: { createdAt: "asc" },
         },
       },
@@ -149,12 +180,23 @@ export const getBookingById = async (req: AuthRequest, res: Response) => {
     const booking = await prisma.booking.findFirst({
       where: { id, customerId: req.user!.id },
       include: {
-        driver: { select: { name: true, phone: true, avatarUrl: true,
-          driverProfile: { select: { brandModel: true, vehicleColor: true, plateNumber: true } } 
-         } },
-        extensions:{
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            driverProfile: {
+              select: {
+                brandModel: true,
+                vehicleColor: true,
+                plateNumber: true,
+              },
+            },
+          },
+        },
+        extensions: {
           orderBy: { createdAt: "asc" },
-        }
+        },
       },
     });
     if (!booking) return res.status(404).json({ message: "Booking not found" });
@@ -181,14 +223,14 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
       data: { status: "CANCELLED" },
     });
 
-     if (booking.driverId) {
+    if (booking.driverId) {
       await prisma.driverProfile.update({
         where: { userId: booking.driverId },
-        data: { isAvailable: true }
-       });
-      getIO().to(`user:${booking.driverId}`).emit('booking:updated', updated);
+        data: { isAvailable: true },
+      });
+      getIO().to(`user:${booking.driverId}`).emit("booking:updated", updated);
     } else {
-      getIO().to(`drivers:available`).emit('ride:removed', booking.id)
+      getIO().to(`drivers:available`).emit("ride:removed", booking.id);
     }
 
     await createNotification(
@@ -299,8 +341,10 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
       });
 
       try {
-        getIO().to('drivers:available').emit('ride:new_request', {booking: updated})
-      }catch(err){
+        getIO()
+          .to("drivers:available")
+          .emit("ride:new_request", { booking: updated });
+      } catch (err) {
         console.log("Socket emit failed:", err);
       }
 
@@ -382,7 +426,6 @@ export const reinitializePayment = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 export const endTrip = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -390,37 +433,41 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
       where: { id, customerId: req.user!.id },
     });
 
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    if (!['IN_PROGRESS', 'AWAITING_DRIVER'].includes(booking.status)) {
-      return res.status(400).json({ message: 'Trip cannot be ended' });
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (!["IN_PROGRESS", "AWAITING_DRIVER"].includes(booking.status)) {
+      return res.status(400).json({ message: "Trip cannot be ended" });
     }
 
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status: 'COMPLETED' },
+      data: { status: "COMPLETED" },
     });
 
-     if (booking.driverId) {
+    if (booking.driverId) {
       await prisma.driverProfile.update({
         where: { userId: booking.driverId },
-        data: { isAvailable: true }
+        data: { isAvailable: true },
       });
-      const { getIO } = require('../lib/socket')
-      getIO().to(`user:${booking.driverId}`).emit('booking:updated', { ...booking, status: 'COMPLETED' });
-      getIO().to(`driver:${booking.customerId}`).emit('booking:updated', updated);
+      const { getIO } = require("../lib/socket");
+      getIO()
+        .to(`user:${booking.driverId}`)
+        .emit("booking:updated", { ...booking, status: "COMPLETED" });
+      getIO()
+        .to(`driver:${booking.customerId}`)
+        .emit("booking:updated", updated);
     }
 
     await createNotification(
       booking.customerId,
-      'Trip Completed',
+      "Trip Completed",
       `Your ${booking.packageType} trip has been completed. Thank you for riding with us!`,
-      'BOOKING_COMPLETED',
+      "BOOKING_COMPLETED",
       id,
     );
 
-    res.json({ message: 'Trip ended', booking: updated });
+    res.json({ message: "Trip ended", booking: updated });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -430,16 +477,22 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
     const { rating, comment } = req.body; // rating: 1-5
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
     }
 
     const booking = await prisma.booking.findFirst({
-      where: { id, customerId: req.user!.id, status: 'COMPLETED' },
+      where: { id, customerId: req.user!.id, status: "COMPLETED" },
       include: { review: true },
     });
 
-    if (!booking) return res.status(404).json({ message: 'Booking not found or not completed' });
-    if (!booking.driverId) return res.status(400).json({ message: 'No driver assigned' });
+    if (!booking)
+      return res
+        .status(404)
+        .json({ message: "Booking not found or not completed" });
+    if (!booking.driverId)
+      return res.status(400).json({ message: "No driver assigned" });
 
     const review = await prisma.driverReview.create({
       data: {
@@ -451,14 +504,16 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({ message: 'Driver rated', review });
+    res.json({ message: "Driver rated", review });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
-
-export const cancelBookingWithReason = async (req: AuthRequest, res: Response) => {
+export const cancelBookingWithReason = async (
+  req: AuthRequest,
+  res: Response,
+) => {
   try {
     const { id } = req.params;
     const { reason, requestRefund } = req.body;
@@ -467,45 +522,43 @@ export const cancelBookingWithReason = async (req: AuthRequest, res: Response) =
       where: { id, customerId: req.user!.id },
     });
 
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    if (['IN_PROGRESS', 'COMPLETED'].includes(booking.status)) {
-      return res.status(400).json({ message: 'Cannot cancel this booking' });
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (["IN_PROGRESS", "COMPLETED"].includes(booking.status)) {
+      return res.status(400).json({ message: "Cannot cancel this booking" });
     }
 
     const updated = await prisma.booking.update({
       where: { id },
       data: {
-        status: 'CANCELLED',
+        status: "CANCELLED",
         cancellationReason: reason,
-        refundRequested: requestRefund && booking.paymentStatus === 'PAID',
+        refundRequested: requestRefund && booking.paymentStatus === "PAID",
       },
     });
-
-
 
     if (booking.driverId) {
       await prisma.driverProfile.update({
         where: { userId: booking.driverId },
-        data: { isAvailable: true }
+        data: { isAvailable: true },
       });
-      getIO().to(`user:${booking.driverId}`).emit('booking:updated', updated);
+      getIO().to(`user:${booking.driverId}`).emit("booking:updated", updated);
     } else {
-      getIO().to(`drivers:available`).emit('ride:removed', booking.id)
+      getIO().to(`drivers:available`).emit("ride:removed", booking.id);
     }
 
     await createNotification(
       req.user!.id,
-      'Booking Cancelled',
-      `Your booking for ${booking.packageType} has been cancelled.${requestRefund && booking.paymentStatus === 'PAID' ? ' Your refund request is being processed.' : ''}`,
-      'BOOKING_CANCELLED',
+      "Booking Cancelled",
+      `Your booking for ${booking.packageType} has been cancelled.${requestRefund && booking.paymentStatus === "PAID" ? " Your refund request is being processed." : ""}`,
+      "BOOKING_CANCELLED",
       id,
     );
 
     res.json({
-      message: 'Booking cancelled',
-      refundRequested: requestRefund && booking.paymentStatus === 'PAID',
+      message: "Booking cancelled",
+      refundRequested: requestRefund && booking.paymentStatus === "PAID",
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
