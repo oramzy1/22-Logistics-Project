@@ -361,14 +361,24 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
   }
 
   // Fetch updated booking for socket emit
-  const updated = await prisma.booking.findUnique({ where: { id: requestId } });
+ const updated = await prisma.booking.findUnique({
+  where: { id: requestId },
+  include: {
+    driver: {                             
+      select: {
+        name: true, phone: true, avatarUrl: true,
+        driverProfile: {
+          select: { brandModel: true, vehicleColor: true, plateNumber: true }
+        }
+      }
+    }
+  }
+});
 
-  try {
-    // Notify the customer their driver is assigned
-    getIO().to(`user:${updated!.customerId}`).emit('booking:updated', updated);
-    // Remove from all drivers' available pool
-    getIO().emit('ride:removed', updated!.id);
-  } catch (err) { console.log('Socket emit failed', err); }
+try {
+  getIO().to(`user:${updated!.customerId}`).emit('booking:updated', updated);
+  getIO().emit('ride:removed', updated!.id);
+} catch (err) { console.log('Socket emit failed', err); }
 
   await prisma.driverProfile.update({
     where: { id: profile.id },
@@ -445,8 +455,9 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
     });
 
     // Notify customer
-    getIO().to(`user:${booking.customerId}`).emit('booking:trip_started', {
+    getIO().to(`user:${booking.customerId}`).emit('booking:updated', {
       bookingId,
+      ...updated,
     });
 
     await createNotification(
@@ -592,7 +603,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
       data: { isAvailable: true },
     });
 
-    getIO().to(`user:${booking.customerId}`).emit('booking:update', updated);
+    getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
 
     await createNotification(
       booking.customerId, 'Trip completed', 'Your driver has completed the trip. Thank you for rideing with us!', 'TRIP_COMPLETED', bookingId

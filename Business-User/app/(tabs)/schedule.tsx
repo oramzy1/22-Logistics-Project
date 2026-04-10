@@ -51,7 +51,10 @@ export default function ScheduleTabScreen() {
   const [pickupDate, setPickupDate] = useState<Date | null>(null);
   const [pickupTime, setPickupTime] = useState<Date | null>(null);
   const [timeSlot, setTimeSlot] = useState("");
-  const [interstateLocation, setInterstateLocation] = useState("");
+  const [interstateLocation, setInterstateLocation] = useState<{
+    label: string;
+    price: number;
+  } | null>(null);
   const [extras, setExtras] = useState({
     babySeat: false,
     extraLuggage: false,
@@ -66,6 +69,13 @@ export default function ScheduleTabScreen() {
 
   const pkg = selectedPackage;
 
+  const getInterstatePrice = (value: string) => {
+    if (!value) return 0;
+
+    const match = value.match(/₦([\d,]+)/);
+    return match ? parseInt(match[1].replace(/,/g, ""), 10) : 0;
+  };
+
   const total = useMemo(() => {
     // Demo calculation only.
     const base =
@@ -78,15 +88,19 @@ export default function ScheduleTabScreen() {
             : 80000;
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
+
+    const interstatePrice = interstateLocation?.price || 0;
+
     return (
       base +
+      interstatePrice +
       add("babySeat", 2000) +
       add("extraLuggage", 2000) +
       add("wifi", 4000) +
       add("coldWater", 2000) +
       add("airportRide", 2000)
     );
-  }, [extras, extrasEnabled, pkg]);
+  }, [extras, extrasEnabled, pkg, interstateLocation]);
 
   const totalLabel = `₦${total.toLocaleString()}`;
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
@@ -107,6 +121,10 @@ export default function ScheduleTabScreen() {
     // if (!scheduleDateTime) {
     //   return Alert.alert("Missing field", "Please select a schedule date.");
     // }
+    if (!timeSlot && selectedPackage !== "multi") {
+      return Alert.alert("Missing Field", "Please select a time slot");
+    }
+
     if (!pickupDate) {
       return Alert.alert("Missing field", "Please select a pick-up date.");
     }
@@ -133,10 +151,9 @@ export default function ScheduleTabScreen() {
         airport: "Airport Schedule",
       };
 
-      
       const addOnsList = Object.entries(extras)
-      .filter(([, v]) => extrasEnabled && v)
-      .map(
+        .filter(([, v]) => extrasEnabled && v)
+        .map(
           ([k]) =>
             ({
               babySeat: "Baby Car Seat",
@@ -145,48 +162,56 @@ export default function ScheduleTabScreen() {
               coldWater: "Cold Water",
               airportRide: "Airport Ride",
             })[k],
-          )
-          .filter(Boolean) as string[];
-          
-          const payload = {
-            pickupAddress: pickupLocation.trim(),
-            dropoffAddress: dropoffLocation.trim(),
-            pickupLat: 0,
-            pickupLng: 0,
-            dropoffLat: 0,
-            dropoffLng: 0,
-            duration: selectedPackage === 'multi' ? 'Multi-Day' : timeSlot,
-           pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
-            pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
-            addOns: addOnsList,
-            scheduledAt: Date.now().toString(),
-            pickupAt: combinedPickup.toISOString(),
-            packageType: packageTypeMap[pkg],
-            totalAmount: total,
-            notes:
-              isBusiness && interstateLocation
-                ? `Interstate: ${interstateLocation}`
-                : undefined,
-          };
-    
+        )
+        .filter(Boolean) as string[];
+
+      const payload = {
+        pickupAddress: pickupLocation.trim(),
+        dropoffAddress: dropoffLocation.trim(),
+        pickupLat: 0,
+        pickupLng: 0,
+        dropoffLat: 0,
+        dropoffLng: 0,
+        duration:
+          selectedPackage === "multi" ? "Multi-Day" : timeSlot || undefined,
+        pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
+        pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
+        addOns: addOnsList,
+        scheduledAt: combinedPickup.toISOString(),
+        pickupAt: combinedPickup.toISOString(),
+        packageType: packageTypeMap[pkg],
+        totalAmount: total,
+        notes:
+          isBusiness && interstateLocation
+            ? `Interstate: ${interstateLocation}`
+            : undefined,
+      };
+
       const { payment, booking } = await createBooking(payload);
 
+      console.log("Your Payload", payload);
 
       router.push({
         pathname: "/screens/confirmation",
         params: {
           bookingId: booking.id,
           packageType: booking.packageType,
-          scheduledAt: Date.now().toString(),
+          scheduledAt: combinedPickup.toISOString(),
           pickupAddress: booking.pickupAddress,
           dropoffAddress: booking.dropoffAddress,
           totalAmount: String(booking.totalAmount),
           authorizationUrl: payment.authorizationUrl,
           reference: payment.reference,
           addOns: addOnsList,
-          pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
-          pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
-          duration: selectedPackage === 'multi' ? 'Multi-Day' : timeSlot,
+          pickupDate: pickupDate
+            ? pickupDate.toISOString().split("T")[0]
+            : undefined,
+
+          pickupTime: pickupTime
+            ? pickupTime.toTimeString().split(" ")[0]
+            : undefined,
+          duration:
+            selectedPackage === "multi" ? "Multi-Day" : timeSlot || undefined,
         },
       });
     } catch (err: any) {
@@ -244,20 +269,20 @@ export default function ScheduleTabScreen() {
             ) : (
               <Text style={styles.h2}>Trip Details Form ({selectedTitle})</Text>
             ))}
-          {isBusiness || isAirportSchedule && (
+          {(isBusiness || isAirportSchedule) && (
             <DropdownInput
               label="Select Interstate Location (outside Rivers State)"
               placeholder="Choose your destination"
               value={interstateLocation}
               onSelect={setInterstateLocation}
               options={[
-                "Owerri (₦27,000)",
-                "Aba (₦27,000)",
-                "Umuahia (₦27,000)",
-                "Ughelli (₦32,000)",
-                "Warri (₦32,000)",
-                "Enugu (₦42,000)",
-                "Abuja (₦52,000)",
+                { label: "Owerri", price: 27000 },
+                { label: "Aba", price: 27000 },
+                { label: "Umuahia", price: 27000 },
+                { label: "Ughelli", price: 32000 },
+                { label: "Warri", price: 32000 },
+                { label: "Enugu", price: 42000 },
+                { label: "Abuja", price: 52000 },
               ]}
             />
           )}
@@ -272,11 +297,16 @@ export default function ScheduleTabScreen() {
           /> */}
           <DropdownInput
             label={
-              pkg === "multi" ? "Time slot (10+ hours)" : `Time slot (8:00 AM – 10:00 PM)`
+              pkg === "multi"
+                ? "Time slot (10+ hours)"
+                : `Time slot (8:00 AM – 10:00 PM)`
             }
             placeholder="Select Your Ride Time"
             value={timeSlot}
-            onSelect={setTimeSlot}
+            onSelect={(val: any) => {
+              console.log("SELECTED SLOT:", val);
+              setTimeSlot(val);
+            }}
             options={generateTimeSlots(pkg)}
           />
           <DateTimePickerInput

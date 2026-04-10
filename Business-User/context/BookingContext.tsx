@@ -97,29 +97,35 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    // Require dynamically so it boots safely
-    const { socketService } = require("../api/socket.service");
-    
-    // When the backend yells that a booking changed (Driver accepted it, ended it, etc.)
-    const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
-      console.log("⚡ Global Socket Update:", updatedBooking.id, updatedBooking.status);
-      
-      setBookings((prev) => {
-        const exists = prev.find((b) => b.id === updatedBooking.id);
-        if (exists) {
-          // Replace the old booking with the newly updated one instantly
-          return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
-        } else {
-          // If it wasn't there before, add it to the top
-          return [updatedBooking, ...prev];
-        }
-      });
+ useEffect(() => {
+  const { socketService } = require('../api/socket.service');
+  
+  // Give socket time to connect before subscribing
+  // The subscription is idempotent — socket.io queues listeners
+  const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
+    console.log('⚡ Socket booking update:', updatedBooking.id, updatedBooking.status);
+    setBookings((prev) => {
+      const exists = prev.find((b) => b.id === updatedBooking.id);
+      if (exists) {
+        return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
+      }
+      return [updatedBooking, ...prev];
     });
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
+  });
+
+  // Also listen for ride:removed to remove from driver pool
+  const unsubRemoved = socketService.onRideRemoved?.((bookingId: string) => {
+    setBookings((prev) => prev.filter((b) => b.id !== bookingId || 
+      // Keep it if it's the driver's own accepted booking
+      true  
+    ));
+  });
+
+  return () => {
+    if (unsubscribe) unsubscribe();
+    if (unsubRemoved) unsubRemoved();
+  };
+}, []);
 
   const createBooking = useCallback(async (payload: BookingPayload) => {
     const data = await BookingService.create(payload);

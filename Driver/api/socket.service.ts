@@ -1,9 +1,12 @@
-import { io, Socket } from 'socket.io-client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { io, Socket } from "socket.io-client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const RAW_URL = process.env.EXPO_PUBLIC_API_URL || process.env.API_URL || 'https://two2-logistics-project.onrender.com';
+const RAW_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  process.env.API_URL ||
+  "https://two2-logistics-project.onrender.com";
 
-const API_URL = RAW_URL.replace(/\/api$/, '');
+const API_URL = RAW_URL.replace(/\/api$/, "");
 
 class SocketService {
   private socket: Socket | null = null;
@@ -12,26 +15,26 @@ class SocketService {
     if (this.socket?.connected) return;
 
     this.socket = io(API_URL, {
-      transports: ['websocket'],
+      transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
     });
 
-    this.socket.on('connect', () => {
-      console.log('🔌 Socket connected');
-      this.socket?.emit('join', userId);
-      this.socket?.emit('join_driver', driverProfileId);
+    this.socket.on("connect", () => {
+      console.log("🔌 Socket connected");
+      this.socket?.emit("join", userId);
+      this.socket?.emit("join_driver", driverProfileId);
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
+    this.socket.on("disconnect", () => {
+      console.log("🔌 Socket disconnected");
     });
   }
 
-   onRideRemoved(callback: (bookingId: string) => void) {
-    this.socket?.on('ride:removed', callback);
-    return () => this.socket?.off('ride:removed', callback);
+  onRideRemoved(callback: (bookingId: string) => void) {
+    this.socket?.on("ride:removed", callback);
+    return () => this.socket?.off("ride:removed", callback);
   }
 
   disconnect() {
@@ -41,14 +44,14 @@ class SocketService {
 
   // Listen for incoming ride requests
   onRideRequest(callback: (data: any) => void) {
-    this.socket?.on('ride:new_request', callback);
-    return () => this.socket?.off('ride:new_request', callback);
+    this.socket?.on("ride:new_request", callback);
+    return () => this.socket?.off("ride:new_request", callback);
   }
 
   // Listen for license verification result
   onLicenseVerified(callback: (data: any) => void) {
-    this.socket?.on('license:verified', callback);
-    return () => this.socket?.off('license:verified', callback);
+    this.socket?.on("license:verified", callback);
+    return () => this.socket?.off("license:verified", callback);
   }
 
   isConnected() {
@@ -56,9 +59,9 @@ class SocketService {
   }
 
   onBookingUpdated(callback: (booking: any) => void) {
-  this.socket?.on('booking:updated', callback);
-  return () => this.socket?.off('booking:updated', callback);
-}
+    this.socket?.on("booking:updated", callback);
+    return () => this.socket?.off("booking:updated", callback);
+  }
 }
 
 export const socketService = new SocketService();

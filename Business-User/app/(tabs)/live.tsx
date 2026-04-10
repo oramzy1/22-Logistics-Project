@@ -65,7 +65,24 @@ export default function LiveTabScreen() {
 
 useBookingSocket({
   onBookingUpdated: (updatedBooking) => {
-    patchBooking(updatedBooking); // instant UI update, no refetch
+    patchBooking(updatedBooking);
+    
+    // Alert user when driver status changes to IN_PROGRESS (arrived + started)
+    const current = activeBookings.find(b => b.id === updatedBooking.id);
+    if (current?.status === 'ACCEPTED' && updatedBooking.status === 'IN_PROGRESS') {
+      Alert.alert(
+        '🚗 Driver Arrived!',
+        'Your driver has arrived at the pickup location and started the trip.',
+        [{ text: 'OK' }]
+      );
+    }
+    
+    // Trip completed by driver — clear live tab
+    if (updatedBooking.status === 'COMPLETED') {
+      Alert.alert('Trip Completed', 'Your trip has been completed!', [
+        { text: 'View Receipt', onPress: () => router.push('/(tabs)/bookings') }
+      ]);
+    }
   },
 });
 

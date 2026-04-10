@@ -16,6 +16,7 @@ export type BookingPayload = {
   duration?: string;
   notes?: string;
   paymentMethod?: "card" | "bank_transfer";
+  totalAmount: number;
 };
 
 export const BookingService = {

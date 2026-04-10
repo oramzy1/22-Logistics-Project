@@ -90,7 +90,7 @@ export default function BookingsTabScreen() {
   const data = useMemo(() => {
     const q = query.trim().toLowerCase();
     const segFiltered = bookings.filter((b) => {
-      if (seg === "Ongoing") return b.status === "IN_PROGRESS";
+      if (seg === "Ongoing") return b.status === "IN_PROGRESS" ||  b.status === "ACCEPTED";
       if (seg === "Upcoming")
         return b.status === "AWAITING_DRIVER" || b.status === "PENDING";
       if (seg === "Completed")

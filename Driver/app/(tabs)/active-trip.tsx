@@ -16,9 +16,18 @@ export default function ActiveTripScreen() {
 
   useBookingSocket({
   onBookingUpdated: (updated) => {
-    if (activeTrip && updated.id === activeTrip.id) {
-      setActiveTrip(updated); // reflect status changes instantly
+    if (!activeTrip || updated.id !== activeTrip.id) return;
+    
+    if (updated.status === 'CANCELLED') {
+      setActiveTrip(null); // ✅ customer cancelled — clear active trip
+      return;
     }
+    if (updated.status === 'COMPLETED') {
+      setActiveTrip(null);
+      router.push('/(tabs)/history'); // ✅ trip ended — go to history
+      return;
+    }
+    setActiveTrip(updated); // ✅ status update (ACCEPTED → IN_PROGRESS etc)
   },
 });
 

@@ -54,6 +54,7 @@ type BookingContextType = {
   activeBookings: Booking[];
   isLoading: boolean;
   error: string | null;
+  patchBooking: (booking: Booking) => void;
   fetchBookings: () => Promise<void>;
   createBooking: (payload: BookingPayload) => Promise<{
     booking: Booking;
@@ -96,23 +97,34 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
    useEffect(() => {
-    const { socketService } = require("../api/socket.service");
-    
-    const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
-      console.log("⚡ Driver Global Socket Update:", updatedBooking.id, updatedBooking.status);
-      
-      setBookings((prev) => {
-        const exists = prev.find((b) => b.id === updatedBooking.id);
-        if (exists) {
-          return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
-        }
-        return [updatedBooking, ...prev];
-      });
+  const { socketService } = require('../api/socket.service');
+  
+  // Give socket time to connect before subscribing
+  // The subscription is idempotent — socket.io queues listeners
+  const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
+    console.log('⚡ Socket booking update:', updatedBooking.id, updatedBooking.status);
+    setBookings((prev) => {
+      const exists = prev.find((b) => b.id === updatedBooking.id);
+      if (exists) {
+        return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
+      }
+      return [updatedBooking, ...prev];
     });
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
+  });
+
+  // Also listen for ride:removed to remove from driver pool
+  const unsubRemoved = socketService.onRideRemoved?.((bookingId: string) => {
+    setBookings((prev) => prev.filter((b) => b.id !== bookingId || 
+      // Keep it if it's the driver's own accepted booking
+      true  
+    ));
+  });
+
+  return () => {
+    if (unsubscribe) unsubscribe();
+    if (unsubRemoved) unsubRemoved();
+  };
+}, []);
 
   const createBooking = useCallback(async (payload: BookingPayload) => {
     const data = await BookingService.create(payload);
@@ -128,6 +140,12 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const patchBooking = useCallback((updated: Booking) => {
+  setBookings((prev) =>
+    prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
+  );
+}, []);
+
   const verifyPayment = useCallback(async (reference: string) => {
   try {
     const data = await BookingService.verifyPayment(reference);
@@ -139,6 +157,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     if (err?.response?.status !== 400) throw err;
   }
 }, []);
+
 
   const reinitializeBooking = useCallback(async (bookingId: string, channel: 'card' | 'bank_transfer') => {
   const data = await BookingService.reinitialize(bookingId, channel);
@@ -164,6 +183,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         createBooking,
         cancelBooking,
         verifyPayment,
+        patchBooking,
         reinitializeBooking,
       }}
     >

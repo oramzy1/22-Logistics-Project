@@ -70,7 +70,7 @@ export default function ConfirmationScreen() {
           <Row label="Ride type" value={packageType ?? '--'} />
           <Row label="Schedule date" value={pickupDate ?? '--'} />
           <Row label="Pick-Up time" value={pickupTime ?? '--'} />
-          <Row label="Duration" value={duration ?? '--'} />
+          <Row label="Time Slot" value={duration ?? '--'} />
           <Row label="Pick up location" value={pickupAddress ?? '--'} />
           <Row label="Drop off location" value={dropoffAddress ?? '--'} />
           {addOns ? <Row label="Add-ons selected" value={addOns} /> : null}

@@ -18,7 +18,7 @@ import Animated, {
 interface DropdownInputProps {
   label?: string;
   placeholder?: string;
-  options: string[];
+  options: any;
   value: any;
   onSelect: any;
 }
@@ -29,8 +29,10 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
   label,
   placeholder,
   options,
+  value,
+  onSelect,
 }) => {
-  const [selected, setSelected] = useState<string | null>(null);
+  // const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   const progress = useSharedValue(0);
@@ -69,9 +71,13 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
     <View style={styles.wrapper}>
       {label && <Text style={styles.label}>{label}</Text>}
 
-      <TouchableOpacity style={styles.input} activeOpacity={0.8} onPress={toggle}>
-        <Text style={[styles.value, !selected && styles.placeholder]}>
-          {selected || placeholder}
+      <TouchableOpacity
+        style={styles.input}
+        activeOpacity={0.8}
+        onPress={toggle}
+      >
+        <Text style={[styles.value, !value && styles.placeholder]}>
+          {value || placeholder}
         </Text>
 
         <Animated.View style={chevronStyle}>
@@ -87,19 +93,18 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
             onPress={toggle}
           />
 
-          <Animated.View style={[styles.dropdown, dropdownStyle, styles.dropdownBody]}>
-            {options.map((item, index) => {
-              const isSelected = selected === item;
+          <Animated.View
+            style={[styles.dropdown, dropdownStyle, styles.dropdownBody]}
+          >
+            {options.map((item: any, index: any) => {
+              const isSelected = value === item;
 
               return (
                 <TouchableOpacity
                   key={index}
-                  style={[
-                    styles.option,
-                    isSelected && styles.selectedOption,
-                  ]}
+                  style={[styles.option, isSelected && styles.selectedOption]}
                   onPress={() => {
-                    setSelected(item);
+                    onSelect(item);
                     toggle();
                   }}
                 >
