@@ -8,6 +8,10 @@ export type BookingPayload = {
   dropoffLat: number;
   dropoffLng: number;
   scheduledAt: string; // ISO string
+  pickupDate?: string; 
+  pickupTime?: string;
+  outsidePH?: boolean;
+  addOns?: string[];
   packageType: string;
   duration?: string;
   notes?: string;

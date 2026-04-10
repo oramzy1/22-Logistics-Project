@@ -104,9 +104,9 @@ export default function ScheduleTabScreen() {
         "Please enter your drop-off location.",
       );
     }
-    if (!scheduleDateTime) {
-      return Alert.alert("Missing field", "Please select a schedule date.");
-    }
+    // if (!scheduleDateTime) {
+    //   return Alert.alert("Missing field", "Please select a schedule date.");
+    // }
     if (!pickupDate) {
       return Alert.alert("Missing field", "Please select a pick-up date.");
     }
@@ -133,29 +133,10 @@ export default function ScheduleTabScreen() {
         airport: "Airport Schedule",
       };
 
-      const payload = {
-        pickupAddress: pickupLocation.trim(),
-        dropoffAddress: dropoffLocation.trim(),
-        pickupLat: 0,
-        pickupLng: 0,
-        dropoffLat: 0,
-        dropoffLng: 0,
-        duration: selectedPackage === 'multi' ? 'Multi-Day' : timeSlot,
-        scheduledAt: scheduleDateTime.toISOString(),
-        pickupAt: combinedPickup.toISOString(),
-        packageType: packageTypeMap[pkg],
-        totalAmount: total,
-        notes:
-          isBusiness && interstateLocation
-            ? `Interstate: ${interstateLocation}`
-            : undefined,
-      };
-
-      const { payment, booking } = await createBooking(payload);
-
+      
       const addOnsList = Object.entries(extras)
-        .filter(([, v]) => extrasEnabled && v)
-        .map(
+      .filter(([, v]) => extrasEnabled && v)
+      .map(
           ([k]) =>
             ({
               babySeat: "Baby Car Seat",
@@ -164,22 +145,48 @@ export default function ScheduleTabScreen() {
               coldWater: "Cold Water",
               airportRide: "Airport Ride",
             })[k],
-        )
-        .filter(Boolean)
-        .join(", ");
+          )
+          .filter(Boolean) as string[];
+          
+          const payload = {
+            pickupAddress: pickupLocation.trim(),
+            dropoffAddress: dropoffLocation.trim(),
+            pickupLat: 0,
+            pickupLng: 0,
+            dropoffLat: 0,
+            dropoffLng: 0,
+            duration: selectedPackage === 'multi' ? 'Multi-Day' : timeSlot,
+           pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
+            pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
+            addOns: addOnsList,
+            scheduledAt: Date.now().toString(),
+            pickupAt: combinedPickup.toISOString(),
+            packageType: packageTypeMap[pkg],
+            totalAmount: total,
+            notes:
+              isBusiness && interstateLocation
+                ? `Interstate: ${interstateLocation}`
+                : undefined,
+          };
+    
+      const { payment, booking } = await createBooking(payload);
+
 
       router.push({
         pathname: "/screens/confirmation",
         params: {
           bookingId: booking.id,
           packageType: booking.packageType,
-          scheduledAt: scheduleDateTime.toISOString(),
+          scheduledAt: Date.now().toString(),
           pickupAddress: booking.pickupAddress,
           dropoffAddress: booking.dropoffAddress,
           totalAmount: String(booking.totalAmount),
           authorizationUrl: payment.authorizationUrl,
           reference: payment.reference,
           addOns: addOnsList,
+          pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
+          pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
+          duration: selectedPackage === 'multi' ? 'Multi-Day' : timeSlot,
         },
       });
     } catch (err: any) {
@@ -254,7 +261,7 @@ export default function ScheduleTabScreen() {
               ]}
             />
           )}
-          <DateTimePickerInput
+          {/* <DateTimePickerInput
             label="Select Schedule Date & Time"
             value={scheduleDateTime}
             onChange={setScheduleDateTime}
@@ -262,7 +269,7 @@ export default function ScheduleTabScreen() {
             placeholder="Select Date"
             minimumDate={new Date()}
             icon={<Calendar size={18} color="#9CA3AF" />}
-          />
+          /> */}
           <DropdownInput
             label={
               pkg === "multi" ? "Time slot (10+ hours)" : `Time slot (8:00 AM – 10:00 PM)`

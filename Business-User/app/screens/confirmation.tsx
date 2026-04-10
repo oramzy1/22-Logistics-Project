@@ -30,7 +30,10 @@ export default function ConfirmationScreen() {
     authorizationUrl,
     reference,
     addOns,
-    isExtension
+    isExtension,
+    pickupDate,
+    pickupTime,
+    duration,
   } = useLocalSearchParams<{
     bookingId: string;
     packageType: string;
@@ -42,6 +45,9 @@ export default function ConfirmationScreen() {
     reference: string;
     addOns?: string;
     isExtension?: string;
+    pickupDate?: string;
+    pickupTime?: string;
+    duration?: string;
   }>();
 
   const formattedDate = scheduledAt
@@ -61,11 +67,12 @@ export default function ConfirmationScreen() {
         </Text>
 
         <View style={styles.card}>
-          <Row label="Ride type" value={packageType ?? '—'} />
-          <Row label="Schedule date" value={formattedDate} />
-          <Row label="Schedule time" value={formattedTime} />
-          <Row label="Pick up location" value={pickupAddress ?? '—'} />
-          <Row label="Drop off location" value={dropoffAddress ?? '—'} />
+          <Row label="Ride type" value={packageType ?? '--'} />
+          <Row label="Schedule date" value={pickupDate ?? '--'} />
+          <Row label="Pick-Up time" value={pickupTime ?? '--'} />
+          <Row label="Duration" value={duration ?? '--'} />
+          <Row label="Pick up location" value={pickupAddress ?? '--'} />
+          <Row label="Drop off location" value={dropoffAddress ?? '--'} />
           {addOns ? <Row label="Add-ons selected" value={addOns} /> : null}
           <Row label="Amount" value={`₦${Number(totalAmount ?? 0).toLocaleString()}`} />
           {bookingId ? (
