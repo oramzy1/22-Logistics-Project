@@ -35,6 +35,7 @@ import { useBookingSocket } from "@/hooks/useBookingSocket";
 
 export default function HomeTabScreen() {
   const [isOnline, setIsOnline] = useState(false);
+  const [onlineStatus, setOnlineStatus] = useState<string>("OFFLINE");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
@@ -68,16 +69,32 @@ export default function HomeTabScreen() {
       setLoading(true);
       const profile = await DriverService.getProfile();
       setIsOnline(profile.isOnline);
-      setStats({
-        totalTrips: profile.totalTrips ?? 0,
-        hours: "0h",
-        rating: profile.rating ?? 5.0,
-        acceptance: profile.acceptanceRate ?? 0,
-      });
       const pendingReqs = await DriverService.getRideRequests();
       setRequests(pendingReqs);
       const trips = await DriverService.getTripHistory();
       setHistory(trips.slice(0, 3)); // Show only recent 3
+      const totalMinutes = trips
+        .filter(
+          (t: any) =>
+            t.status === "COMPLETED" && t.acceptedByDriverAt && t.updatedAt,
+        )
+        .reduce((acc: number, t: any) => {
+          const start = new Date(t.acceptedByDriverAt).getTime();
+          const end = new Date(t.updatedAt).getTime();
+          return acc + Math.max(0, (end - start) / 60000); // ms to minutes
+        }, 0);
+
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = Math.floor(totalMinutes % 60);
+
+       setStats({
+        totalTrips: profile.totalTrips ?? 0,
+        hours: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+        rating: profile.rating ?? 5.0,
+        acceptance: profile.acceptanceRate ?? 0,
+      });
+
+      setOnlineStatus(profile.onlineStatus ?? "OFFLINE");
       setIsOnTrip(profile.onlineStatus === "AWAY");
     } catch (err: any) {
       if (err?.response?.status === 401) {
@@ -182,7 +199,7 @@ export default function HomeTabScreen() {
               />
             </View>
             <Text style={styles.statusSubtitle}>
-              {isOnline && profile?.onlineStatus === "AWAY"
+              {isOnline && onlineStatus === "AWAY"
                 ? "On a Trip (Away)"
                 : isOnline
                   ? "Waiting for Ride Assignment"

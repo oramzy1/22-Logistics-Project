@@ -1,15 +1,15 @@
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import { Request, Response } from "express";
-import { sendVerificationEmail } from "../lib/email.service";
-import { getIO } from "../lib/socket";
-import prisma from "../lib/prisma";
-import { AuthRequest } from "../middlewares/auth.middleware";
-import { createNotification } from "../lib/notifications";
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { Request, Response } from 'express';
+import { sendVerificationEmail } from '../lib/email.service';
+import { getIO } from '../lib/socket';
+import prisma from '../lib/prisma';
+import { AuthRequest } from '../middlewares/auth.middleware';
+import { createNotification } from '../lib/notifications';
 
 const generateCode = () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const hashed = crypto.createHash("sha256").update(code).digest("hex");
+  const hashed = crypto.createHash('sha256').update(code).digest('hex');
   const expiry = new Date(Date.now() + 15 * 60 * 1000);
   return { code, hashed, expiry };
 };
@@ -20,8 +20,7 @@ export const registerDriver = async (req: Request, res: Response) => {
     const { name, email, phone, password, licenseNumber } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing)
-      return res.status(400).json({ message: "Email already registered" });
+    if (existing) return res.status(400).json({ message: 'Email already registered' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const { code, hashed, expiry } = generateCode();
@@ -32,7 +31,7 @@ export const registerDriver = async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         name,
-        role: "DRIVER",
+        role: 'DRIVER',
         phone,
         verificationToken: hashed,
         verificationExpiry: expiry,
@@ -40,7 +39,7 @@ export const registerDriver = async (req: Request, res: Response) => {
           create: {
             licenseNumber: licenseNumber ?? null,
             licenseImageUrl: licenseImageUrl, // 3. Store the image instantly!
-            licenseStatus: licenseImageUrl ? "PENDING" : "REJECTED",
+            licenseStatus: licenseImageUrl ? 'PENDING' : 'REJECTED',
           },
         },
       },
@@ -49,16 +48,16 @@ export const registerDriver = async (req: Request, res: Response) => {
     try {
       await sendVerificationEmail(email, code);
     } catch (e) {
-      console.error("Email send failed:", e);
+      console.error('Email send failed:', e);
     }
 
     res.status(201).json({
-      message: "Driver registered. Check your email for the verification code.",
+      message: 'Driver registered. Check your email for the verification code.',
       email,
     });
   } catch (error) {
-    console.error("Driver register error:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error('Driver register error:', error);
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -68,21 +67,18 @@ export const uploadLicense = async (
   res: Response,
 ) => {
   try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
     const licenseImageUrl = req.file.path;
 
     await prisma.driverProfile.update({
       where: { userId: req.user!.id },
-      data: { licenseImageUrl, licenseStatus: "PENDING" },
+      data: { licenseImageUrl, licenseStatus: 'PENDING' },
     });
 
-    res.json({
-      message: "License uploaded. Pending admin verification.",
-      licenseImageUrl,
-    });
+    res.json({ message: 'License uploaded. Pending admin verification.', licenseImageUrl });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -97,31 +93,23 @@ export const getDriverProfile = async (req: AuthRequest, res: Response) => {
         },
       },
     });
-    if (!profile)
-      return res.status(404).json({ message: "Driver profile not found" });
+    if (!profile) return res.status(404).json({ message: 'Driver profile not found' });
     res.json(profile);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
 export const updateDriverProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { vehicleType, brandModel, plateNumber, vehicleColor, workingHours } =
-      req.body;
+    const { vehicleType, brandModel, plateNumber, vehicleColor, workingHours } = req.body;
     const profile = await prisma.driverProfile.update({
       where: { userId: req.user!.id },
-      data: {
-        vehicleType,
-        brandModel,
-        plateNumber,
-        vehicleColor,
-        workingHours,
-      },
+      data: { vehicleType, brandModel, plateNumber, vehicleColor, workingHours },
     });
-    res.json({ message: "Profile updated", profile });
+    res.json({ message: 'Profile updated', profile });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -134,21 +122,21 @@ export const setOnlineStatus = async (req: AuthRequest, res: Response) => {
       where: { userId: req.user!.id },
       data: {
         onlineStatus: status,
-        isOnline: status !== "OFFLINE",
-        isAvailable: status === "ONLINE",
+        isOnline: status !== 'OFFLINE',
+        isAvailable: status === 'ONLINE',
       },
     });
 
     // Broadcast status change so admin dashboard updates in real-time
-    getIO().emit("driver:status_changed", {
+    getIO().emit('driver:status_changed', {
       driverProfileId: profile.id,
       isOnline: profile.isOnline,
       isAvailable: profile.isAvailable,
     });
 
-    res.json({ message: `Status updated to ${status}`, profile });
+     res.json({ message: `Status updated to ${status}`, profile });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -161,11 +149,9 @@ export const setAvailability = async (req: AuthRequest, res: Response) => {
       where: { userId: req.user!.id },
     });
 
-    if (!profile) return res.status(404).json({ message: "Profile not found" });
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
     if (!profile.isOnline && isAvailable) {
-      return res
-        .status(400)
-        .json({ message: "You must be online to set availability" });
+      return res.status(400).json({ message: 'You must be online to set availability' });
     }
 
     const updated = await prisma.driverProfile.update({
@@ -173,14 +159,14 @@ export const setAvailability = async (req: AuthRequest, res: Response) => {
       data: { isAvailable },
     });
 
-    getIO().emit("driver:availability_changed", {
+    getIO().emit('driver:availability_changed', {
       driverProfileId: updated.id,
       isAvailable: updated.isAvailable,
     });
 
     res.json({ message: `Availability updated`, profile: updated });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -219,18 +205,19 @@ export const getMyRideRequests = async (req: AuthRequest, res: Response) => {
     // 1. Fetch ALL bookings that are paid but have no driver assigned yet
     const pool = await prisma.booking.findMany({
       where: {
-        status: "AWAITING_DRIVER",
+        status: 'AWAITING_DRIVER', 
       },
       include: {
         customer: { select: { name: true, phone: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
     res.json(pool); // Send the raw bookings directly
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 // ── RESPOND TO RIDE REQUEST ─────────────────────────────────────
 // export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
@@ -339,102 +326,78 @@ export const getMyRideRequests = async (req: AuthRequest, res: Response) => {
 export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { requestId } = req.params; // In this case, requestId is actually the Booking ID
-    const { action } = req.body;
+    const { action } = req.body; 
     const profile = await prisma.driverProfile.findUnique({
       where: { userId: req.user!.id },
       include: { user: { select: { name: true } } },
     });
-    if (!profile) return res.status(404).json({ message: "Profile not found" });
-
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+    
     // If they decline, we don't modify the database. We just let them ignore it on the frontend so other drivers can still see it.
-    if (action === "DECLINED") {
-      return res.json({ message: "Ride ignored locally" });
+    if (action === 'DECLINED') {
+       return res.json({ message: 'Ride ignored locally' });
     }
-    if (action === "ACCEPTED") {
-      const existingActiveTrip = await prisma.booking.findFirst({
-        where: {
-          driverId: profile.userId,
-          status: { in: ["ACCEPTED", "IN_PROGRESS"] },
-        },
-      });
+    if (action === 'ACCEPTED') {
 
-      if (existingActiveTrip) {
-        return res.status(409).json({
-          message:
-            "You already have an active trip. Please complete it before accepting a new one.",
-        });
+      
+      
+  const result = await prisma.booking.updateMany({
+    where: {
+      id: requestId,
+      status: 'AWAITING_DRIVER', // guard — atomic check+update in one query
+      driverId: null,             // double guard — not yet assigned
+    },
+    data: {
+      driverId: profile.userId,
+      status: 'ACCEPTED',
+      acceptedByDriverAt: new Date(),
+    },
+  });
+
+  // If count is 0, another driver beat this one to it
+  if (result.count === 0) {
+    return res.status(409).json({
+      message: 'Sorry! Another driver just accepted this ride.',
+    });
+  }
+
+  // Fetch updated booking for socket emit
+ const updated = await prisma.booking.findUnique({
+  where: { id: requestId },
+  include: {
+    driver: {                             
+      select: {
+        name: true, phone: true, avatarUrl: true,
+        driverProfile: {
+          select: { brandModel: true, vehicleColor: true, plateNumber: true }
+        }
       }
-
-      const result = await prisma.booking.updateMany({
-        where: {
-          id: requestId,
-          status: "AWAITING_DRIVER", // guard — atomic check+update in one query
-          driverId: null, // double guard — not yet assigned
-        },
-        data: {
-          driverId: profile.userId,
-          status: "ACCEPTED",
-          acceptedByDriverAt: new Date(),
-        },
-      });
-
-      // If count is 0, another driver beat this one to it
-      if (result.count === 0) {
-        return res.status(409).json({
-          message: "Sorry! Another driver just accepted this ride.",
-        });
-      }
-
-      // Fetch updated booking for socket emit
-      const updated = await prisma.booking.findUnique({
-        where: { id: requestId },
-        include: {
-          driver: {
-            select: {
-              name: true,
-              phone: true,
-              avatarUrl: true,
-              driverProfile: {
-                select: {
-                  brandModel: true,
-                  vehicleColor: true,
-                  plateNumber: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      try {
-        getIO()
-          .to(`user:${updated!.customerId}`)
-          .emit("booking:updated", updated);
-        getIO().emit("ride:removed", updated!.id);
-      } catch (err) {
-        console.log("Socket emit failed", err);
-      }
-
-      await prisma.driverProfile.update({
-        where: { id: profile.id },
-        data: { isAvailable: false, totalTrips: { increment: 1 }, onlineStatus: 'AWAY' },
-      });
-
-      await createNotification(
-        updated!.customerId,
-        "Driver Assigned!",
-        "A driver has accepted your booking and is on the way.",
-        "DRIVER_ASSIGNED",
-        requestId,
-      );
-
-      return res.json({
-        message: "Ride accepted successfully",
-        booking: updated,
-      });
     }
+  }
+});
+
+try {
+  getIO().to(`user:${updated!.customerId}`).emit('booking:updated', updated);
+  getIO().emit('ride:removed', updated!.id);
+} catch (err) { console.log('Socket emit failed', err); }
+
+  await prisma.driverProfile.update({
+    where: { id: profile.id },
+    data: { isAvailable: false, totalTrips: { increment: 1 } },
+  });
+
+  await createNotification(
+    updated!.customerId,
+    'Driver Assigned!',
+    'A driver has accepted your booking and is on the way.',
+    'DRIVER_ASSIGNED',
+    requestId,
+  );
+
+  return res.json({ message: 'Ride accepted successfully', booking: updated });
+}
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -444,9 +407,9 @@ export const getDriverTripHistory = async (req: AuthRequest, res: Response) => {
     const trips = await prisma.booking.findMany({
       where: {
         driverId: req.user!.id,
-        status: { in: ["COMPLETED", "CANCELLED"] },
+        status: { in: ['COMPLETED', 'CANCELLED'] },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         customer: { select: { name: true, phone: true, avatarUrl: true } },
         review: { select: { rating: true, comment: true } },
@@ -454,7 +417,7 @@ export const getDriverTripHistory = async (req: AuthRequest, res: Response) => {
     });
     res.json(trips);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -464,16 +427,16 @@ export const getActiveTrip = async (req: AuthRequest, res: Response) => {
     const trip = await prisma.booking.findFirst({
       where: {
         driverId: req.user!.id,
-        status: { in: ["ACCEPTED", "IN_PROGRESS"] },
+        status: { in: ['ACCEPTED', 'IN_PROGRESS'] },
       },
       include: {
         customer: { select: { name: true, phone: true, avatarUrl: true } },
-        extensions: { where: { paymentStatus: "PAID" } },
+        extensions: { where: { paymentStatus: 'PAID' } },
       },
     });
     res.json(trip ?? null);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -483,37 +446,32 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
     const { bookingId } = req.params;
 
     const booking = await prisma.booking.findFirst({
-      where: { id: bookingId, driverId: req.user!.id, status: "ACCEPTED" },
+      where: { id: bookingId, driverId: req.user!.id, status: 'ACCEPTED' },
     });
-    if (!booking)
-      return res
-        .status(404)
-        .json({ message: "Booking not found or not accepted" });
+    if (!booking) return res.status(404).json({ message: 'Booking not found or not accepted' });
 
     const updated = await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: "IN_PROGRESS" },
+      data: { status: 'IN_PROGRESS' },
     });
 
     // Notify customer
-    getIO()
-      .to(`user:${booking.customerId}`)
-      .emit("booking:updated", {
-        bookingId,
-        ...updated,
-      });
+    getIO().to(`user:${booking.customerId}`).emit('booking:updated', {
+      bookingId,
+      ...updated,
+    });
 
     await createNotification(
       booking.customerId,
-      "Trip Started",
-      "Your driver has started the trip. Have a safe journey!",
-      "TRIP_STARTED",
+      'Trip Started',
+      'Your driver has started the trip. Have a safe journey!',
+      'TRIP_STARTED',
       bookingId,
     );
 
-    res.json({ message: "Trip started", booking: updated });
+    res.json({ message: 'Trip started', booking: updated });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -523,8 +481,8 @@ export const verifyDriverLicense = async (req: AuthRequest, res: Response) => {
     const { driverProfileId, status, rejectionReason } = req.body;
     // status: 'APPROVED' | 'REJECTED'
 
-    if (!["APPROVED", "REJECTED"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+    if (!['APPROVED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
     }
 
     const profile = await prisma.driverProfile.update({
@@ -534,31 +492,26 @@ export const verifyDriverLicense = async (req: AuthRequest, res: Response) => {
     });
 
     // Notify driver in real-time
-    getIO()
-      .to(`user:${profile.user.id}`)
-      .emit("license:verified", { status, rejectionReason });
+    getIO().to(`user:${profile.user.id}`).emit('license:verified', { status, rejectionReason });
 
     await createNotification(
       profile.user.id,
-      status === "APPROVED" ? "License Approved!" : "License Rejected",
-      status === "APPROVED"
-        ? "Your driver's license has been verified. You can now receive ride requests."
-        : `Your license was rejected. ${rejectionReason ?? "Please re-upload a valid license."}`,
-      "LICENSE_STATUS",
+      status === 'APPROVED' ? 'License Approved!' : 'License Rejected',
+      status === 'APPROVED'
+        ? 'Your driver\'s license has been verified. You can now receive ride requests.'
+        : `Your license was rejected. ${rejectionReason ?? 'Please re-upload a valid license.'}`,
+      'LICENSE_STATUS',
       undefined,
     );
 
     res.json({ message: `License ${status.toLowerCase()}`, profile });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
 // ── ADMIN: ASSIGN DRIVER TO BOOKING ────────────────────────────
-export const assignDriverToBooking = async (
-  req: AuthRequest,
-  res: Response,
-) => {
+export const assignDriverToBooking = async (req: AuthRequest, res: Response) => {
   try {
     const { bookingId, driverProfileId } = req.body;
 
@@ -567,19 +520,18 @@ export const assignDriverToBooking = async (
       include: { user: true },
     });
 
-    if (!driverProfile)
-      return res.status(404).json({ message: "Driver not found" });
+    if (!driverProfile) return res.status(404).json({ message: 'Driver not found' });
     if (!driverProfile.isOnline) {
-      return res.status(400).json({ message: "Driver is offline" });
+      return res.status(400).json({ message: 'Driver is offline' });
     }
-    if (driverProfile.licenseStatus !== "APPROVED") {
-      return res.status(400).json({ message: "Driver license not verified" });
+    if (driverProfile.licenseStatus !== 'APPROVED') {
+      return res.status(400).json({ message: 'Driver license not verified' });
     }
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
     });
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     // Create ride request that expires in 30 seconds
     const expiresAt = new Date(Date.now() + 30 * 1000);
@@ -589,7 +541,7 @@ export const assignDriverToBooking = async (
         bookingId,
         driverProfileId,
         expiresAt,
-        status: "PENDING",
+        status: 'PENDING',
       },
       include: {
         booking: {
@@ -601,16 +553,16 @@ export const assignDriverToBooking = async (
     });
 
     // Push ride request to driver in real-time
-    getIO().to(`driver:${driverProfileId}`).emit("ride:new_request", {
+    getIO().to(`driver:${driverProfileId}`).emit('ride:new_request', {
       requestId: rideRequest.id,
       booking: rideRequest.booking,
       expiresAt,
     });
 
-    res.json({ message: "Ride request sent to driver", rideRequest });
+    res.json({ message: 'Ride request sent to driver', rideRequest });
   } catch (error) {
-    console.error("Assign driver error:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error('Assign driver error:', error);
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -621,7 +573,7 @@ export const getAvailableDrivers = async (req: AuthRequest, res: Response) => {
       where: {
         isOnline: true,
         isAvailable: true,
-        licenseStatus: "APPROVED",
+        licenseStatus: 'APPROVED',
       },
       include: {
         user: { select: { name: true, phone: true, avatarUrl: true } },
@@ -629,7 +581,7 @@ export const getAvailableDrivers = async (req: AuthRequest, res: Response) => {
     });
     res.json(drivers);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
@@ -638,34 +590,27 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
     const { bookingId } = req.params;
 
     const booking = await prisma.booking.findFirst({
-      where: { id: bookingId, driverId: req.user!.id, status: "IN_PROGRESS" },
-    });
-    if (!booking)
-      return res
-        .status(404)
-        .json({ message: "Trip not found or not running." });
-
+      where: { id: bookingId, driverId: req.user!.id, status: 'IN_PROGRESS' },
+    })
+    if (!booking) return res.status(404).json({message: "Trip not found or not running."});
+    
     const updated = await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: "COMPLETED" },
+      where: {id: bookingId },
+      data: {status: 'COMPLETED'},
     });
 
     await prisma.driverProfile.update({
       where: { userId: req.user!.id },
-      data: { isAvailable: true, onlineStatus: 'ONLINE' },
+      data: { isAvailable: true },
     });
 
-    getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
+    getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
 
     await createNotification(
-      booking.customerId,
-      "Trip completed",
-      "Your driver has completed the trip. Thank you for rideing with us!",
-      "TRIP_COMPLETED",
-      bookingId,
-    );
-    res.json({ message: "Trip ended successfully", booking: updated });
+      booking.customerId, 'Trip completed', 'Your driver has completed the trip. Thank you for rideing with us!', 'TRIP_COMPLETED', bookingId
+    )
+    res.json({message: "Trip ended successfully", booking: updated});
   } catch (error) {
-    res;
+    res
   }
 };

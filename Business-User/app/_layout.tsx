@@ -16,7 +16,6 @@ import { BookingProvider } from "@/context/BookingContext";
 import { ScheduleProvider } from "@/context/ScheduleContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
-import { GlobalSocketAlerts } from "@/src/ui/GlobalSocketAlerts";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -63,7 +62,6 @@ function RootLayoutNav() {
     <GestureHandlerRootView>
       <ScheduleProvider>
         <BookingProvider>
-          <GlobalSocketAlerts />
           <AuthProvider>
             <ThemeProvider
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}

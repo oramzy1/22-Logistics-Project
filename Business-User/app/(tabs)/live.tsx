@@ -67,6 +67,7 @@ useBookingSocket({
   onBookingUpdated: (updatedBooking) => {
     patchBooking(updatedBooking);
     
+    // Alert user when driver status changes to IN_PROGRESS (arrived + started)
     const current = activeBookings.find(b => b.id === updatedBooking.id);
     if (current?.status === 'ACCEPTED' && updatedBooking.status === 'IN_PROGRESS') {
       Alert.alert(
