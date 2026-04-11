@@ -500,6 +500,35 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    const aggregate = await prisma.driverReview.aggregate({
+    where: { driverId: booking.driverId! },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+
+    const totalCompleted = await prisma.booking.count({
+    where: { driverId: booking.driverId!, status: 'COMPLETED' },
+  });
+  const totalAccepted = await prisma.booking.count({
+    where: { driverId: booking.driverId!, status: { in: ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'] } },
+  });
+  const totalRequests = await prisma.booking.count({
+    where: { driverId: booking.driverId! },
+  });
+
+  await prisma.driverProfile.update({
+    where: { userId: booking.driverId! },
+    data: {
+      // Store computed values so home tab reads them directly
+      acceptanceRate: totalRequests > 0
+        ? Math.round((totalAccepted / totalRequests) * 100)
+        : 0,
+      totalTrips: totalCompleted,
+      // Add rating field to schema if not present — see note below
+    },
+  });
+
+
     res.json({ message: "Driver rated", review });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -538,8 +567,10 @@ export const cancelBookingWithReason = async (
         data: { isAvailable: true },
       });
       getIO().to(`user:${booking.driverId}`).emit("booking:updated", updated);
+      getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
     } else {
       getIO().to(`drivers:available`).emit("ride:removed", booking.id);
+      getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
     }
 
     await createNotification(

@@ -168,6 +168,7 @@ model DriverProfile {
 
   workingHours      String? @default("8:00 AM - 5:00 PM")
   onlineStatus      String  @default("OFFLINE") // "ONLINE", "AWAY", "OFFLINE"
+  rating            Float   @default(5.0)
 
   rideRequests      RideRequest[]
 }

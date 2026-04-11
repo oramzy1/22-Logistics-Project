@@ -1,5 +1,7 @@
 import apiClient from './api';
 
+const ignoredRideIds = new Set<string>();
+
 export const DriverService = {
   register: async (data: {
     firstName: string;
@@ -46,10 +48,15 @@ export const DriverService = {
     return res.data;
   },
 
+  ignoreRide: (bookingId: string) => {
+    ignoredRideIds.add(bookingId);
+  },
   getRideRequests: async () => {
     const res = await apiClient.get('/driver/requests');
-    return res.data;
-  },
+    const all = res.data as any[];
+    // Filter out locally ignored rides
+    return all.filter((r) => !ignoredRideIds.has(r.id));
+  },  
 
   respondToRequest: async (requestId: string, action: 'ACCEPTED' | 'DECLINED') => {
     const res = await apiClient.patch(`/driver/requests/${requestId}/respond`, { action });

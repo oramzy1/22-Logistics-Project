@@ -67,11 +67,10 @@ useBookingSocket({
   onBookingUpdated: (updatedBooking) => {
     patchBooking(updatedBooking);
     
-    // Alert user when driver status changes to IN_PROGRESS (arrived + started)
     const current = activeBookings.find(b => b.id === updatedBooking.id);
     if (current?.status === 'ACCEPTED' && updatedBooking.status === 'IN_PROGRESS') {
       Alert.alert(
-        '🚗 Driver Arrived!',
+        'Driver Arrived!',
         'Your driver has arrived at the pickup location and started the trip.',
         [{ text: 'OK' }]
       );
