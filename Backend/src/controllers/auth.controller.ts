@@ -146,30 +146,8 @@ export const login = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        businessProfile: {
-          select: {
-            logoUrl: true,
-            companyName: true,
-            companyEmail: true,
-            companyAddress: true,
-            companyPhone: true,
-            adminName: true,
-            adminEmail: true,
-            department: true,
-            adminPhone: true,
-            scheduleType: true,
-            cacNumber: true,
-            id: true,
-            vehicleType: true,
-            brandModel: true,
-            plateNumber: true,
-            vehicleColor: true,
-            workingHours: true,
-            onlineStatus: true,
-            licenseImageUrl: true,
-            licenseStatus: true,
-          },
-        },
+        businessProfile: true,
+        driverProfile: true,
       },
     });
     if (!user) {
