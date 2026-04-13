@@ -63,8 +63,8 @@ function RootLayoutNav() {
     <GestureHandlerRootView>
       <ScheduleProvider>
         <BookingProvider>
-          <GlobalSocketAlerts />
           <AuthProvider>
+          <GlobalSocketAlerts />
             <ThemeProvider
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >

@@ -472,12 +472,10 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
 export const rateDriver = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params; // bookingId
-    const { rating, comment } = req.body; // rating: 1-5
+    const { rating, comment } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res
-        .status(400)
-        .json({ message: "Rating must be between 1 and 5" });
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
     }
 
     const booking = await prisma.booking.findFirst({
@@ -486,11 +484,14 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
     });
 
     if (!booking)
-      return res
-        .status(404)
-        .json({ message: "Booking not found or not completed" });
+      return res.status(404).json({ message: "Booking not found or not completed" });
     if (!booking.driverId)
       return res.status(400).json({ message: "No driver assigned" });
+
+    // Prevent duplicate reviews
+    if (booking.review) {
+      return res.status(400).json({ message: "You have already rated this trip" });
+    }
 
     const review = await prisma.driverReview.create({
       data: {
@@ -502,40 +503,45 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Recalculate average rating from ALL reviews for this driver
     const aggregate = await prisma.driverReview.aggregate({
-    where: { driverId: booking.driverId! },
-    _avg: { rating: true },
-    _count: { rating: true },
-  });
+      where: { driverId: booking.driverId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
 
     const totalCompleted = await prisma.booking.count({
-    where: { driverId: booking.driverId!, status: 'COMPLETED' },
-  });
-  const totalAccepted = await prisma.booking.count({
-    where: { driverId: booking.driverId!, status: { in: ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'] } },
-  });
-  const totalRequests = await prisma.booking.count({
-    where: { driverId: booking.driverId! },
-  });
+      where: { driverId: booking.driverId, status: "COMPLETED" },
+    });
+    const totalAccepted = await prisma.booking.count({
+      where: {
+        driverId: booking.driverId,
+        status: { in: ["ACCEPTED", "IN_PROGRESS", "COMPLETED"] },
+      },
+    });
+    const totalRequests = await prisma.booking.count({
+      where: { driverId: booking.driverId },
+    });
 
-  await prisma.driverProfile.update({
-    where: { userId: booking.driverId! },
-    data: {
-      // Store computed values so home tab reads them directly
-      acceptanceRate: totalRequests > 0
-        ? Math.round((totalAccepted / totalRequests) * 100)
-        : 0,
-      totalTrips: totalCompleted,
-      // Add rating field to schema if not present — see note below
-    },
-  });
-
+    // ✅ NOW we actually write the computed rating back to DriverProfile
+    await prisma.driverProfile.update({
+      where: { userId: booking.driverId },
+      data: {
+        rating: parseFloat((aggregate._avg.rating ?? 5.0).toFixed(2)), // ← THIS WAS MISSING
+        acceptanceRate:
+          totalRequests > 0
+            ? Math.round((totalAccepted / totalRequests) * 100)
+            : 0,
+        totalTrips: totalCompleted,
+      },
+    });
 
     res.json({ message: "Driver rated", review });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
 
 export const cancelBookingWithReason = async (
   req: AuthRequest,
