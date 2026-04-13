@@ -1,3 +1,5 @@
+// Business-User/context/BookingContext.tsx
+
 import React, {
   createContext,
   useCallback,
@@ -100,10 +102,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
  useEffect(() => {
   const { socketService } = require('../api/socket.service');
   
-  // Give socket time to connect before subscribing
-  // The subscription is idempotent — socket.io queues listeners
   const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
-    console.log('⚡ Socket booking update:', updatedBooking.id, updatedBooking.status);
+    console.log('⚡ BookingContext socket update:', updatedBooking.id, updatedBooking.status);
     setBookings((prev) => {
       const exists = prev.find((b) => b.id === updatedBooking.id);
       if (exists) {
@@ -112,15 +112,14 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       return [updatedBooking, ...prev];
     });
   });
-
-  // Also listen for ride:removed to remove from driver pool
   const unsubRemoved = socketService.onRideRemoved?.((bookingId: string) => {
-    setBookings((prev) => prev.filter((b) => b.id !== bookingId || 
-      // Keep it if it's the driver's own accepted booking
-      true  
-    ));
+    // Only remove from list if it's genuinely cancelled (not accepted by this driver)
+    setBookings((prev) => prev.filter((b) => {
+      if (b.id !== bookingId) return true;          // keep unrelated bookings
+      if (b.status === 'ACCEPTED') return true;     // keep our own accepted booking
+      return false;                                  // remove cancelled/taken ride
+    }));
   });
-
   return () => {
     if (unsubscribe) unsubscribe();
     if (unsubRemoved) unsubRemoved();
@@ -153,9 +152,15 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   }
 }, []);
 
-  const patchBooking = useCallback((updated: Booking) => {
+//   const patchBooking = useCallback((updated: Booking) => {
+//   setBookings((prev) =>
+//     prev.map((b) => (b.id === updated.id ? updated : b))
+//   );
+// }, []);
+
+const patchBooking = useCallback((updated: Booking) => {
   setBookings((prev) =>
-    prev.map((b) => (b.id === updated.id ? updated : b))
+    prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
   );
 }, []);
 

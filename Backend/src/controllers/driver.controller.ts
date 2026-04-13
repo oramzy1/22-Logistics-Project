@@ -1,3 +1,5 @@
+// backend/src/controllers/driver.controller.ts
+
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Request, Response } from "express";
@@ -490,18 +492,36 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
         .status(404)
         .json({ message: "Booking not found or not accepted" });
 
-    const updated = await prisma.booking.update({
+   const updated = await prisma.booking.update({
       where: { id: bookingId },
       data: { status: "IN_PROGRESS" },
+      include: {
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            driverProfile: {
+              select: {
+                brandModel: true,
+                vehicleColor: true,
+                plateNumber: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Notify customer
-    getIO()
+      getIO()
       .to(`user:${booking.customerId}`)
-      .emit("booking:updated", {
-        bookingId,
-        ...updated,
-      });
+      .emit("booking:updated", updated);
+    // Also log for debugging
+    console.log(`🚗 startTrip emitted booking:updated to user:${booking.customerId}`, {
+      bookingId,
+      status: updated.status,
+    });
 
     await createNotification(
       booking.customerId,
@@ -648,6 +668,18 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
     const updated = await prisma.booking.update({
       where: { id: bookingId },
       data: { status: "COMPLETED" },
+      include: {
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            driverProfile: {
+              select: { brandModel: true, vehicleColor: true, plateNumber: true },
+            },
+          },
+        },
+      },
     });
 
     await prisma.driverProfile.update({
@@ -655,6 +687,9 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
       data: { isAvailable: true, onlineStatus: 'ONLINE' },
     });
 
+    console.log(`✅ endTrip: emitting booking:updated to user:${booking.customerId}`, {
+      bookingId, status: updated.status,
+    });
     getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
 
     await createNotification(

@@ -1,4 +1,6 @@
-import React, { useState, useCallback } from "react";
+// Driver/app/(tabs)/active-trip.tsx
+
+import React, { useState, useCallback, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Phone, MapPin } from "lucide-react-native";
@@ -12,33 +14,44 @@ import { useRouter } from "expo-router";
 export default function ActiveTripScreen() {
   const [activeTrip, setActiveTrip] = useState<any>(null);
   const router = useRouter();
+  const activeTripRef = useRef<any>(null);
 
-
-  useBookingSocket({
-  onBookingUpdated: (updated) => {
-    if (!activeTrip || updated.id !== activeTrip.id) return;
-    
-    if (updated.status === 'CANCELLED') {
-      setActiveTrip(null); // ✅ customer cancelled — clear active trip
-      return;
-    }
-    if (updated.status === 'COMPLETED') {
-      setActiveTrip(null);
-      router.push('/(tabs)/history'); // ✅ trip ended — go to history
-      return;
-    }
-    setActiveTrip(updated); // ✅ status update (ACCEPTED → IN_PROGRESS etc)
-  },
-});
+  const updateActiveTrip = (trip: any) => {
+  activeTripRef.current = trip;
+  setActiveTrip(trip);
+};
 
   const fetchActiveTrip = async () => {
     try {
       const trip = await DriverService.getActiveTrip();
-      setActiveTrip(trip);
+      updateActiveTrip(trip);
     } catch (error) {
       console.log("No active trip");
     }
   };
+
+
+
+  useBookingSocket({
+  onBookingUpdated: (updated) => {
+    const current = activeTripRef.current;
+    if (!current || updated.id !== current.id) return;
+    
+
+    if (updated.status === 'CANCELLED') {
+      updateActiveTrip(null); // ✅ customer cancelled — clear active trip
+      return;
+    }
+    if (updated.status === 'COMPLETED') {
+      updateActiveTrip(null);
+      router.push('/(tabs)/history'); // ✅ trip ended — go to history
+      return;
+    }
+    updateActiveTrip(updated); // ✅ status update (ACCEPTED → IN_PROGRESS etc)
+  },
+});
+
+
 
   useFocusEffect(
     useCallback(() => {

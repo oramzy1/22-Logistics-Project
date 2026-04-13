@@ -1,3 +1,5 @@
+// Driver/hooks/useBookingSocket.ts
+
 import { useEffect, useRef } from 'react';
 import { socketService } from '@/api/socket.service';
 import { useAuth } from '@/context/AuthContext';
@@ -14,19 +16,18 @@ export function useBookingSocket(options: BookingSocketOptions) {
   optionsRef.current = options; // always latest without re-subscribing
 
   useEffect(() => {
-  if (!user?.id) return;
+    if (!user?.id) return;
 
-  const driverProfileId = (user as any)?.driverProfile?.id;
+    const driverProfileId = (user as any)?.driverProfile?.id;
 
-  if (driverProfileId) {
-    socketService.connect(user.id, driverProfileId);
-  } else {
-    socketService.connect(user.id, '');
-  }
+    // Connect — idempotent, won't reconnect if already connected
+    if (driverProfileId) {
+      socketService.connect(user.id, driverProfileId);
+    } else {
+      socketService.connect(user.id, '');
+    }
 
-  // Small delay to ensure socket handshake completes before subscribing
-  // This is only needed the very first time — subsequent calls are instant
-  const timeout = setTimeout(() => {
+    // Subscribe — each returns an unsubscribe fn
     const unsubs: (() => void)[] = [];
 
     if (optionsRef.current.onBookingUpdated) {
@@ -45,13 +46,6 @@ export function useBookingSocket(options: BookingSocketOptions) {
       );
     }
 
-    // Store unsubs for cleanup
-    (timeout as any)._unsubs = unsubs;
-  }, 100);
-
-  return () => {
-    clearTimeout(timeout);
-    ((timeout as any)._unsubs ?? []).forEach((fn: () => void) => fn());
-  };
-}, [user?.id]);
+    return () => unsubs.forEach((fn) => fn());
+  }, [user?.id]);
 }

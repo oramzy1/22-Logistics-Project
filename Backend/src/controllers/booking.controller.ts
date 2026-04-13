@@ -1,3 +1,5 @@
+// backend/src/controllers/booking.controller.ts
+
 import crypto from "crypto";
 import { Response } from "express";
 import { createNotification } from "../lib/notifications";
