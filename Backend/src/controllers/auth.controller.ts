@@ -159,6 +159,15 @@ export const login = async (req: Request, res: Response) => {
             adminPhone: true,
             scheduleType: true,
             cacNumber: true,
+            id: true,
+            vehicleType: true,
+            brandModel: true,
+            plateNumber: true,
+            vehicleColor: true,
+            workingHours: true,
+            onlineStatus: true,
+            licenseImageUrl: true,
+            licenseStatus: true,
           },
         },
       },
@@ -198,9 +207,12 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         role: user.role,
         avatarUrl: user.avatarUrl ?? null,
+        isActive: user.isActive,
+        isVerified: user.isVerified,
         businessProfile: user.businessProfile
           ? { logoUrl: user.businessProfile.logoUrl ?? null }
           : null,
+        driverProfile: user.driverProfile ?? null,
       },
     });
   } catch (error) {

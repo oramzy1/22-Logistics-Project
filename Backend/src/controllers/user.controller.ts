@@ -31,6 +31,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         },
         driverProfile: {
           select: {
+            id: true,
             vehicleType: true,
             brandModel: true,
             plateNumber: true,

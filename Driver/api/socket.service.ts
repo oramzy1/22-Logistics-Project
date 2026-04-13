@@ -87,8 +87,9 @@ class SocketService {
 
   connect(userId: string, driverProfileId: string) {
     this.userId = userId;
+    if (driverProfileId) {
     this.driverProfileId = driverProfileId;
-
+  }
     // If already connected with same identity, skip
     if (this.socket?.connected) {
       // Re-emit join rooms in case server restarted (rooms wiped)
