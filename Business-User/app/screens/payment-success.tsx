@@ -7,6 +7,7 @@ import { Text } from '../../components/AppText';
 import { useBookings } from '@/context/BookingContext';
 import LottieView from "lottie-react-native";
 import { colors, radius, spacing, text } from '@/src/ui/theme';
+import { Image } from 'expo-image';
 
 function SuccessBadge() {
   return (
@@ -149,7 +150,7 @@ useEffect(() => {
 
         <View style={styles.driverBanner}>
           <Text style={styles.driverBannerText}>Driver Pending Assignment..</Text>
-          <Text style={{ fontSize: 22 }}>🚗</Text>
+           <Image source={require('../../assets/images/car.png')} style={{  width: 40, height: 40 }} />
         </View>
 
         <TouchableOpacity

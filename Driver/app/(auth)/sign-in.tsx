@@ -23,6 +23,7 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { showToast } from "../utils/toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -41,6 +42,9 @@ export default function SignInScreen() {
 
   const emailErrorColor = useSharedValue(0);
   const passwordErrorColor = useSharedValue(0);
+
+  const hasLaunched = AsyncStorage.getItem("hasLaunched");
+
 
   const triggerError = (field: "email" | "password") => {
     const shake = field === "email" ? emailShake : passwordShake;
@@ -69,6 +73,9 @@ export default function SignInScreen() {
       const data = await AuthService.login({ email, password });
       await setAuthData(data.token, data.user);
       await refreshUser();
+     if (!hasLaunched){
+       await AsyncStorage.setItem("hasLaunched", "true");
+     };
       showToast.success("Login Successful", "Welcome back!");
       setTimeout(() => {
         router.replace("/(tabs)");
@@ -239,7 +246,7 @@ export default function SignInScreen() {
 
           <TouchableOpacity
             style={styles.footerLink}
-            onPress={() => router.push("/(auth)/register-individual")}
+            onPress={() => router.push("/(auth)/register")}
           >
             <Text style={styles.footerText}>
               Don't Have an account{" "}

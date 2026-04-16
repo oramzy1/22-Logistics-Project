@@ -34,11 +34,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STEPS = [
   "Personal Info",
   "License Upload",
-  "Sign Up Set Up",
+  "Password Set Up",
 ];
 
 export default function RegisterDriverScreen() {
@@ -67,6 +68,8 @@ export default function RegisterDriverScreen() {
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const hasLaunched = AsyncStorage.getItem("hasLaunched");
+
 
   // Progress Line Animation
   // Assuming 3 gaps, currentStep goes 0, 1, 2, 3
@@ -145,6 +148,9 @@ export default function RegisterDriverScreen() {
       }
 
       const data = await AuthService.registerDriver(formData);
+       if (!hasLaunched){
+       await AsyncStorage.setItem("hasLaunched", "true");
+     };
       router.push({
         pathname: "/(auth)/verify",
         params: { email: data.email },
@@ -218,8 +224,8 @@ export default function RegisterDriverScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <Text style={styles.title}>
-              {currentStep === 0 && "Tell us about your Business"}
-              {currentStep === 1 && "Set Up your Admin account"}
+              {currentStep === 0 && "Tell us about yourself"}
+              {currentStep === 1 && "Set Up your account"}
               {currentStep === 2 && "Set a secure password"}
             </Text>
           </View>

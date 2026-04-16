@@ -3,6 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { Appearance, StatusBar } from 'react-native';
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -56,10 +57,15 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme(); 
+  const isDark = colorScheme === 'dark';
 
   return (
     <GestureHandlerRootView>
+       <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={isDark ? '#060F18' : '#0B1B2B'}
+      />
       <ScheduleProvider>
         <BookingProvider>
           <AuthProvider>

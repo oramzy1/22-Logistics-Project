@@ -1,4 +1,4 @@
-// Driver/app/(tabs)/index.tsx  
+// Driver/app/(tabs)/index.tsx
 
 import React, { useState, useCallback } from "react";
 import {
@@ -24,6 +24,7 @@ import {
   X,
   Check,
   Car,
+  CarFront,
 } from "lucide-react-native";
 import { DriverService } from "@/api/driver.service";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +35,12 @@ import { Text } from "../../components/AppText";
 import { HomeSkeleton } from "@/src/ui/skeletons/HomeSkeleton";
 import { colors, spacing } from "@/src/ui/theme";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
+import EmptyState from "@/src/ui/EmptyState";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+import {
+  ProfileCompletionCard,
+  isProfileComplete,
+} from "@/src/ui/ProfileCompletionCard";
 
 export default function HomeTabScreen() {
   const [isOnline, setIsOnline] = useState(false);
@@ -50,6 +57,8 @@ export default function HomeTabScreen() {
   });
   const [isOnTrip, setIsOnTrip] = useState(false);
   const { user, isLoading, updateUser, signOut } = useAuth();
+  const { isDark, colors: themeColors } = useAppTheme();
+  const profileComplete = isProfileComplete(user);
 
   useBookingSocket({
     onNewRideRequest: (data) => {
@@ -89,7 +98,7 @@ export default function HomeTabScreen() {
       const hours = Math.floor(totalMinutes / 60);
       const minutes = Math.floor(totalMinutes % 60);
 
-       setStats({
+      setStats({
         totalTrips: profile.totalTrips ?? 0,
         hours: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
         rating: profile.rating ?? 5.0,
@@ -115,7 +124,15 @@ export default function HomeTabScreen() {
       fetchData();
     }, []),
   );
+
   const toggleStatus = async (value: boolean) => {
+    if (value && !profileComplete) {
+      Alert.alert(
+        "Profile Incomplete",
+        "Please complete your profile setup before going online.",
+      );
+      return;
+    }
     const newStatus = value ? "ONLINE" : "OFFLINE";
     try {
       await DriverService.setOnlineStatus(newStatus);
@@ -150,7 +167,10 @@ export default function HomeTabScreen() {
   }
 
   return (
-    <SafeAreaView edges={["top"]} style={[{ flex: 1 }, styles.origin]}>
+    <SafeAreaView
+      edges={["top"]}
+      style={[{ flex: 1 }, { backgroundColor: themeColors.navy }]}
+    >
       <View style={styles.root}>
         <View style={styles.top}>
           <AppHeader
@@ -169,7 +189,10 @@ export default function HomeTabScreen() {
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            { backgroundColor: themeColors.background },
+          ]}
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={fetchData} />
           }
@@ -193,11 +216,13 @@ export default function HomeTabScreen() {
                   Availability Status ({isOnline ? "Online" : "Offline"})
                 </Text>
               </View>
+
               <Switch
                 value={isOnline}
                 onValueChange={toggleStatus}
                 trackColor={{ false: "#D1D5DB", true: "#FFF" }}
                 thumbColor={isOnline ? "#0B1B2B" : "#FFF"}
+                disabled={!profileComplete && !isOnline}
               />
             </View>
             <Text style={styles.statusSubtitle}>
@@ -214,7 +239,11 @@ export default function HomeTabScreen() {
             </Text>
           </View>
 
-          {!isOnline && (
+{!profileComplete && (
+  <ProfileCompletionCard user={user} isDark={isDark} />
+)}
+
+          {(!isOnline && profileComplete) && (
             <View
               style={{
                 backgroundColor: "#FFF",
@@ -312,12 +341,6 @@ export default function HomeTabScreen() {
                           <Text style={styles.rideCardHeaderText}>
                             New Ride Request
                           </Text>
-                          <Text style={styles.rideCardHeaderSub}>
-                            {"\n"}Respond within 30 seconds
-                          </Text>
-                        </View>
-                        <View style={styles.rideTimerBadge}>
-                          <Text style={styles.rideTimerText}>00:30</Text>
                         </View>
                       </View>
 
@@ -397,6 +420,13 @@ export default function HomeTabScreen() {
                             </Text>
                           </View>
                         </View>
+
+                         <View style={styles.rideMetaCol}>
+                            <Text style={styles.rideMetaLabel}>Add Ons</Text>
+                            <Text style={styles.rideMetaValue}>
+                             {req.addOns?.join(", ")}
+                            </Text>
+                          </View>
 
                         {/* Scheduled date + duration */}
                         <View style={styles.rideFooterRow}>
@@ -532,16 +562,11 @@ export default function HomeTabScreen() {
               </TouchableOpacity>
             </View>
             {history.length === 0 ? (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconCircle}>
-                  <Car size={30} color="#D1D5DB" />
-                </View>
-                <Text style={styles.emptyTitle}>No Trip History Yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Your completed trips will appear here once you've scheduled
-                  and finished a trip.
-                </Text>
-              </View>
+              <EmptyState
+                Icon={CarFront}
+                title="No Trip History"
+                subtitle="Your completed trips will appear here once you've scheduled and finished a trip."
+              />
             ) : (
               history.map((trip) => {
                 const isCompleted = trip.status === "COMPLETED";
@@ -589,7 +614,7 @@ export default function HomeTabScreen() {
                           />
                         )}
                         <Text style={styles.historyId}>
-                          Trip #{trip.id?.slice(0, 8)}
+                          Trip #{trip.trackingId}
                         </Text>
                         <Text style={styles.historyMeta}>
                           , {tripDate}, {tripTime}
@@ -672,7 +697,7 @@ const styles = StyleSheet.create({
   origin: { backgroundColor: colors.navy },
   root: { backgroundColor: colors.background, height: "100%" },
   top: { backgroundColor: colors.navy, paddingBottom: spacing.md },
-  content: { padding: spacing.lg, paddingBottom: 40 },
+  // content: { padding: spacing.lg, paddingBottom: 40 },
 
   content: {
     backgroundColor: "#FFF",
@@ -843,29 +868,6 @@ const styles = StyleSheet.create({
   footerSub: { fontSize: 11, color: "#6B7280" },
 
   // Empty state (replaces the inline styles)
-  emptyState: { alignItems: "center", paddingVertical: 40 },
-  emptyIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 15,
-  },
-  emptyTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#374151",
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    textAlign: "center",
-    paddingHorizontal: 20,
-    lineHeight: 18,
-  },
   rideCard: {
     width: 300,
     backgroundColor: "#FFF",
@@ -892,7 +894,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "flex-start",
+    alignItems: "center",
+
   },
   rideCardHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
   rideCardHeaderSub: {

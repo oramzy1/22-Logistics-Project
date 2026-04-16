@@ -239,7 +239,7 @@ export default function SignInScreen() {
 
           <TouchableOpacity
             style={styles.footerLink}
-            onPress={() => router.push("/(auth)/register-individual")}
+            onPress={() => router.push("/(auth)/register-business")}
           >
             <Text style={styles.footerText}>
               Don't Have an account{" "}

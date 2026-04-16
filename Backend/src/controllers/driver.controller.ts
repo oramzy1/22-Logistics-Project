@@ -345,7 +345,7 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
     const profile = await prisma.driverProfile.findUnique({
       where: { userId: req.user!.id },
       include: { user: { select: { name: true } } },
-    });
+    }); 
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 
     // If they decline, we don't modify the database. We just let them ignore it on the frontend so other drivers can still see it.

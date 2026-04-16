@@ -77,7 +77,7 @@ export default function OnboardingScreen() {
       scrollRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      router.push("/(auth)/account-type");
+      router.push("/(auth)/register");
       AsyncStorage.setItem("hasLaunched", "true").catch((e) =>
         console.error("Error setting launch flag", e),
       );
@@ -103,7 +103,7 @@ export default function OnboardingScreen() {
             style={styles.skipButton}
             onPress={async () => {
               await AsyncStorage.setItem("hasLaunched", "true");
-              router.push("/(auth)/account-type");
+              router.push("/(auth)/register");
             }}
           >
             <Text style={styles.skipText}>Skip</Text>

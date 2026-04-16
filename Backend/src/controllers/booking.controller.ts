@@ -31,7 +31,6 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       duration,
       notes,
       totalAmount: clientTotal,
-      // -- NEW PARAMS --
       pickupDate,
       pickupTime,
       outsidePH,
@@ -42,9 +41,11 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
     const customer = await prisma.user.findUnique({
       where: { id: customerId },
-      select: { email: true, name: true },
+      select: { email: true, name: true, role: true },
     });
     if (!customer) return res.status(404).json({ message: "User not found" });
+
+    const rideType = customer.role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL";
 
     // ── INTERSTATE PRICE EVALUATION ──
     let finalAmount = 0;
@@ -115,6 +116,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         pickupTime,
         outsidePH: outsidePH || false,
         addOns: addOns || [],
+        rideType,
       },
     });
 
@@ -451,7 +453,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
         data: { isAvailable: true },
       });
       const { getIO } = require("../lib/socket");
-      getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated); 
+      getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
       getIO().to(`user:${booking.driverId}`).emit("booking:updated", updated);
     }
 
@@ -475,7 +477,9 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
     const { rating, comment } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
     }
 
     const booking = await prisma.booking.findFirst({
@@ -484,13 +488,17 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
     });
 
     if (!booking)
-      return res.status(404).json({ message: "Booking not found or not completed" });
+      return res
+        .status(404)
+        .json({ message: "Booking not found or not completed" });
     if (!booking.driverId)
       return res.status(400).json({ message: "No driver assigned" });
 
     // Prevent duplicate reviews
     if (booking.review) {
-      return res.status(400).json({ message: "You have already rated this trip" });
+      return res
+        .status(400)
+        .json({ message: "You have already rated this trip" });
     }
 
     const review = await prisma.driverReview.create({
@@ -542,7 +550,6 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 export const cancelBookingWithReason = async (
   req: AuthRequest,
   res: Response,
@@ -575,10 +582,10 @@ export const cancelBookingWithReason = async (
         data: { isAvailable: true },
       });
       getIO().to(`user:${booking.driverId}`).emit("booking:updated", updated);
-      getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
+      getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
     } else {
       getIO().to(`drivers:available`).emit("ride:removed", booking.id);
-      getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
+      getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
     }
 
     await createNotification(

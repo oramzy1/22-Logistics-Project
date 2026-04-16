@@ -10,6 +10,13 @@ import {
   View,
 } from "react-native";
 import { Text } from "../../components/AppText";
+import { LocationInput } from "@/src/ui/LocationInput";
+import { OutOfLGAModal } from "@/src/ui/OutOfLGAModal";
+import {
+  INTERSTATE_STATES,
+  PH_LGAS,
+  OUT_OF_LGA_FEE,
+} from "@/src/utils/nigeriaLocations";
 
 import { useAuth } from "@/context/AuthContext";
 import { useBookings } from "@/context/BookingContext";
@@ -47,8 +54,8 @@ export default function ScheduleTabScreen() {
   const { selectedPackage, setSelectedPackage } = useSchedule();
   const [extrasEnabled, setExtrasEnabled] = useState(true);
   const { isBusiness } = useAuth();
-  const [pickupLocation, setPickupLocation] = useState("");
-  const [dropoffLocation, setDropoffLocation] = useState("");
+  // const [pickupLocation, setPickupLocation] = useState("");
+  // const [dropoffLocation, setDropoffLocation] = useState("");
   const [scheduleDateTime, setScheduleDateTime] = useState<Date | null>(null);
   const [pickupDate, setPickupDate] = useState<Date | null>(null);
   const [pickupTime, setPickupTime] = useState<Date | null>(null);
@@ -65,6 +72,13 @@ export default function ScheduleTabScreen() {
     airportRide: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pickupStreet, setPickupStreet] = useState("");
+  const [pickupLGA, setPickupLGA] = useState("");
+  const [dropoffStreet, setDropoffStreet] = useState("");
+  const [dropoffLGA, setDropoffLGA] = useState("");
+  const [outOfLGATarget, setOutOfLGATarget] = useState<
+    "pickup" | "dropoff" | null
+  >(null);
 
   const { createBooking } = useBookings();
   const router = useRouter();
@@ -78,8 +92,56 @@ export default function ScheduleTabScreen() {
     return match ? parseInt(match[1].replace(/,/g, ""), 10) : 0;
   };
 
+  // const total = useMemo(() => {
+  //   // Demo calculation only.
+  //   const base =
+  //     pkg === "3h"
+  //       ? 24000
+  //       : pkg === "6h"
+  //         ? 34000
+  //         : pkg === "10h"
+  //           ? 54000
+  //           : 80000;
+  //   const add = (k: keyof typeof extras, amount: number) =>
+  //     extrasEnabled && extras[k] ? amount : 0;
+
+  //   const interstatePrice = interstateLocation?.price || 0;
+
+  //   return (
+  //     base +
+  //     interstatePrice +
+  //     add("babySeat", 2000) +
+  //     add("extraLuggage", 2000) +
+  //     add("wifi", 4000) +
+  //     add("coldWater", 2000) +
+  //     add("airportRide", 2000)
+  //   );
+  // }, [extras, extrasEnabled, pkg, interstateLocation]);
+
+  // Computed — concatenates into the string the backend already expects, no schema change
+  const pickupLocation = [
+    pickupStreet.trim(),
+    pickupLGA && `${pickupLGA} LGA`,
+    "Rivers State",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const dropoffLocation = interstateLocation
+    ? [dropoffStreet.trim(), `${interstateLocation.label} State`]
+        .filter(Boolean)
+        .join(", ")
+    : [dropoffStreet.trim(), dropoffLGA && `${dropoffLGA} LGA`, "Rivers State"]
+        .filter(Boolean)
+        .join(", ");
+
+  const handleLGASelect = (which: "pickup" | "dropoff", lga: string) => {
+    if (which === "pickup") setPickupLGA(lga);
+    else setDropoffLGA(lga);
+    if (!PH_LGAS.includes(lga)) setOutOfLGATarget(which); // trigger modal
+  };
+
   const total = useMemo(() => {
-    // Demo calculation only.
     const base =
       pkg === "3h"
         ? 24000
@@ -90,36 +152,58 @@ export default function ScheduleTabScreen() {
             : 80000;
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
-
     const interstatePrice = interstateLocation?.price || 0;
+    // ₦3k if pickup is outside PH; ₦3k if dropoff is outside PH (only for within-Rivers trips)
+    const outOfLGAFee =
+      (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
+      (!interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA)
+        ? OUT_OF_LGA_FEE
+        : 0);
 
     return (
       base +
       interstatePrice +
+      outOfLGAFee +
       add("babySeat", 2000) +
       add("extraLuggage", 2000) +
       add("wifi", 4000) +
       add("coldWater", 2000) +
       add("airportRide", 2000)
     );
-  }, [extras, extrasEnabled, pkg, interstateLocation]);
+  }, [extras, extrasEnabled, pkg, interstateLocation, pickupLGA, dropoffLGA]);
 
   const totalLabel = `₦${total.toLocaleString()}`;
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
 
   const handleSchedule = async () => {
-    if (!pickupLocation.trim()) {
+    // if (!pickupLocation.trim()) {
+    //   return Alert.alert(
+    //     "Missing field",
+    //     "Please enter your pick-up location.",
+    //   );
+    // }
+    // if (!dropoffLocation.trim()) {
+    //   return Alert.alert(
+    //     "Missing field",
+    //     "Please enter your drop-off location.",
+    //   );
+    // }
+
+    if (!pickupStreet.trim())
       return Alert.alert(
         "Missing field",
-        "Please enter your pick-up location.",
+        "Please enter your pick-up street address.",
       );
-    }
-    if (!dropoffLocation.trim()) {
+    if (!pickupLGA)
+      return Alert.alert("Missing field", "Please select your pick-up LGA.");
+    if (!dropoffStreet.trim())
       return Alert.alert(
         "Missing field",
-        "Please enter your drop-off location.",
+        "Please enter your drop-off street address.",
       );
-    }
+    if (!interstateLocation && !dropoffLGA)
+      return Alert.alert("Missing field", "Please select your drop-off LGA.");
+
     // if (!scheduleDateTime) {
     //   return Alert.alert("Missing field", "Please select a schedule date.");
     // }
@@ -178,15 +262,31 @@ export default function ScheduleTabScreen() {
           selectedPackage === "multi" ? "Multi-Day" : timeSlot || undefined,
         pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
         pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
+        outsidePH:
+          !!interstateLocation ||
+          (!!pickupLGA && !PH_LGAS.includes(pickupLGA)) ||
+          (!interstateLocation &&
+            !!dropoffLGA &&
+            !PH_LGAS.includes(dropoffLGA)),
         addOns: addOnsList,
         scheduledAt: combinedPickup.toISOString(),
         pickupAt: combinedPickup.toISOString(),
         packageType: packageTypeMap[pkg],
         totalAmount: total,
         notes:
-          isBusiness && interstateLocation
-            ? `Interstate: ${interstateLocation}`
-            : undefined,
+          [
+            interstateLocation
+              ? `Interstate: ${interstateLocation.label}`
+              : null,
+            pickupLGA && !PH_LGAS.includes(pickupLGA)
+              ? `Pickup outside PH (${pickupLGA} LGA)`
+              : null,
+            !interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA)
+              ? `Dropoff outside PH (${dropoffLGA} LGA)`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" | ") || undefined,
       };
 
       const { payment, booking } = await createBooking(payload);
@@ -205,6 +305,14 @@ export default function ScheduleTabScreen() {
           authorizationUrl: payment.authorizationUrl,
           reference: payment.reference,
           addOns: addOnsList,
+          outOfLGAFee: String(
+            (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
+              (!interstateLocation &&
+              dropoffLGA &&
+              !PH_LGAS.includes(dropoffLGA)
+                ? OUT_OF_LGA_FEE
+                : 0),
+          ),
           pickupDate: pickupDate
             ? pickupDate.toISOString().split("T")[0]
             : undefined,
@@ -233,6 +341,7 @@ export default function ScheduleTabScreen() {
   };
 
   const isAirportSchedule = selectedPackage === "airport";
+  const isMultiSchedule = selectedPackage === "multi";
 
   // if (isSubmitting) return <ScheduleSkeleton />;
 
@@ -271,21 +380,13 @@ export default function ScheduleTabScreen() {
             ) : (
               <Text style={styles.h2}>Trip Details Form ({selectedTitle})</Text>
             ))}
-          {(isBusiness || isAirportSchedule) && (
+          {(isBusiness || isAirportSchedule || isMultiSchedule) && (
             <DropdownInput
               label="Select Interstate Location (outside Rivers State)"
               placeholder="Choose your destination"
               value={interstateLocation}
               onSelect={setInterstateLocation}
-              options={[
-                { label: "Owerri", price: 27000 },
-                { label: "Aba", price: 27000 },
-                { label: "Umuahia", price: 27000 },
-                { label: "Ughelli", price: 32000 },
-                { label: "Warri", price: 32000 },
-                { label: "Enugu", price: 42000 },
-                { label: "Abuja", price: 52000 },
-              ]}
+              options={INTERSTATE_STATES}
             />
           )}
           {/* <DateTimePickerInput
@@ -328,7 +429,7 @@ export default function ScheduleTabScreen() {
             placeholder="Select Time"
             icon={<Clock size={18} color="#9CA3AF" />}
           />
-          <FormInput
+          {/* <FormInput
             label={`${isAirportSchedule ? "Airport" : ""} Pick-up Location`}
             placeholder="Input your pick up location"
             value={pickupLocation}
@@ -341,7 +442,39 @@ export default function ScheduleTabScreen() {
             value={dropoffLocation}
             onChangeText={setDropoffLocation}
             leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+          /> */}
+
+          {/* Pickup — always Rivers State LGA */}
+          <LocationInput
+            label={`${isAirportSchedule ? "Airport " : ""}Pick-up Location`}
+            placeholder="Enter street / area name"
+            leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+            street={pickupStreet}
+            lga={pickupLGA}
+            onStreetChange={setPickupStreet}
+            onLGASelect={(lga) => handleLGASelect("pickup", lga)}
           />
+
+          {/* Dropoff — LGA picker only when staying within Rivers State */}
+          {interstateLocation ? (
+            <FormInput
+              label={`${isAirportSchedule ? "Airport " : ""}Drop-off Location`}
+              placeholder={`Enter address in ${interstateLocation.label}`}
+              value={dropoffStreet}
+              onChangeText={setDropoffStreet}
+              leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+            />
+          ) : (
+            <LocationInput
+              label={`${isAirportSchedule ? "Airport " : ""}Drop-off Location`}
+              placeholder="Enter street / area name"
+              leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+              street={dropoffStreet}
+              lga={dropoffLGA}
+              onStreetChange={setDropoffStreet}
+              onLGASelect={(lga) => handleLGASelect("dropoff", lga)}
+            />
+          )}
           <InfoBanner
             variant="warning"
             text="Note: you are responsible for fueling the vehicle during your trip."
@@ -407,6 +540,16 @@ export default function ScheduleTabScreen() {
           <TouchableOpacity style={{ height: 12 }} activeOpacity={1} />
         </ScrollView>
       </View>
+      <OutOfLGAModal
+        visible={!!outOfLGATarget}
+        lgaName={outOfLGATarget === "pickup" ? pickupLGA : dropoffLGA}
+        onContinue={() => setOutOfLGATarget(null)}
+        onChangeDestination={() => {
+          if (outOfLGATarget === "pickup") setPickupLGA("");
+          else setDropoffLGA("");
+          setOutOfLGATarget(null);
+        }}
+      />
     </SafeAreaView>
   );
 }

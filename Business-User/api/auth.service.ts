@@ -7,7 +7,9 @@ export const AuthService = {
   },
 
   registerBusiness: async (formData: FormData) => {
-    const response = await apiClient.post("/auth/register", formData);
+    const response = await apiClient.post("/auth/register", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
 

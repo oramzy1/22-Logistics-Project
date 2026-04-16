@@ -47,13 +47,18 @@ import {
   TouchableOpacity,
   UIManager,
   View,
-  RefreshControl
+  RefreshControl,
+  Appearance,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { showToast } from "../utils/toast";
 import { AccountSkeleton } from "@/src/ui/skeletons/AccountSkeleton";
 import { DriverService } from "@/api/driver.service";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+import {
+  isProfileComplete,
+} from "@/src/ui/ProfileCompletionCard";
 
 // Enable LayoutAnimation for Android
 if (
@@ -103,13 +108,15 @@ const AccordionItem: React.FC<any> = ({
 }: any) => {
   const [expanded, setExpanded] = useState(false);
 
+  const { isDark } = useAppTheme();
+
   const toggleAccordion = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
   };
 
   return (
-    <View style={styles.accordionWrapper}>
+    <View style={[styles.accordionWrapper, { backgroundColor: isDark ? '#1a2a3a' : '#FFF', borderColor: isDark ? '#2D3F52' : 'transparent' }]}>
       <TouchableOpacity
         style={styles.accordionHeader}
         onPress={toggleAccordion}
@@ -137,16 +144,26 @@ const AccordionItem: React.FC<any> = ({
 };
 
 export default function AccountTabScreen() {
+  const { isDark } = useAppTheme();
   const [notifications, setNotifications] = useState({
     trip: true,
     driver: true,
     payment: true,
     promos: false,
   });
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(isDark);
 
-  const { user, clearAuthData, updateUser, signOut, refreshUser, isLoading, isBusiness } = useAuth();
+  const {
+    user,
+    clearAuthData,
+    updateUser,
+    signOut,
+    refreshUser,
+    isLoading,
+    isBusiness,
+  } = useAuth();
   const router = useRouter();
+    const profileComplete = isProfileComplete(user);
   const [activeModal, setActiveModal] = useState<
     | "editProfile"
     | "changeEmail"
@@ -283,7 +300,7 @@ export default function AccountTabScreen() {
     }
   };
 
-   const handleEditVehicle = () => {
+  const handleEditVehicle = () => {
     setModalValues((v) => ({
       ...v,
       vehicleType: user?.driverProfile?.vehicleType || "",
@@ -304,16 +321,15 @@ export default function AccountTabScreen() {
   if (!user) return <AccountSkeleton />;
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.root}>
+    <SafeAreaView edges={["top"]} style={[styles.root, { backgroundColor: isDark ? '#060F18' : colors.navy }]}>
       <AppHeader title="Account" rightIcons />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { backgroundColor: isDark ? '#0B1B2B' : colors.background }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl onRefresh={refreshUser} refreshing={isLoading} />
         }
       >
-
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <TouchableOpacity
@@ -344,20 +360,34 @@ export default function AccountTabScreen() {
           <Text style={styles.contact}>{user?.phone ?? "No phone added"}</Text>
           <Text style={styles.email}>{user?.email ?? "—"}</Text>
 
-             <View style={{
-                backgroundColor: user?.driverProfile?.licenseStatus === "APPROVED" ? "#baf8e3" 
-                       : user?.driverProfile?.licenseStatus === "REJECTED" ? "#ebb9b9" 
-                       : "#f5ddb5", borderRadius: 5, marginBottom: 10
-             }}>
-              <Text style={{
-                  color: user?.driverProfile?.licenseStatus === "APPROVED" ? "#10B981" 
-                       : user?.driverProfile?.licenseStatus === "REJECTED" ? "#EF4444" 
-                       : "#F59E0B", 
-                  fontSize: 13, fontWeight: "600", padding: 3
-              }}>
-                ● {user?.driverProfile?.licenseStatus || "PENDING"}
-              </Text>
-              </View>
+          <View
+            style={{
+              backgroundColor:
+                user?.driverProfile?.licenseStatus === "APPROVED"
+                  ? "#baf8e3"
+                  : user?.driverProfile?.licenseStatus === "REJECTED"
+                    ? "#ebb9b9"
+                    : "#f5ddb5",
+              borderRadius: 5,
+              marginBottom: 10,
+            }}
+          >
+            <Text
+              style={{
+                color:
+                  user?.driverProfile?.licenseStatus === "APPROVED"
+                    ? "#10B981"
+                    : user?.driverProfile?.licenseStatus === "REJECTED"
+                      ? "#EF4444"
+                      : "#F59E0B",
+                fontSize: 13,
+                fontWeight: "600",
+                padding: 3,
+              }}
+            >
+              ● {user?.driverProfile?.licenseStatus || "PENDING"}
+            </Text>
+          </View>
 
           <TouchableOpacity
             style={styles.editProfileBtn}
@@ -394,41 +424,47 @@ export default function AccountTabScreen() {
         </AccordionItem>
 
         <AccordionItem title="VEHICLE INFORMATION" icon={Car}>
-          <ListItem 
-            icon={Car} 
+          <ListItem
+            icon={Car}
             title={`Type: ${user?.driverProfile?.vehicleType || "Not Set"}`}
             onPress={handleEditVehicle}
           />
-          <ListItem 
-            icon={Car} 
-            title={`Brand & Model: ${user?.driverProfile?.brandModel || "Not Set"}`} 
+          <ListItem
+            icon={Car}
+            title={`Brand & Model: ${user?.driverProfile?.brandModel || "Not Set"}`}
             onPress={handleEditVehicle}
           />
-          <ListItem 
-            icon={CheckCircle} 
-            title={`Plate Number: ${user?.driverProfile?.plateNumber || "Not Set"}`} 
+          <ListItem
+            icon={CheckCircle}
+            title={`Plate Number: ${user?.driverProfile?.plateNumber || "Not Set"}`}
             onPress={handleEditVehicle}
           />
-          <ListItem 
-            icon={Edit3} 
-            title={`Color: ${user?.driverProfile?.vehicleColor || "Not Set"}`} 
-            isLast 
+          <ListItem
+            icon={Edit3}
+            title={`Color: ${user?.driverProfile?.vehicleColor || "Not Set"}`}
+            isLast
             onPress={handleEditVehicle}
           />
         </AccordionItem>
         {/* DOCUMENTS */}
         <AccordionItem title="DOCUMENT INFORMATION" icon={FileText}>
-          <ListItem 
-            icon={FileText} 
-            title="Driver's License" 
+          <ListItem
+            icon={FileText}
+            title="Driver's License"
             isLast
             rightElement={
-              <Text style={{
-                  color: user?.driverProfile?.licenseStatus === "APPROVED" ? "#10B981" 
-                       : user?.driverProfile?.licenseStatus === "REJECTED" ? "#EF4444" 
-                       : "#F59E0B", 
-                  fontSize: 13, fontWeight: "600"
-              }}>
+              <Text
+                style={{
+                  color:
+                    user?.driverProfile?.licenseStatus === "APPROVED"
+                      ? "#10B981"
+                      : user?.driverProfile?.licenseStatus === "REJECTED"
+                        ? "#EF4444"
+                        : "#F59E0B",
+                  fontSize: 13,
+                  fontWeight: "600",
+                }}
+              >
                 ● {user?.driverProfile?.licenseStatus || "PENDING"}
               </Text>
             }
@@ -442,29 +478,33 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={user?.driverProfile?.onlineStatus !== "OFFLINE"}
+                disabled={user?.driverProfile?.onlineStatus === "OFFLINE" && !profileComplete}
                 onValueChange={async (v) => {
-                   const newStatus = v ? "ONLINE" : "OFFLINE";
-                   try {
-                     await DriverService.setOnlineStatus(newStatus);
-                     await updateUser({ 
-                       driverProfile: { ...user?.driverProfile, onlineStatus: newStatus } 
-                     });
-                   } catch (err) {
-                     Alert.alert("Error", "Could not update status");
-                   }
+                  const newStatus = v ? "ONLINE" : "OFFLINE";
+                  try {
+                    await DriverService.setOnlineStatus(newStatus);
+                    await updateUser({
+                      driverProfile: {
+                        ...user?.driverProfile,
+                        onlineStatus: newStatus,
+                      },
+                    });
+                  } catch (err) {
+                    Alert.alert("Error", "Could not update status");
+                  }
                 }}
                 trackColor={{ true: "#111827" }}
               />
             }
           />
-          <ListItem 
-            icon={Clock} 
-            title="Working Hours" 
+          <ListItem
+            icon={Clock}
+            title="Working Hours"
             onPress={handleEditWorkingHours}
             isLast
             rightElement={
-              <Text style={{color: "#6B7280", fontSize: 12}}>
-                 {user?.driverProfile?.workingHours || "8:00 AM - 5:00 PM"}
+              <Text style={{ color: "#6B7280", fontSize: 12 }}>
+                {user?.driverProfile?.workingHours || "8:00 AM - 5:00 PM"}
               </Text>
             }
           />
@@ -484,7 +524,7 @@ export default function AccountTabScreen() {
               />
             }
           />
-          <ListItem
+          {/* <ListItem
             icon={Car}
             title="Driver Arrival Alerts"
             rightElement={
@@ -496,8 +536,8 @@ export default function AccountTabScreen() {
                 trackColor={{ true: "#111827" }}
               />
             }
-          />
-          <ListItem
+          /> */}
+          {/* <ListItem
             icon={CheckCircle}
             title="Payment Confirmation"
             rightElement={
@@ -509,8 +549,8 @@ export default function AccountTabScreen() {
                 trackColor={{ true: "#111827" }}
               />
             }
-          />
-          <ListItem
+          /> */}
+          {/* <ListItem
             icon={Gift}
             title="Promotions"
             isLast
@@ -523,7 +563,7 @@ export default function AccountTabScreen() {
                 trackColor={{ true: "#111827" }}
               />
             }
-          />
+          /> */}
         </AccordionItem>
 
         <AccordionItem title="PREFERENCES" icon={Globe}>
@@ -535,7 +575,10 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={darkMode}
-                onValueChange={setDarkMode}
+                onValueChange={(v) => {
+                  setDarkMode(v);
+                  Appearance.setColorScheme(v ? "dark" : "light");
+                }}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -640,7 +683,6 @@ export default function AccountTabScreen() {
                           setActiveModal(null);
                           Alert.alert("Success", "Profile updated");
                         } catch (err: any) {
-
                           Alert.alert(
                             "Error",
                             err?.response?.data?.message || "Update failed",
@@ -846,40 +888,51 @@ export default function AccountTabScreen() {
                   </View>
                 </>
               )}
-                {activeModal === "editVehicle" && (
+              {activeModal === "editVehicle" && (
                 <>
                   <Text style={styles.modalTitle}>Vehicle Information</Text>
-                  
+
                   <Text style={styles.modalLabel}>Vehicle Type</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.vehicleType}
-                    onChangeText={(t) => setModalValues((v) => ({ ...v, vehicleType: t }))}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, vehicleType: t }))
+                    }
                     placeholder="e.g. Sedan, SUV, Truck"
                   />
                   <Text style={styles.modalLabel}>Brand & Model</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.brandModel}
-                    onChangeText={(t) => setModalValues((v) => ({ ...v, brandModel: t }))}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, brandModel: t }))
+                    }
                     placeholder="e.g. Toyota Camry 2022"
                   />
                   <Text style={styles.modalLabel}>Plate Number</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.plateNumber}
-                    onChangeText={(t) => setModalValues((v) => ({ ...v, plateNumber: t }))}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, plateNumber: t }))
+                    }
                     placeholder="e.g. ACCA-1784"
                   />
                   <Text style={styles.modalLabel}>Color</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.vehicleColor}
-                    onChangeText={(t) => setModalValues((v) => ({ ...v, vehicleColor: t }))}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, vehicleColor: t }))
+                    }
                     placeholder="e.g. Red, Blue, Black"
                   />
                   <View style={styles.modalButtons}>
-                    <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setActiveModal(null)}>
+                    <TouchableOpacity
+                      style={styles.modalCancelBtn}
+                      onPress={() => setActiveModal(null)}
+                    >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -899,17 +952,23 @@ export default function AccountTabScreen() {
                               brandModel: modalValues.brandModel,
                               plateNumber: modalValues.plateNumber,
                               vehicleColor: modalValues.vehicleColor,
-                            }
+                            },
                           });
                           setActiveModal(null);
                           showToast.success("Vehicle details updated");
                         } catch (err: any) {
-                           console.error('Cancel error:', JSON.stringify({
-      status: err?.response?.status,
-      data: err?.response?.data,
-      message: err?.message,
-    }));
-                          Alert.alert("Error", err?.response?.data?.message || "Update failed");
+                          console.error(
+                            "Cancel error:",
+                            JSON.stringify({
+                              status: err?.response?.status,
+                              data: err?.response?.data,
+                              message: err?.message,
+                            }),
+                          );
+                          Alert.alert(
+                            "Error",
+                            err?.response?.data?.message || "Update failed",
+                          );
                         }
                       }}
                     >
@@ -922,35 +981,51 @@ export default function AccountTabScreen() {
               {activeModal === "editWorkingHours" && (
                 <>
                   <Text style={styles.modalTitle}>Set Working Hours</Text>
-                  
+
                   <Text style={styles.modalLabel}>Available Hours</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.workingHours}
-                    onChangeText={(t) => setModalValues((v) => ({ ...v, workingHours: t }))}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, workingHours: t }))
+                    }
                     placeholder="e.g. 8:00 AM - 5:00 PM"
                   />
                   <View style={styles.modalButtons}>
-                    <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setActiveModal(null)}>
+                    <TouchableOpacity
+                      style={styles.modalCancelBtn}
+                      onPress={() => setActiveModal(null)}
+                    >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.modalSaveBtn}
                       onPress={async () => {
                         try {
-                          await DriverService.updateProfile({ workingHours: modalValues.workingHours });
+                          await DriverService.updateProfile({
+                            workingHours: modalValues.workingHours,
+                          });
                           await updateUser({
-                            driverProfile: { ...user?.driverProfile, workingHours: modalValues.workingHours }
+                            driverProfile: {
+                              ...user?.driverProfile,
+                              workingHours: modalValues.workingHours,
+                            },
                           });
                           setActiveModal(null);
                           showToast.success("Working hours updated");
                         } catch (err: any) {
-                         console.error('Cancel error:', JSON.stringify({
-      status: err?.response?.status,
-      data: err?.response?.data,
-      message: err?.message,
-    }));
-                          Alert.alert("Error", err?.response?.data?.message || "Update failed");
+                          console.error(
+                            "Cancel error:",
+                            JSON.stringify({
+                              status: err?.response?.status,
+                              data: err?.response?.data,
+                              message: err?.message,
+                            }),
+                          );
+                          Alert.alert(
+                            "Error",
+                            err?.response?.data?.message || "Update failed",
+                          );
                         }
                       }}
                     >

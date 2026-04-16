@@ -11,7 +11,7 @@ import { StatusPill } from "@/src/ui/StatusPill";
 import { colors, radius, spacing, text } from "@/src/ui/theme";
 import { Image } from "expo-image";
 
-type BookingStatus = "Successful" | "Pay Later" | "Monthly Billing";
+type BookingStatus = "Successful" | "Pay Later" | "Monthly Billing" | null;
 
 type BookingItem = {
   id: string;
@@ -92,7 +92,7 @@ export default function BookingsTabScreen() {
     const segFiltered = bookings.filter((b) => {
       if (seg === "Ongoing") return b.status === "IN_PROGRESS" ||  b.status === "ACCEPTED";
       if (seg === "Upcoming")
-        return b.status === "AWAITING_DRIVER" || b.status === "PENDING";
+        return b.status === "AWAITING_DRIVER";
       if (seg === "Completed")
         return b.status === "COMPLETED" || b.status === "CANCELLED";
       return true;
@@ -178,7 +178,7 @@ export default function BookingsTabScreen() {
                       ? "Pay Later"
                       : item.status === "COMPLETED"
                         ? "Successful"
-                        : "Monthly Billing"
+                        : null
                   }
                 />
               </View>

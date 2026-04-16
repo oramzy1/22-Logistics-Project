@@ -22,7 +22,7 @@ export default function SplashScreen() {
 
         setTimeout(() => {
           if (!hasLaunched) {
-            router.replace("/(auth)/onboarding");
+            router.replace("/(auth)/register");
           } else if (!isAuthenticated) {
             router.replace("/(auth)/sign-in");
           } else {

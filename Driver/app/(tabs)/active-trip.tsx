@@ -3,12 +3,13 @@
 import React, { useState, useCallback, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Phone, MapPin } from "lucide-react-native";
+import { Phone, MapPin, CarFront } from "lucide-react-native";
 import { DriverService } from "@/api/driver.service";
 import { useFocusEffect } from "expo-router";
 import { Text } from "../../components/AppText";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
 import { useRouter } from "expo-router";
+import EmptyState from "@/src/ui/EmptyState";
 
 
 export default function ActiveTripScreen() {
@@ -66,7 +67,7 @@ export default function ActiveTripScreen() {
       fetchActiveTrip();
     } catch (error) {
       console.log("Failed to start trip");
-    }
+    } 
   };
   const handleEndTrip = async () => {
     if (!activeTrip) return;
@@ -82,7 +83,7 @@ export default function ActiveTripScreen() {
   if (!activeTrip) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>You currently have no active trips.</Text>
+        <EmptyState Icon={CarFront} title="No Active Trips" subtitle="Your active Trips would display here as soon as you accept a trip." />
       </View>
     );
   }

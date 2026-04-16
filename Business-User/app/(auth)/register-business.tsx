@@ -93,7 +93,7 @@ export default function RegisterBusinessScreen() {
     });
     if (!result.canceled) {
       setLogoUri(result.assets[0].uri);
-    }
+    } 
   };
 
   const handleNext = async () => {
@@ -148,8 +148,9 @@ export default function RegisterBusinessScreen() {
       formData.append("cacNumber", cacNumber);
 
       if (logoUri) {
+        const safeUri = Platform.OS === "ios" ? logoUri.replace("file://", "") : logoUri;
         formData.append("logo", {
-          uri: logoUri,
+          uri: safeUri,
           type: "image/jpeg",
           name: "logo.jpg",
         } as any);
@@ -161,6 +162,7 @@ export default function RegisterBusinessScreen() {
         params: { email: data.email },
       });
     } catch (err: any) {
+      console.log(err);
       setError(
         err?.response?.data?.message ||
           "Registration failed. Please try again.",

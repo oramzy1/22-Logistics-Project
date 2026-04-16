@@ -1,0 +1,50 @@
+export const RIVERS_LGAS = [
+  'Abua/Odual', 'Ahoada East', 'Ahoada West', 'Akuku-Toru',
+  'Andoni', 'Asari-Toru', 'Bonny', 'Degema', 'Eleme', 'Emohua',
+  'Etche', 'Gokana', 'Ikwerre', 'Khana', 'Obio/Akpor',
+  'Ogba/Egbema/Ndoni', 'Ogu/Bolo', 'Okrika', 'Omuma',
+  'Opobo/Nkoro', 'Oyigbo', 'Port Harcourt', 'Tai',
+];
+
+export const PH_LGAS = ['Port Harcourt', 'Obio/Akpor'];
+export const OUT_OF_LGA_FEE = 3000;
+
+// All 36 states + FCT, excluding Rivers, priced by road distance from PH
+export const INTERSTATE_STATES: { label: string; price: number }[] = [
+  { label: 'Abia', price: 27000 },
+  { label: 'Adamawa', price: 110000 },
+  { label: 'Akwa Ibom', price: 25000 },
+  { label: 'Anambra', price: 45000 },
+  { label: 'Bauchi', price: 115000 },
+  { label: 'Bayelsa', price: 30000 },
+  { label: 'Benue', price: 75000 },
+  { label: 'Borno', price: 140000 },
+  { label: 'Cross River', price: 35000 },
+  { label: 'Delta', price: 32000 },
+  { label: 'Ebonyi', price: 48000 },
+  { label: 'Edo', price: 42000 },
+  { label: 'Ekiti', price: 65000 },
+  { label: 'Enugu', price: 42000 },
+  { label: 'FCT (Abuja)', price: 55000 },
+  { label: 'Gombe', price: 120000 },
+  { label: 'Imo', price: 27000 },
+  { label: 'Jigawa', price: 130000 },
+  { label: 'Kaduna', price: 105000 },
+  { label: 'Kano', price: 115000 },
+  { label: 'Katsina', price: 125000 },
+  { label: 'Kebbi', price: 135000 },
+  { label: 'Kogi', price: 65000 },
+  { label: 'Kwara', price: 70000 },
+  { label: 'Lagos', price: 85000 },
+  { label: 'Nasarawa', price: 75000 },
+  { label: 'Niger', price: 90000 },
+  { label: 'Ogun', price: 82000 },
+  { label: 'Ondo', price: 58000 },
+  { label: 'Osun', price: 72000 },
+  { label: 'Oyo', price: 75000 },
+  { label: 'Plateau', price: 95000 },
+  { label: 'Sokoto', price: 140000 },
+  { label: 'Taraba', price: 115000 },
+  { label: 'Yobe', price: 135000 },
+  { label: 'Zamfara', price: 130000 },
+];

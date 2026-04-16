@@ -53,6 +53,10 @@ export function BusinessHome() {
       d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
     );
   });
+
+  const tripsThisMonth = thisMonth.filter((b) => b.paymentStatus === "PAID")
+
+
   const totalSpentThisMonth = thisMonth
     .filter((b) => b.paymentStatus === "PAID")
     .reduce((sum, b) => sum + b.totalAmount, 0);
@@ -288,7 +292,7 @@ export function BusinessHome() {
                 <Car size={16} color="#111827" />
               </View>
             </View>
-            <Text style={styles.activityValue}>{thisMonth.length} Trips</Text>
+            <Text style={styles.activityValue}>{tripsThisMonth.length} Trips</Text>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <TrendingUp
                 size={12}

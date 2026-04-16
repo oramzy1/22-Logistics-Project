@@ -24,6 +24,7 @@ interface DropdownInputProps {
 }
 
 const ITEM_HEIGHT = 50;
+const MAX_HEIGHT = 250;
 
 export const DropdownInput: React.FC<DropdownInputProps> = ({
   label,
@@ -46,8 +47,10 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
   };
 
   const dropdownStyle = useAnimatedStyle(() => {
+    const fullHeight = ITEM_HEIGHT * options.length;
+    const containerHeight = Math.min(fullHeight, MAX_HEIGHT);
     return {
-      height: progress.value * ITEM_HEIGHT * options.length,
+      height: progress.value * containerHeight,
       opacity: progress.value,
       transform: [
         {
@@ -77,7 +80,11 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
         onPress={toggle}
       >
         <Text style={[styles.value, !value && styles.placeholder]}>
-          {value || placeholder}
+          {value
+            ? typeof value === "object"
+              ? value.label
+              : value
+            : placeholder}
         </Text>
 
         <Animated.View style={chevronStyle}>
@@ -93,11 +100,17 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
             onPress={toggle}
           />
 
-          <Animated.View
+          <Animated.ScrollView
             style={[styles.dropdown, dropdownStyle, styles.dropdownBody]}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+            contentContainerStyle={{ paddingVertical: 4 }}
           >
             {options.map((item: any, index: any) => {
-              const isSelected = value === item;
+              const isSelected =
+                typeof item === "object"
+                  ? value?.label === item.label
+                  : value === item;
 
               return (
                 <TouchableOpacity
@@ -114,12 +127,14 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
                       isSelected && styles.selectedText,
                     ]}
                   >
-                    {item}
+                    {typeof item === "object"
+                      ? `${item.label} (₦${item.price.toLocaleString()})`
+                      : item}
                   </Text>
                 </TouchableOpacity>
               );
             })}
-          </Animated.View>
+          </Animated.ScrollView>
         </>
       )}
     </View>

@@ -75,7 +75,7 @@ export const register = async (
               companyName,
               companyEmail,
               companyAddress,
-              companyPhone,
+              companyPhone, 
               adminName,
               adminEmail,
               department,

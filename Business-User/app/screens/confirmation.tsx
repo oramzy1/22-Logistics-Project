@@ -8,12 +8,13 @@ import { AppHeader } from '@/src/ui/AppHeader';
 import { InfoBanner } from '@/src/ui/InfoBanner';
 import { PrimaryButton } from '@/src/ui/PrimaryButton';
 import { colors, radius, spacing, text } from '@/src/ui/theme';
+import { Image } from 'expo-image';
 
 function Row({ label, value, valueStyle }: { label: string; value: string; valueStyle?: any }) {
   return (
     <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={[styles.rowValue, valueStyle]}>{value}</Text>
+      <Text numberOfLines={2} style={styles.rowLabel}>{label}</Text>
+      <Text numberOfLines={2} style={[styles.rowValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
@@ -34,6 +35,7 @@ export default function ConfirmationScreen() {
     pickupDate,
     pickupTime,
     duration,
+    outOfLGAFee,
   } = useLocalSearchParams<{
     bookingId: string;
     packageType: string;
@@ -48,13 +50,14 @@ export default function ConfirmationScreen() {
     pickupDate?: string;
     pickupTime?: string;
     duration?: string;
+    outOfLGAFee?: string;
   }>();
 
   const formattedDate = scheduledAt
     ? new Date(scheduledAt).toLocaleDateString('en-NG', { month: 'long', day: 'numeric' })
     : '—';
 
-  const formattedTime = scheduledAt
+  const formattedTime = scheduledAt 
     ? new Date(scheduledAt).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
     : '—';
 
@@ -74,7 +77,9 @@ export default function ConfirmationScreen() {
           <Row label="Pick up location" value={pickupAddress ?? '--'} />
           <Row label="Drop off location" value={dropoffAddress ?? '--'} />
           {addOns ? <Row label="Add-ons selected" value={addOns} /> : null}
+          {outOfLGAFee ? <Row label='Out of LGA Fee' value={outOfLGAFee} /> : null}
           <Row label="Amount" value={`₦${Number(totalAmount ?? 0).toLocaleString()}`} />
+
           {bookingId ? (
             <Row label="Booking ID" value={`#${bookingId.slice(-10).toUpperCase()}`} />
           ) : null}
@@ -82,10 +87,12 @@ export default function ConfirmationScreen() {
 
         <View style={styles.driverPending}>
           <Text style={{ fontWeight: '800', color: '#1D4ED8' }}>Driver will be assigned soon...</Text>
-          <Text style={{ fontSize: 18 }}>🚗</Text>
+          <Image source={require('../../assets/images/car.png')} style={{  width: 40, height: 40 }} />
         </View>
 
         <InfoBanner variant="info" text="Reminder: Please fuel the car as needed during your trip." />
+
+        {outOfLGAFee && <InfoBanner variant="basic" text="Trips outside Port harcourt and Obio Akpo LGAs attract additional charges."/>}
 
         <View style={styles.btnRow}>
           <View style={{ flex: 1 }}>
@@ -140,7 +147,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   rowLabel: { ...text.body, color: colors.muted },
-  rowValue: { ...text.body, fontWeight: '800' },
+  rowValue: { ...text.body, fontWeight: '800', width: 150, textAlign: 'right'},
   driverPending: {
     marginBottom: spacing.lg,
     height: 56,
