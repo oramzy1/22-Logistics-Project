@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Response } from "express";
-import { sendVerificationEmail } from "../lib/email.service";
+import {
+  sendSupportRequestEmail,
+  sendVerificationEmail,
+} from "../lib/email.service";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
@@ -40,7 +43,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
             onlineStatus: true,
             licenseImageUrl: true,
             licenseStatus: true,
-          }
+          },
         },
         avatarUrl: true,
       },
@@ -169,17 +172,35 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const submitSupportRequest = async (req: AuthRequest, res: Response) => {
+  const { subject, description } = req.body;
+  const screenshotUrl = req.file?.path;
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.id },
+    select: { email: true, name: true },
+  });
+  if (!user) return res.status(404).json({ message: "User not found" });
+  sendSupportRequestEmail(
+    user.email,
+    user.name,
+    subject,
+    description,
+    screenshotUrl,
+  );
+  res.json({ message: "Support request submitted" });
+};
+
 export const uploadAvatar = async (req: AuthRequest, res: Response) => {
   console.log("req.file:", req.file);
   console.log("req.body:", req.body);
   console.log("req.headers content-type:", req.headers["content-type"]);
-   try {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
     const imageUrl = req.file.path;
     const role = req.user!.role;
 
-    if (role === 'BUSINESS') {
+    if (role === "BUSINESS") {
       await prisma.businessProfile.update({
         where: { userId: req.user!.id },
         data: { logoUrl: imageUrl },
@@ -194,7 +215,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response) => {
 
     res.json({ avatarUrl: imageUrl });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -205,8 +226,8 @@ export const savePushToken = async (req: AuthRequest, res: Response) => {
       where: { id: req.user!.id },
       data: { pushToken },
     });
-    res.json({ message: 'Push token saved' });
+    res.json({ message: "Push token saved" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };

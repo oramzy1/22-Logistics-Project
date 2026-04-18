@@ -60,6 +60,8 @@ export default function HomeTabScreen() {
   const { isDark, colors: themeColors } = useAppTheme();
   const profileComplete = isProfileComplete(user);
 
+  const styles = createStyles(themeColors);
+
   useBookingSocket({
     onNewRideRequest: (data) => {
       // New booking available — add to requests if not already there
@@ -162,7 +164,7 @@ export default function HomeTabScreen() {
     }
   };
 
-  if (!user || isLoading) {
+  if (loading) {
     return <HomeSkeleton />;
   }
 
@@ -171,8 +173,8 @@ export default function HomeTabScreen() {
       edges={["top"]}
       style={[{ flex: 1 }, { backgroundColor: themeColors.navy }]}
     >
-      <View style={styles.root}>
-        <View style={styles.top}>
+      <View style={[styles.root, { backgroundColor: themeColors.background }]}>
+        <View style={[styles.top, { backgroundColor: themeColors.navy }]}>
           <AppHeader
             title={
               <View>
@@ -201,7 +203,7 @@ export default function HomeTabScreen() {
           <View
             style={[
               styles.statusBox,
-              isOnline ? styles.onlineBox : styles.offlineBox,
+              isOnline ? styles.onlineBox : styles.offlineBox, { backgroundColor: themeColors.card1}
             ]}
           >
             <View style={styles.statusHeaderRow}>
@@ -239,28 +241,28 @@ export default function HomeTabScreen() {
             </Text>
           </View>
 
-{!profileComplete && (
-  <ProfileCompletionCard user={user} isDark={isDark} />
-)}
+          {!profileComplete && (
+            <ProfileCompletionCard user={user} isDark={isDark} />
+          )}
 
-          {(!isOnline && profileComplete) && (
+          {!isOnline && profileComplete && (
             <View
               style={{
-                backgroundColor: "#FFF",
+                backgroundColor: themeColors.card,
                 borderRadius: 12,
                 padding: 30,
                 alignItems: "center",
                 marginBottom: 25,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: themeColors.border,
               }}
             >
               <View
                 style={{
                   width: 48,
                   height: 48,
-                  borderRadius: 24,
-                  backgroundColor: "#ECFDF5",
+                  borderRadius: 50,
+                  backgroundColor: themeColors.cardSecondary,
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 15,
@@ -272,7 +274,7 @@ export default function HomeTabScreen() {
                 style={{
                   fontSize: 16,
                   fontWeight: "bold",
-                  color: "#111827",
+                  color: themeColors.text,
                   marginBottom: 5,
                 }}
               >
@@ -326,12 +328,12 @@ export default function HomeTabScreen() {
                         minute: "2-digit",
                       })
                     : "—";
-                  const isBusinessType = req.customer?.role === "BUSINESS";
+                  const isBusinessType = req.rideType === "BUSINESS";
 
                   return (
-                    <View key={req.id} style={styles.rideCard}>
+                    <View key={req.id} style={[styles.rideCard, {backgroundColor: themeColors.card, borderColor: themeColors.border}]}>
                       {/* Orange header */}
-                      <View style={styles.rideCardHeader}>
+                      <View style={[styles.rideCardHeader, isDark ? {backgroundColor: '#2c2c2c'} : { backgroundColor: "#F97316"}]}>
                         <View style={styles.rideCardHeaderLeft}>
                           <Bell
                             size={14}
@@ -421,15 +423,15 @@ export default function HomeTabScreen() {
                           </View>
                         </View>
 
-                         <View style={styles.rideMetaCol}>
-                            <Text style={styles.rideMetaLabel}>Add Ons</Text>
-                            <Text style={styles.rideMetaValue}>
-                             {req.addOns?.join(", ")}
-                            </Text>
-                          </View>
+                        <View style={styles.rideMetaCol}>
+                          <Text style={styles.rideMetaLabel}>Add Ons</Text>
+                          <Text style={styles.rideMetaValue}>
+                            {req.addOns?.join(", ")}
+                          </Text>
+                        </View>
 
                         {/* Scheduled date + duration */}
-                        <View style={styles.rideFooterRow}>
+                        <View style={[styles.rideFooterRow, isDark ? { backgroundColor: '#2c2c2c'} : { backgroundColor: '#F6F6F6'}]}>
                           <View style={styles.rideFooterCol}>
                             <Text style={styles.rideMetaLabel}>
                               SCHEDULED DATE
@@ -552,7 +554,6 @@ export default function HomeTabScreen() {
             >
               <Text style={styles.sectionTitle}>Recent Trip History</Text>
 
-              {/* Navigate to the History Tab natively! */}
               <TouchableOpacity onPress={() => router.push("/(tabs)/history")}>
                 <Text
                   style={{ color: "#3B82F6", fontSize: 13, fontWeight: "600" }}
@@ -693,10 +694,10 @@ export default function HomeTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  origin: { backgroundColor: colors.navy },
-  root: { backgroundColor: colors.background, height: "100%" },
-  top: { backgroundColor: colors.navy, paddingBottom: spacing.md },
+const createStyles = ( themeColors: any) => StyleSheet.create({
+  // origin: { backgroundColor: colors.navy },
+  root: { height: "100%" },
+  top: { paddingBottom: spacing.md },
   // content: { padding: spacing.lg, paddingBottom: 40 },
 
   content: {
@@ -730,12 +731,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
+    color: "#3B82F6",
     marginBottom: 15,
   },
 
   requestCard: {
-    backgroundColor: "#FFF",
+    // backgroundColor: "#FFF",
     borderRadius: 12,
     overflow: "hidden",
     borderWidth: 1,
@@ -792,9 +793,9 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: "48%",
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: themeColors.border,
     borderRadius: 12,
     padding: 15,
     marginBottom: 15,
@@ -802,17 +803,17 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#111827",
+    color: themeColors.text,
     marginTop: 10,
     marginBottom: 5,
   },
   statLabel: { fontSize: 12, color: "#6B7280" },
   // History card
   historyCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: themeColors.border,
     padding: 16,
     marginBottom: 14,
     shadowColor: "#000",
@@ -828,7 +829,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   historyIdRow: { flexDirection: "row", alignItems: "center", flex: 1 },
-  historyId: { fontSize: 12, fontWeight: "700", color: "#111827" },
+  historyId: { fontSize: 12, fontWeight: "700", color: themeColors.text },
   historyMeta: { fontSize: 11, color: "#6B7280" },
   statusBadge: { fontSize: 12, fontWeight: "700" },
   historyLocRow: {
@@ -850,8 +851,8 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 2,
   },
-  locValue: { fontSize: 13, fontWeight: "600", color: "#111827" },
-  locMeta: { fontSize: 13, fontWeight: "700", color: "#111827" },
+  locValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
+  locMeta: { fontSize: 13, fontWeight: "700", color: themeColors.text },
   historyFooter: {
     flexDirection: "row",
     paddingTop: 12,
@@ -862,7 +863,7 @@ const styles = StyleSheet.create({
   footerVal: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#111827",
+    color: themeColors.text,
     marginBottom: 2,
   },
   footerSub: { fontSize: 11, color: "#6B7280" },
@@ -870,12 +871,12 @@ const styles = StyleSheet.create({
   // Empty state (replaces the inline styles)
   rideCard: {
     width: 300,
-    backgroundColor: "#FFF",
+    // backgroundColor: "#FFF",
     marginBottom: 10,
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    // borderColor: "#E5E7EB",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
@@ -883,7 +884,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   rideCardHeader: {
-    backgroundColor: "#F97316",
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: "row",
@@ -895,7 +895,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-
   },
   rideCardHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
   rideCardHeaderSub: {
@@ -931,7 +930,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 4,
   },
-  rideMetaValue: { fontSize: 12, fontWeight: "700", color: "#111827" },
+  rideMetaValue: { fontSize: 12, fontWeight: "700", color: themeColors.text },
   rideTypeBadge: {
     paddingHorizontal: 7,
     paddingVertical: 3,
@@ -962,7 +961,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 2,
   },
-  rideLocValue: { fontSize: 13, fontWeight: "600", color: "#111827" },
+  rideLocValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
 
   rideFooterRow: {
     flexDirection: "row",
@@ -973,13 +972,12 @@ const styles = StyleSheet.create({
     borderTopColor: "#F3F4F6",
     borderRadius: 3,
     marginBottom: 14,
-    backgroundColor: "#F6F6F6",
   },
   // rideFooterCol: { flex: 1 },
   rideFooterVal: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#111827",
+    color: themeColors.text,
     marginBottom: 2,
   },
   rideFooterSub: { fontSize: 10, color: "#6B7280" },

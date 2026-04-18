@@ -3,8 +3,10 @@ import { Pressable, StyleSheet, Text, TouchableOpacity, View, Image } from 'reac
 import { Headphones, Bell, ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme } from './useAppTheme';
 
 import { colors, spacing } from './theme';
+import { NotificationBell } from './NotificationBell';
 
 type Props = {
   title: string | React.ReactNode;
@@ -16,13 +18,14 @@ type Props = {
 
 export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent }: Props) {
   const router = useRouter();
+  const {  colors: themeColors } = useAppTheme();
   const { user, isBusiness } = useAuth();
    const avatarUri = isBusiness
     ? user?.businessProfile?.logoUrl ?? null
     : user?.avatarUrl ?? null;
 
   return (
-    <View style={[styles.root, translucent && styles.translucent]}>
+    <View style={[styles.root, translucent && styles.translucent, { backgroundColor: themeColors.navy }]}>
       <View>
         {showBack ? (
           <Pressable onPress={() => router.back()} hitSlop={10} style={styles.circle}>
@@ -56,9 +59,13 @@ export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent
             <View style={styles.circle}>
               <Text style={styles.circleText}><Headphones  color="#fff" size={16} /></Text>
             </View>
-            <TouchableOpacity style={styles.circle} onPress={() => router.push('/screens/notifications')}>
+            {/* <TouchableOpacity style={styles.circle} onPress={() => router.push('/screens/notifications')}>
               <Text style={styles.circleText}><Bell color="#fff" size={16} /></Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+
+            <View style={styles.circle}>
+              <NotificationBell />
+            </View>
           </View>
         ) : (
           <View style={{ width: 80 }} />

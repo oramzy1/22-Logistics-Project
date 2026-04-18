@@ -14,7 +14,8 @@ import { useSchedule } from "@/context/ScheduleContext";
 import { AppHeader } from "@/src/ui/AppHeader";
 import { BusinessHome } from "@/src/ui/BusinessHome";
 import { HomeSkeleton } from "@/src/ui/skeletons/HomeSkeleton";
-import { colors, radius, spacing, text } from "@/src/ui/theme";
+import { colors, radius, spacing } from "@/src/ui/theme";
+import { useAppTheme } from "@/src/ui/useAppTheme";
 import { PackageId } from "@/src/utils/timeSlots";
 import { Clock } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,6 +31,8 @@ const packages = [
 export default function HomeTabScreen() {
   const { isBusiness, user, isLoading } = useAuth();
   const { setSelectedPackage } = useSchedule();
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
 
   const titleToId: Record<string, PackageId> = {
     "3 Hours": "3h",
@@ -51,11 +54,21 @@ export default function HomeTabScreen() {
             title={
               <View>
                 <Text
-                  style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}
+                  style={{
+                    color: themeColors.textPrimary,
+                    fontWeight: "800",
+                    fontSize: 16,
+                  }}
                 >
                   Hello {user?.name}
                 </Text>
-                <Text style={{ color: "#B7C3D0", marginTop: 2, fontSize: 12 }}>
+                <Text
+                  style={{
+                    color: themeColors.textSecondary,
+                    marginTop: 2,
+                    fontSize: 12,
+                  }}
+                >
                   Plan Your Next Ride
                 </Text>
               </View>
@@ -86,10 +99,10 @@ export default function HomeTabScreen() {
               <Text style={styles.offerDiscount}>20% OFF</Text>
               <Text style={styles.offerTitle}>Rent Smart, Save More</Text>
               <Text style={styles.offerSubtitle}>
-                Save big on rentals with limited\ntime promotions.
+                Save big on rentals with limited time promotions.
               </Text>
               <Pressable style={styles.offerBtn}>
-                <Text style={{ fontWeight: "700" }}>Claim Offer</Text>
+                <Text style={{ fontWeight: "600" }}>Claim Offer</Text>
               </Pressable>
             </ImageBackground>
 
@@ -114,10 +127,11 @@ export default function HomeTabScreen() {
                   <Clock color={"#3B82F6"} size={10} />
                   <Text
                     style={{
-                      fontWeight: "800",
+                      fontWeight: "600",
                       fontSize: 18,
                       marginTop: 6,
                       margin: "auto",
+                      color: themeColors.textPrimary
                     }}
                   >
                     {p.title}
@@ -125,10 +139,11 @@ export default function HomeTabScreen() {
                   {!!p.price && (
                     <Text
                       style={{
-                        fontWeight: "900",
+                        fontWeight: "600",
                         fontSize: 18,
                         marginTop: 6,
                         margin: "auto",
+                        color: themeColors.textSecondary
                       }}
                     >
                       {p.price}
@@ -144,59 +159,76 @@ export default function HomeTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  origin: { backgroundColor: colors.navy },
-  root: { backgroundColor: colors.background, height: "100%" },
-  top: { backgroundColor: colors.navy, paddingBottom: spacing.md },
-  content: { padding: spacing.lg, paddingBottom: 40 },
-  h1: { ...text.h1, marginBottom: spacing.lg },
-  section: { ...text.h2, marginTop: spacing.lg, marginBottom: spacing.md },
-  offer: {
-    height: 180,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    overflow: "hidden",
-  },
-  offerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  offerDiscount: { color: "#fff", fontWeight: "900", fontSize: 18 },
-  offerTitle: { color: "#fff", fontWeight: "900", fontSize: 18, marginTop: 10 },
-  offerSubtitle: { color: "#E5E7EB", marginTop: 6, lineHeight: 18 },
-  offerBtn: {
-    marginTop: 14,
-    alignSelf: "flex-start",
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  dots: {
-    marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  dot: { width: 18, height: 4, borderRadius: 3, backgroundColor: "#F59E0B" },
-  dotInactive: { width: 6, backgroundColor: "#D1D5DB" },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-  },
-  pkg: {
-    width: "47%",
-    minHeight: 120,
-    borderRadius: radius.xl,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: colors.softBorder,
-    padding: spacing.lg,
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-});
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    origin: { backgroundColor: themeColors.navy },
+    root: { backgroundColor: themeColors.background, height: "100%" },
+    top: { paddingBottom: spacing.md },
+    content: { padding: spacing.lg, paddingBottom: 40 },
+    h1: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: themeColors.text,
+      marginBottom: spacing.lg,
+    },
+    section: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: themeColors.text,
+      marginTop: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    offer: {
+      height: 180,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      overflow: "hidden",
+    },
+    offerOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.35)",
+    },
+    offerDiscount: { color: "#fff", fontWeight: "600", fontSize: 18 },
+    offerTitle: {
+      color: "#fff",
+      fontWeight: "900",
+      fontSize: 18,
+      marginTop: 10,
+    },
+    offerSubtitle: { color: "#E5E7EB", marginTop: 6, lineHeight: 18 },
+    offerBtn: {
+      marginTop: 14,
+      alignSelf: "flex-start",
+      backgroundColor: "#fff",
+      borderRadius: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+    },
+    dots: {
+      marginTop: 10,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+    },
+    dot: { width: 18, height: 4, borderRadius: 3, backgroundColor: "#F59E0B" },
+    dotInactive: { width: 6, backgroundColor: "#D1D5DB" },
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    pkg: {
+      width: "47%",
+      minHeight: 120,
+      borderRadius: radius.xl,
+      backgroundColor: themeColors.card,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      padding: spacing.lg,
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+  });

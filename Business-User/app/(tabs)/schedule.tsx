@@ -35,6 +35,8 @@ import { colors, radius, spacing, text } from "@/src/ui/theme";
 import { generateTimeSlots } from "@/src/utils/timeSlots";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+
 
 type RidePackage = {
   id: "3h" | "6h" | "10h" | "multi" | "airport";
@@ -81,6 +83,8 @@ export default function ScheduleTabScreen() {
   >(null);
 
   const { createBooking } = useBookings();
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   const router = useRouter();
 
   const pkg = selectedPackage;
@@ -91,32 +95,6 @@ export default function ScheduleTabScreen() {
     const match = value.match(/₦([\d,]+)/);
     return match ? parseInt(match[1].replace(/,/g, ""), 10) : 0;
   };
-
-  // const total = useMemo(() => {
-  //   // Demo calculation only.
-  //   const base =
-  //     pkg === "3h"
-  //       ? 24000
-  //       : pkg === "6h"
-  //         ? 34000
-  //         : pkg === "10h"
-  //           ? 54000
-  //           : 80000;
-  //   const add = (k: keyof typeof extras, amount: number) =>
-  //     extrasEnabled && extras[k] ? amount : 0;
-
-  //   const interstatePrice = interstateLocation?.price || 0;
-
-  //   return (
-  //     base +
-  //     interstatePrice +
-  //     add("babySeat", 2000) +
-  //     add("extraLuggage", 2000) +
-  //     add("wifi", 4000) +
-  //     add("coldWater", 2000) +
-  //     add("airportRide", 2000)
-  //   );
-  // }, [extras, extrasEnabled, pkg, interstateLocation]);
 
   // Computed — concatenates into the string the backend already expects, no schema change
   const pickupLocation = [
@@ -554,14 +532,14 @@ export default function ScheduleTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.navy,
+    backgroundColor: themeColors.navy,
   },
   sheet: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: themeColors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: "hidden",
@@ -572,11 +550,13 @@ const styles = StyleSheet.create({
   },
   h1: {
     ...text.h1,
+    color: themeColors.text
   },
   h2: {
     ...text.h2,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
+    color: themeColors.text
   },
   packRow: {
     paddingVertical: spacing.md,
@@ -585,6 +565,7 @@ const styles = StyleSheet.create({
   label: {
     ...text.label,
     marginBottom: 8,
+    color: themeColors.textSecondary
   },
   input: {
     height: 52,
@@ -594,7 +575,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 14,
     color: colors.text,
-    backgroundColor: "#fff",
+    backgroundColor: themeColors.background,
   },
   rowBetween: {
     flexDirection: "row",
@@ -604,23 +585,24 @@ const styles = StyleSheet.create({
   },
   extrasWrap: {
     borderWidth: 1,
-    borderColor: colors.softBorder,
+    borderColor: themeColors.border,
     borderRadius: radius.lg,
     padding: 10,
     marginTop: spacing.sm,
+
   },
   totalBox: {
     height: 56,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: themeColors.border,
     justifyContent: "center",
     paddingHorizontal: 14,
-    backgroundColor: "#fff",
+    backgroundColor: themeColors.background,
   },
   totalText: {
     fontSize: 16,
     fontWeight: "700",
-    color: colors.text,
+    color: themeColors.text,
   },
 });

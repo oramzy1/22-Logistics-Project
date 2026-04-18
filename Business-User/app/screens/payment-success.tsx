@@ -8,8 +8,11 @@ import { useBookings } from '@/context/BookingContext';
 import LottieView from "lottie-react-native";
 import { colors, radius, spacing, text } from '@/src/ui/theme';
 import { Image } from 'expo-image';
+import { useAppTheme } from '@/src/ui/useAppTheme';
 
 function SuccessBadge() {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   return (
     <View style={styles.lottieContainer}>
       <LottieView
@@ -34,6 +37,8 @@ export default function PaymentSuccessScreen() {
     addOns?: string;
   }>();
 
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   const { verifyPayment, fetchBookings } = useBookings();
   const [verifyStatus, setVerifyStatus] = useState<'pending' | 'confirmed' | 'failed'>('pending');
 
@@ -170,6 +175,9 @@ useEffect(() => {
 }
 
 function Row({ label, value, valueStyle }: { label: string; value: string; valueStyle?: any }) {
+  
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -178,8 +186,8 @@ function Row({ label, value, valueStyle }: { label: string; value: string; value
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.background },
   content: { padding: spacing.lg, paddingBottom: 40 },
   successIcon: { alignItems: 'center', marginTop: 12, marginBottom: 16 },
    lottieContainer: {
@@ -188,8 +196,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // marginBottom: 10,
   },    
-  successTitle: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center', marginBottom: 8 },
-  successSub: { fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 12, lineHeight: 20 },
+  successTitle: { fontSize: 22, fontWeight: '800', color: themeColors.text, textAlign: 'center', marginBottom: 8 },
+  successSub: { fontSize: 14, color: themeColors.textSecondary, textAlign: 'center', marginBottom: 12, lineHeight: 20 },
   verifyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -208,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.softBorder,
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.background,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -219,8 +227,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  rowLabel: { ...text.body, color: colors.muted },
-  rowValue: { ...text.body, fontWeight: '800', textAlign: 'right', flex: 1, marginLeft: 16 },
+  rowLabel: { ...text.body, color: themeColors.textSecondary },
+  rowValue: { ...text.body, fontWeight: '600', textAlign: 'right', flex: 1, marginLeft: 16, color: themeColors.textPrimary },
   driverBanner: {
     flexDirection: 'row',
     alignItems: 'center',

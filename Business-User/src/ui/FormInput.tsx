@@ -1,12 +1,13 @@
 import React from "react";
 import {
-  View,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
-  TouchableOpacity,
   TextInputProps,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useAppTheme } from "./useAppTheme";
 
 interface FormInputProps extends TextInputProps {
   label?: string;
@@ -23,6 +24,9 @@ export const FormInput: React.FC<FormInputProps> = ({
   style,
   ...props
 }) => {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
+
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -54,36 +58,38 @@ export const FormInput: React.FC<FormInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 8,
-    color: "#1F2937",
-  },
-  inputWrapper: {
-    position: "relative",
-    justifyContent: "center",
-  },
-  input: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    backgroundColor: "#FFFFFF",
-  },
-  leftIcon: {
-    position: "absolute",
-    left: 12,
-    zIndex: 1,
-  },
-  rightIcon: {
-    position: "absolute",
-    right: 12,
-  },
-});
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    container: {
+      marginBottom: 16,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: "500",
+      marginBottom: 8,
+      color: themeColors.textSecondary,
+    },
+    inputWrapper: {
+      position: "relative",
+      justifyContent: "center",
+    },
+    input: {
+      height: 52,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      fontSize: 14,
+      backgroundColor: themeColors.background,
+      color: themeColors.textPrimary,
+    },
+    leftIcon: {
+      position: "absolute",
+      left: 12,
+      zIndex: 1,
+    },
+    rightIcon: {
+      position: "absolute",
+      right: 12,
+    },
+  });

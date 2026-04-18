@@ -10,12 +10,20 @@ import { Text } from "../../components/AppText";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
 import { useRouter } from "expo-router";
 import EmptyState from "@/src/ui/EmptyState";
+import { PrimaryButton } from "@/src/ui/PrimaryButton";
+import { useAppTheme } from "@/src/ui/useAppTheme";
 
 
 export default function ActiveTripScreen() {
   const [activeTrip, setActiveTrip] = useState<any>(null);
   const router = useRouter();
   const activeTripRef = useRef<any>(null);
+  const [isLoading, setIsLoading ] = useState(false);
+  const { colors: themeColors } = useAppTheme();
+
+  const styles = createStyles(themeColors);
+
+
 
   const updateActiveTrip = (trip: any) => {
   activeTripRef.current = trip;
@@ -61,15 +69,19 @@ export default function ActiveTripScreen() {
   );
 
   const handleStartTrip = async () => {
+    setIsLoading(true);
     if (!activeTrip) return;
     try {
       await DriverService.startTrip(activeTrip.id);
       fetchActiveTrip();
     } catch (error) {
       console.log("Failed to start trip");
-    } 
+    }finally{
+      setIsLoading(false);
+    }
   };
   const handleEndTrip = async () => {
+    setIsLoading(true);
     if (!activeTrip) return;
     try {
       await DriverService.endTrip(activeTrip.id);
@@ -77,6 +89,8 @@ export default function ActiveTripScreen() {
       fetchActiveTrip();
     } catch (error) {
       console.log("Failed to end trip", error);
+    }finally{
+      setIsLoading(false);
     }
   };
 
@@ -91,9 +105,9 @@ export default function ActiveTripScreen() {
   return (
     <View style={styles.container}>
       {/* Map Placeholder */}
-      <View style={styles.mapBase}>
+      {/* <View style={styles.mapBase}>
          <Image source={{ uri: "https://maps.googleapis.com/maps/api/staticmap?center=Port+Harcourt&zoom=14&size=600x600&key=YOUR_API_KEY_HERE" }} style={{flex: 1, backgroundColor: '#E5E7EB'}} />
-      </View>
+      </View> */}
 
       {/* Bottom Sheet Card */}
       <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
@@ -133,13 +147,9 @@ export default function ActiveTripScreen() {
             </View>
 
             {activeTrip.status === "ACCEPTED" ? (
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleStartTrip}>
-                <Text style={styles.primaryBtnText}>Arrived at Pickup</Text>
-              </TouchableOpacity>
+              <PrimaryButton loading={isLoading} disabled={isLoading} onPress={handleStartTrip} title="Start Trip"/>
             ) : (
-              <TouchableOpacity onPress={handleEndTrip} style={[styles.primaryBtn, {backgroundColor: "#F97316"}]}>
-                 <Text style={[styles.primaryBtnText, {color: "#FFF"}]}>End Trip</Text>
-              </TouchableOpacity>
+              <PrimaryButton loading={isLoading} disabled={isLoading} onPress={handleEndTrip} title="End Trip"/>
             )}
          </View>
       </SafeAreaView>
@@ -147,26 +157,26 @@ export default function ActiveTripScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  emptyContainer: { flex: 1, backgroundColor: "#FFF", alignItems: "center", justifyContent: "center" },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  emptyContainer: { flex: 1, backgroundColor: themeColors.background, alignItems: "center", justifyContent: "center" },
   emptyText: { color: "#6B7280", fontSize: 16 },
-  container: { flex: 1, backgroundColor: "#F3F4F6", position: "relative" },
+  container: { flex: 1, backgroundColor: themeColors.background, position: "relative" },
   mapBase: { flex: 1 },
-  bottomCard: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: "#000", shadowOffset: {height: -4, width: 0}, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
-  cardHeader: { backgroundColor: "#F97316", padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
-  enRouteText: { color: "#FFF", fontWeight: "700", marginBottom: 15 },
+  bottomCard: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: themeColors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: "#000", shadowOffset: {height: -4, width: 0}, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+  cardHeader: { backgroundColor: themeColors.card2, padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  enRouteText: { color: themeColors.textPrimary, fontWeight: "700", marginBottom: 15 },
   passengerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   passInfo: { flexDirection: "row", alignItems: "center" },
   passAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.3)", alignItems: "center", justifyContent: "center", marginRight: 12 },
-  passName: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
-  passRole: { color: "#FFF", opacity: 0.8, fontSize: 12 },
+  passName: { color: themeColors.textPrimary, fontSize: 18, fontWeight: "bold" },
+  passRole: { color:themeColors.textPrimary, opacity: 0.8, fontSize: 12 },
   callBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: "#FFF", alignItems: "center", justifyContent: "center" },
   
   cardBody: { padding: 20 },
   rideId: { fontSize: 12, color: "#6B7280", marginBottom: 15 },
   timeline: { marginBottom: 25 },
   locationRow: { flexDirection: "row", alignItems: "center", zIndex: 2 },
-  locationText: { marginLeft: 15, fontSize: 15, color: "#111827", fontWeight: "500" },
+  locationText: { marginLeft: 15, fontSize: 15, color: themeColors.text, fontWeight: "500" },
   line: { width: 2, height: 20, backgroundColor: "#E5E7EB", marginLeft: 9, marginVertical: 4, zIndex: 1 },
   
   primaryBtn: { backgroundColor: "#E4C77B", paddingVertical: 16, borderRadius: 8, alignItems: "center" },

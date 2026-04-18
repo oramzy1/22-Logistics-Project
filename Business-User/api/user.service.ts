@@ -77,4 +77,56 @@ export const UserService = {
     });
     return response.data;
   },
+
+   sendSupportRequest: async (data: {
+    subject: string;
+    description: string;
+    screenshotUri?: string;
+  }) => {
+    // If there's a screenshot, use multipart — otherwise plain JSON is fine
+    if (data.screenshotUri) {
+      const token = await AsyncStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("subject", data.subject);
+      formData.append("description", data.description);
+
+      const filename = data.screenshotUri.split("/").pop() ?? "screenshot.jpg";
+      const ext = filename.split(".").pop()?.toLowerCase();
+      const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+
+      formData.append("screenshot", {
+        uri: data.screenshotUri,
+        type: mimeType,
+        name: filename,
+      } as any);
+
+      const response = await fetch(`${API_URL}/support/request`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Do NOT set Content-Type manually — fetch sets it with the boundary
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let message = "Failed to send support request";
+        try {
+          message = JSON.parse(text)?.message ?? message;
+        } catch {}
+        throw new Error(message);
+      }
+
+      return response.json();
+    }
+
+    // No screenshot — plain JSON
+    const response = await apiClient.post("/support/request", {
+      subject: data.subject,
+      description: data.description,
+    });
+    return response.data;
+  },
 };

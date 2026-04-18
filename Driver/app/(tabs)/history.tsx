@@ -13,11 +13,17 @@ import { useFocusEffect } from "expo-router";
 import { Text } from "../../components/AppText";
 import { AppHeader } from "@/src/ui/AppHeader";
 import EmptyState from "@/src/ui/EmptyState";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+import { HistorySkeleton } from "@/src/ui/skeletons/HistorySkeleton";
 
 export default function TripHistoryScreen() {
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState("All"); // All, Completed, Cancelled
+  const [filter, setFilter] = useState("All");
+  const { colors: themeColors } = useAppTheme();
+  
+    
+    const styles = createStyles(themeColors);
 
   const fetchHistory = async () => {
     try {
@@ -63,6 +69,10 @@ export default function TripHistoryScreen() {
   };
 
   const { title, subtitle, Icon } = emptyStateConfig[filter];
+
+  if(loading){
+    return <HistorySkeleton />
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -271,19 +281,20 @@ export default function TripHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF" },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: themeColors.background },
   header: { padding: 20, paddingBottom: 30 },
   headerTitle: {
     fontSize: 21,
     fontWeight: "medium",
+    color: themeColors.textPrimary,
     marginBottom: 5,
   },
-  headerSubtitle: { color: "#9CA3AF", fontSize: 12 },
+  headerSubtitle: { color: themeColors.textSecondary, fontSize: 12 },
 
   filterRow: {
     flexDirection: "row",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: themeColors.cardPrimary,
     margin: 20,
     borderRadius: 30,
     padding: 4,
@@ -297,14 +308,14 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   filterPillActive: {
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.cardSecondary,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
   },
   filterText: { color: "#6B7280", fontWeight: "600", fontSize: 13 },
-  filterTextActive: { color: "#111827" },
+  filterTextActive: { color: themeColors.text },
 
   content: { padding: 20 },
   card: {
@@ -329,8 +340,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  tripId: { fontSize: 12, color: "#6B7280" },
-  tripDate: { fontSize: 14, fontWeight: "600", color: "#111827", marginTop: 2 },
+  tripId: { fontSize: 12, color: themeColors.textSecondary },
+  tripDate: { fontSize: 14, fontWeight: "600", color: themeColors.text, marginTop: 2 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   statusText: { fontSize: 12, fontWeight: "700" },
 
@@ -350,11 +361,11 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   rideCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     marginBottom: 10,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: themeColors.border,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
@@ -375,7 +386,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     alignItems: "flex-start",
   },
-  rideCardHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+  rideCardHeaderText: { color: themeColors.textPrimary, fontWeight: "700", fontSize: 13 },
   rideCardHeaderSub: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 10,
@@ -409,7 +420,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 4,
   },
-  rideMetaValue: { fontSize: 12, fontWeight: "700", color: "#111827" },
+  rideMetaValue: { fontSize: 12, fontWeight: "700", color: themeColors.text },
   rideTypeBadge: {
     paddingHorizontal: 7,
     paddingVertical: 3,
@@ -440,7 +451,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 2,
   },
-  rideLocValue: { fontSize: 13, fontWeight: "600", color: "#111827" },
+  rideLocValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
 
   rideFooterRow: {
     flexDirection: "row",
@@ -451,13 +462,13 @@ const styles = StyleSheet.create({
     borderTopColor: "#F3F4F6",
     borderRadius: 3,
     marginBottom: 14,
-    backgroundColor: "#F6F6F6",
+    backgroundColor: themeColors.cardSecondary,
   },
   // rideFooterCol: { flex: 1 },
   rideFooterVal: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#111827",
+    color: themeColors.text,
     marginBottom: 2,
   },
   rideFooterSub: { fontSize: 10, color: "#6B7280" },

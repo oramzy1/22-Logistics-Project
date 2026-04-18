@@ -3,16 +3,17 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SkeletonBox, SkeletonSpacer } from './SkeletonBase';
 import { colors, spacing } from '@/src/ui/theme';
+import { AppHeader } from '../AppHeader';
 
 function AccordionSkeleton() {
   return (
     <View style={styles.accordion}>
       <View style={styles.accordionRow}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <SkeletonBox width={36} height={36} radius={8} />
-          <SkeletonBox width={100} height={14} radius={6} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <SkeletonBox width='100%' height={60} radius={8} />
+          {/* <SkeletonBox width={100} height={14} radius={6} /> */}
         </View>
-        <SkeletonBox width={20} height={20} radius={4} />
+        {/* <SkeletonBox width={20} height={20} radius={4} /> */}
       </View>
     </View>
   );
@@ -20,7 +21,8 @@ function AccordionSkeleton() {
 
 export function AccountSkeleton() {
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.navy }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <AppHeader title="Account" rightIcons />
       <View style={styles.content}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
           {/* Profile header */}
@@ -70,12 +72,12 @@ export function AccountSkeleton() {
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    backgroundColor: colors.background,
+    // backgroundColor: colors.background,
   },
   scroll: { padding: spacing.lg, paddingBottom: 60 },
   profileHeader: { alignItems: 'center', marginBottom: 20, marginTop: 10 },
   accordion: {
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 12,
     overflow: 'hidden',
@@ -85,17 +87,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 2,
   },
   dangerCard: {
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     borderRadius: 12,
     paddingHorizontal: 16,
     overflow: 'hidden',
     elevation: 1,
   },
   borderBottom: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#F3F4F6',
   },
 });

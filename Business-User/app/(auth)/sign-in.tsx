@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   content: { flex: 1, padding: 24, paddingTop: 20 },
-  title: { fontSize: 24, fontWeight: "700", color: "#111827", marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: "600", color: "#111827", marginBottom: 8 },
   subtitle: {
     fontSize: 15,
     color: "#6B7280",

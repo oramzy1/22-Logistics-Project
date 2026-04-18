@@ -8,6 +8,7 @@ import {
   sendVerificationEmail,
 } from "../lib/email.service";
 import prisma from "../lib/prisma";
+import { sendWelcomeEmail } from "../lib/email.service";
 
 const base_url = process.env.BASE_URL;
 
@@ -75,7 +76,7 @@ export const register = async (
               companyName,
               companyEmail,
               companyAddress,
-              companyPhone, 
+              companyPhone,
               adminName,
               adminEmail,
               department,
@@ -128,6 +129,11 @@ export const register = async (
     } catch (emailError) {
       console.error("Verification email failed to send:", emailError);
       // User is created, just warn — they can request resend
+    }
+    try {
+      await sendWelcomeEmail(email, name, "INDIVIDUAL");
+    } catch (e) {
+      console.error("Welcome email failed:", e);
     }
     return res.status(201).json({
       message:

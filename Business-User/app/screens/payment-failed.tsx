@@ -5,6 +5,24 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/AppText';
 import { colors, radius, spacing } from '@/src/ui/theme';
+import LottieView from 'lottie-react-native';
+import { useAppTheme } from '@/src/ui/useAppTheme';
+
+
+function FailureBadge() {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
+  return (
+    <View style={styles.lottieContainer}>
+      <LottieView
+        source={require("../../assets/animations/Error animation.json")}
+        autoPlay
+        loop={false}
+        style={{ width: 150, height: 150 }}
+      />
+    </View>
+  );
+}
 
 export default function PaymentFailedScreen() {
   const { reference, bookingId } = useLocalSearchParams<{
@@ -12,12 +30,14 @@ export default function PaymentFailedScreen() {
     bookingId: string;
   }>();
 
-  return (
+  
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
+
+  return ( 
     <SafeAreaView style={styles.root}>
       <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <XCircle size={64} color="#EF4444" strokeWidth={1.5} />
-        </View>
+       <FailureBadge />
         <Text style={styles.title}>Payment Failed</Text>
         <Text style={styles.sub}>
           We couldn't process your payment. Your booking is still saved — you can retry or choose a different method.
@@ -48,15 +68,15 @@ export default function PaymentFailedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background, justifyContent: 'center' },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.background, justifyContent: 'center' },
   content: { padding: spacing.lg, alignItems: 'center' },
   iconWrap: { marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 12, textAlign: 'center' },
-  sub: { fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  title: { fontSize: 24, fontWeight: '800', color: themeColors.text, marginBottom: 12, textAlign: 'center' },
+  sub: { fontSize: 14, color: themeColors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
   refBox: {
     borderWidth: 1,
-    borderColor: colors.softBorder,
+    borderColor: themeColors.border,
     borderRadius: radius.lg,
     padding: spacing.md,
     width: '100%',
@@ -64,7 +84,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   refLabel: { fontSize: 11, color: colors.muted, marginBottom: 4 },
-  refValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  refValue: { fontSize: 14, fontWeight: '700', color: themeColors.text },
   retryBtn: {
     backgroundColor: '#E4C77B',
     paddingVertical: 16,
@@ -76,11 +96,16 @@ const styles = StyleSheet.create({
   retryText: { fontWeight: '700', color: '#3E2723', fontSize: 15 },
   cancelBtn: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: themeColors.border,
     paddingVertical: 16,
     borderRadius: 28,
     alignItems: 'center',
     width: '100%',
   },
-  cancelText: { fontWeight: '600', color: '#374151', fontSize: 15 },
+  cancelText: { fontWeight: '600', color: themeColors.textSecondary, fontSize: 15 },
+    lottieContainer: {
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+  }, 
 });

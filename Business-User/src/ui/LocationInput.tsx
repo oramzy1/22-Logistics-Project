@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { FormInput } from './FormInput';
 import { DropdownInput } from './DropdownInput';
 import { RIVERS_LGAS } from '../utils/nigeriaLocations';
+import { useAppTheme } from './useAppTheme';
 
 interface LocationInputProps {
   label: string;

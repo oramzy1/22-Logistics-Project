@@ -3,7 +3,11 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Request, Response } from "express";
-import { sendVerificationEmail } from "../lib/email.service";
+import {
+  sendVerificationEmail,
+  sendWelcomeEmail,
+  sendTripCompletionEmail,
+} from "../lib/email.service";
 import { getIO } from "../lib/socket";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
@@ -52,6 +56,12 @@ export const registerDriver = async (req: Request, res: Response) => {
       await sendVerificationEmail(email, code);
     } catch (e) {
       console.error("Email send failed:", e);
+    }
+
+    try {
+      await sendWelcomeEmail(email, name, "DRIVER"); // or 'BUSINESS' / 'DRIVER'
+    } catch (e) {
+      console.error("Welcome email failed:", e);
     }
 
     res.status(201).json({
@@ -345,7 +355,7 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
     const profile = await prisma.driverProfile.findUnique({
       where: { userId: req.user!.id },
       include: { user: { select: { name: true } } },
-    }); 
+    });
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 
     // If they decline, we don't modify the database. We just let them ignore it on the frontend so other drivers can still see it.
@@ -419,7 +429,11 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
 
       await prisma.driverProfile.update({
         where: { id: profile.id },
-        data: { isAvailable: false, totalTrips: { increment: 1 }, onlineStatus: 'AWAY' },
+        data: {
+          isAvailable: false,
+          totalTrips: { increment: 1 },
+          onlineStatus: "AWAY",
+        },
       });
 
       await createNotification(
@@ -492,7 +506,7 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
         .status(404)
         .json({ message: "Booking not found or not accepted" });
 
-   const updated = await prisma.booking.update({
+    const updated = await prisma.booking.update({
       where: { id: bookingId },
       data: { status: "IN_PROGRESS" },
       include: {
@@ -514,14 +528,15 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
     });
 
     // Notify customer
-      getIO()
-      .to(`user:${booking.customerId}`)
-      .emit("booking:updated", updated);
+    getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
     // Also log for debugging
-    console.log(`🚗 startTrip emitted booking:updated to user:${booking.customerId}`, {
-      bookingId,
-      status: updated.status,
-    });
+    console.log(
+      `🚗 startTrip emitted booking:updated to user:${booking.customerId}`,
+      {
+        bookingId,
+        status: updated.status,
+      },
+    );
 
     await createNotification(
       booking.customerId,
@@ -675,7 +690,11 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
             phone: true,
             avatarUrl: true,
             driverProfile: {
-              select: { brandModel: true, vehicleColor: true, plateNumber: true },
+              select: {
+                brandModel: true,
+                vehicleColor: true,
+                plateNumber: true,
+              },
             },
           },
         },
@@ -684,21 +703,46 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
 
     await prisma.driverProfile.update({
       where: { userId: req.user!.id },
-      data: { isAvailable: true, onlineStatus: 'ONLINE' },
+      data: { isAvailable: true, onlineStatus: "ONLINE" },
     });
 
-    console.log(`✅ endTrip: emitting booking:updated to user:${booking.customerId}`, {
-      bookingId, status: updated.status,
+    const customer = await prisma.user.findUnique({
+      where: { id: booking.customerId },
+      select: { email: true, name: true },
     });
+
+    console.log(
+      `✅ endTrip: emitting booking:updated to user:${booking.customerId}`,
+      {
+        bookingId,
+        status: updated.status,
+      },
+    );
     getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
 
     await createNotification(
       booking.customerId,
       "Trip completed",
-      "Your driver has completed the trip. Thank you for rideing with us!",
+      "Your driver has completed the trip. Thank you for riding with us!",
       "TRIP_COMPLETED",
       bookingId,
     );
+
+    if (customer && updated.driver) {
+      try {
+        sendTripCompletionEmail(
+          customer.email,
+          customer.name,
+          updated.packageType ?? "Trip",
+          updated.driver.name,
+          bookingId,
+          updated.totalAmount,
+        );
+      } catch (e) {
+        console.error("Trip email failed:", e);
+      }
+    }
+
     res.json({ message: "Trip ended successfully", booking: updated });
   } catch (error) {
     res;

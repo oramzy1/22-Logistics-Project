@@ -116,7 +116,6 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         pickupTime,
         outsidePH: outsidePH || false,
         addOns: addOns || [],
-        rideType,
       },
     });
 

@@ -10,80 +10,18 @@ import { BookingsSkeleton } from "@/src/ui/skeletons/BookingsSkeleton";
 import { StatusPill } from "@/src/ui/StatusPill";
 import { colors, radius, spacing, text } from "@/src/ui/theme";
 import { Image } from "expo-image";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+import { Calendar, Check, Recycle } from "lucide-react-native";
+import EmptyState from "@/src/ui/EmptyState";
 
-type BookingStatus = "Successful" | "Pay Later" | "Monthly Billing" | null;
 
-type BookingItem = {
-  id: string;
-  title: string;
-  amount: string;
-  date: string;
-  status: BookingStatus;
-};
-
-const BOOKINGS: BookingItem[] = [
-  {
-    id: "1",
-    title: "3 hrs Ride",
-    amount: "₦24,000",
-    date: "Mar 15, 2025",
-    status: "Successful",
-  },
-  {
-    id: "2",
-    title: "3 hrs Ride",
-    amount: "₦24,000",
-    date: "Mar 15, 2025",
-    status: "Successful",
-  },
-  {
-    id: "3",
-    title: "6 hrs Ride",
-    amount: "₦34,000",
-    date: "Mar 15, 2025",
-    status: "Successful",
-  },
-  {
-    id: "4",
-    title: "Airport Pickup",
-    amount: "₦54,000",
-    date: "Mar 15, 2025",
-    status: "Pay Later",
-  },
-  {
-    id: "5",
-    title: "Multi-day",
-    amount: "₦80,000",
-    date: "Mar 15, 2025",
-    status: "Successful",
-  },
-  {
-    id: "6",
-    title: "Multi-day",
-    amount: "₦77,000",
-    date: "Mar 15, 2025",
-    status: "Monthly Billing",
-  },
-  {
-    id: "7",
-    title: "Multi-day",
-    amount: "₦77,000",
-    date: "Mar 15, 2025",
-    status: "Pay Later",
-  },
-  {
-    id: "8",
-    title: "Airport Pickup",
-    amount: "₦54,000",
-    date: "Mar 15, 2025",
-    status: "Pay Later",
-  },
-];
 
 export default function BookingsTabScreen() {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   const [query, setQuery] = useState("");
   const [seg, setSeg] = useState<"Ongoing" | "Upcoming" | "Completed">(
-    "Upcoming",
+    "Completed",
   );
   const { bookings, isLoading, fetchBookings } = useBookings();
 
@@ -101,6 +39,27 @@ export default function BookingsTabScreen() {
       ? segFiltered.filter((b) => b.packageType.toLowerCase().includes(q))
       : segFiltered;
   }, [query, seg, bookings]);
+
+  const emptyStateConfig: Record<string, any>= {
+    Upcoming: {
+      title: "No Upcoming",
+      subtitle:
+        "You haven’t booked any trips yet. ",
+      Icon: Calendar,
+    },
+    Completed: {
+      title: "No Completed Trips",
+      subtitle: "Your completed trips will appear here once you've scheduled and finished a trip.",
+      Icon: Check,
+    },
+    Ongoing: {
+      title: "No Upcoming Trips",
+      subtitle: "You have no ongoing trips.",
+      Icon: Recycle,
+    },
+  };
+
+  const { title, subtitle, Icon } = emptyStateConfig[seg];
 
   if (isLoading) {
     return <BookingsSkeleton />;
@@ -140,7 +99,10 @@ export default function BookingsTabScreen() {
           })}
         </View>
 
-        <FlatList
+       { data.length === 0 ? ( 
+        <EmptyState Icon={Icon} title={title} subtitle={subtitle} />
+       ) : (
+         <FlatList
           data={data}
           keyExtractor={(i) => i.id}
           contentContainerStyle={{ paddingBottom: 20 }}
@@ -185,21 +147,22 @@ export default function BookingsTabScreen() {
             </Pressable>
           )}
         />
+       )}
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.navy },
-  content: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.navy },
+  content: { flex: 1, padding: spacing.lg, backgroundColor: themeColors.background },
   search: {
     height: 46,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: themeColors.border,
     paddingHorizontal: 14,
-    backgroundColor: "#fff",
+    backgroundColor: themeColors.background,
   },
   segments: {
     flexDirection: "row",
@@ -212,10 +175,10 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: themeColors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: themeColors.background,
   },
   segmentActive: {
     backgroundColor: colors.goldSoft,
@@ -223,7 +186,7 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     ...text.small,
-    color: colors.muted,
+    color: themeColors.textSecondary,
     fontWeight: "700",
   },
   segmentTextActive: {
@@ -236,8 +199,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.softBorder,
-    backgroundColor: "#fff",
+    borderColor: themeColors.softBorder,
+    backgroundColor: themeColors.card,
   },
   badge: {
     width: 44,
@@ -247,7 +210,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { ...text.body, fontWeight: "700" },
-  amount: { ...text.body, fontWeight: "900", marginTop: 2 },
+  title: { ...text.body, fontWeight: "600", color: themeColors.textPrimary},
+  amount: { ...text.body, fontWeight: "600", marginTop: 2, color: themeColors.textSecondary },
   date: { ...text.small, color: colors.muted },
 });

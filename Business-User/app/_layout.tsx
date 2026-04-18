@@ -17,6 +17,7 @@ import { ScheduleProvider } from "@/context/ScheduleContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { GlobalSocketAlerts } from "@/src/ui/GlobalSocketAlerts";
+import { I18nContext, useI18nState } from '@/src/i18n/useTranslation';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -58,10 +59,14 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const i18n = useI18nState();
+  
+
 
   return (
     <GestureHandlerRootView>
-      <ScheduleProvider>
+      <I18nContext.Provider value={i18n}>
+        <ScheduleProvider>
         <BookingProvider>
           <AuthProvider>
           <GlobalSocketAlerts />
@@ -92,6 +97,7 @@ function RootLayoutNav() {
         </BookingProvider>
       </ScheduleProvider>
       <Toast config={toastConfig} />
+      </I18nContext.Provider>
     </GestureHandlerRootView>
   );
 }

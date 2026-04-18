@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TouchableOpacity, View, Image } from 'reac
 import { Headphones, Bell, ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme } from './useAppTheme';
 
 import { colors, spacing } from './theme';
 
@@ -17,12 +18,15 @@ type Props = {
 export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent }: Props) {
   const router = useRouter();
   const { user, isBusiness } = useAuth();
+  const {  colors: themeColors } = useAppTheme();
+
+  
    const avatarUri = isBusiness
     ? user?.businessProfile?.logoUrl ?? null
     : user?.avatarUrl ?? null;
 
   return (
-    <View style={[styles.root, translucent && styles.translucent]}>
+    <View style={[styles.root, translucent && styles.translucent, { backgroundColor: themeColors.navy }]}>
       <View>
         {showBack ? (
           <Pressable onPress={() => router.back()} hitSlop={10} style={styles.circle}>
@@ -75,10 +79,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.navy,
+    // backgroundColor: themeColors.navy,
   },
   translucent: {
-    backgroundColor: 'transparent',
+    // backgroundColor: 'transparent',
   },
   leftSection: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   center: { flex: 1, alignItems: 'center' },

@@ -52,3 +52,15 @@ export const savePushToken = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
+export const getUnreadCount = async (req: AuthRequest, res: Response) => {
+  try {
+    const count = await prisma.notification.count({
+      where: { userId: req.user!.id, read: false },
+    });
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};

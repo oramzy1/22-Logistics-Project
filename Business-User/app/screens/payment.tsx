@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
 import { Text } from "../../components/AppText";
+import { useAppTheme } from "@/src/ui/useAppTheme";
 
 export default function PaymentScreen() {
   const {
@@ -46,6 +47,8 @@ export default function PaymentScreen() {
     addOns?: string;
     isExtension?: string;
   }>();
+    const { colors: themeColors } = useAppTheme();
+    const styles = createStyles(themeColors);
 
   const [selectedType, setSelectedType] = useState<"Card" | "Transfer" | null>(
     null,
@@ -304,9 +307,6 @@ export default function PaymentScreen() {
             renderLoading={() => (
               <View style={styles.webViewLoader}>
                 <ActivityIndicator size="large" color={colors.navy} />
-                <Text style={{ marginTop: 12, color: colors.muted }}>
-                  Loading payment gateway...
-                </Text>
               </View>
             )}
           />
@@ -316,16 +316,16 @@ export default function PaymentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.background },
   content: {
     padding: spacing.lg,
     margin: spacing.lg,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.softBorder,
+    borderColor: themeColors.border,
   },
-  title: { ...text.h2, fontSize: 18, marginBottom: spacing.lg },
+  title: { ...text.h2, fontSize: 18, marginBottom: spacing.lg, color: themeColors.textPrimary},
   card: {
     borderRadius: 12,
     padding: 20,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
   },
-  webViewTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
+  webViewTitle: { fontSize: 16, fontWeight: "700", color: themeColors.text },
   closeBtn: {
     width: 36,
     height: 36,

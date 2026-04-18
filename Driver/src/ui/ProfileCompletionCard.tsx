@@ -56,7 +56,7 @@ export function ProfileCompletionCard({ user, isDark }: { user: any; isDark: boo
   const percent = Math.round((completedCount / steps.length) * 100);
 
   const c = {
-    card: isDark ? '#1a2a3a' : '#FFFFFF',
+    card: isDark ? '#1e1e1e' : '#FFFFFF',
     border: isDark ? '#2D3F52' : '#E5E7EB',
     text: isDark ? '#F9FAFB' : '#111827',
     muted: isDark ? '#9CA3AF' : '#6B7280',

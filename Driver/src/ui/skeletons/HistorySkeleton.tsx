@@ -5,37 +5,36 @@ import { SkeletonBox, SkeletonSpacer } from './SkeletonBase';
 import { colors, spacing } from '@/src/ui/theme';
 import { AppHeader } from '../AppHeader';
 
-function BookingCardSkeleton() {
+function HistoryCardSkeleton() {
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        <SkeletonBox width={50} height={45} radius={6} />
-        <SkeletonBox width={100} height={30} radius={3} />
-        <SkeletonBox width={80} height={30} radius={3} />
+        <SkeletonBox width='100%' height={200} radius={6} />
       </View>
     </View>
   );
 }
 
-export function BookingsSkeleton() {
+export function HistorySkeleton() {
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#333' }}>
-      <AppHeader title="My Bookings" rightIcons />
+    <SafeAreaView edges={['top']} style={{ flex: 1}}>
+      <AppHeader title="Trip History" showBack  rightIcons />
       <View style={styles.sheet}>
         {/* Filter pills */}
+          <View style={{paddingHorizontal: spacing.lg, gap: 12}}>
+          <SkeletonSpacer height={30} />
+          <SkeletonBox width={90} height={30} radius={20}/>
+          <SkeletonBox width={95} height={20} radius={20}/>
+          </View>
         <View style={styles.filterRow}>
           {[100].map((w, i) => (
-            <SkeletonBox key={i} width='95%' height={40} radius={10} />
+            <SkeletonBox key={i} width='95%' height={40} radius={50} />
           ))}
         </View>
-        <View style={styles.filterRow}>
-          {[100, 100, 100].map((w, i) => (
-            <SkeletonBox key={i} width={w} height={40} radius={20} />
-          ))}
-        </View>
+        < SkeletonSpacer height={spacing.lg} />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {Array(14).fill(0).map((_, i) => (
-            <BookingCardSkeleton key={i} />
+            <HistoryCardSkeleton key={i} />
           ))}
         </ScrollView>
       </View>
@@ -46,25 +45,25 @@ export function BookingsSkeleton() {
 const styles = StyleSheet.create({
   sheet: {
     flex: 1,
-    backgroundColor: colors.background,
+    // backgroundColor: colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: 'hidden',
   },
   filterRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 10, 
     paddingHorizontal: spacing.lg,
     paddingVertical: 14,
-    backgroundColor:' #333',
+    // backgroundColor:' #333',
   },
-  content: { padding: spacing.lg, paddingBottom: 32, gap: 12 },
+  content: { padding: spacing.sm, paddingBottom: 32, gap: 12 },
   card: {
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    // borderColor: '#F1F5F9',
   },
   row: {
     flexDirection: 'row',

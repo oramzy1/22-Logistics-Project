@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   headerBar: { height: 70, backgroundColor: '#0B1B2B', borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
   content: { padding: 24, alignItems: 'center', paddingTop: 20 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: '600', color: '#111827', marginBottom: 16 },
   subtitle: { fontSize: 16, color: '#3E2723', textAlign: 'left', fontWeight: '500', paddingHorizontal: 20, marginBottom: 10 },
   timerBadge: { backgroundColor: '#F3F4F6', paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16, marginBottom: 30 },
   timerText: { fontSize: 12, color: '#6B7280' },

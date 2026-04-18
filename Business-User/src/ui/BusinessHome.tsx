@@ -14,7 +14,7 @@ import {
 
 import { useBookings } from "@/context/BookingContext";
 import { useSchedule } from "@/context/ScheduleContext";
-import { colors, radius, spacing, text } from "@/src/ui/theme";
+import { colors, radius, spacing } from "@/src/ui/theme";
 import {
   Car,
   ChevronRight,
@@ -24,6 +24,7 @@ import {
 } from "lucide-react-native";
 import { getRideTimeLabel } from "../utils/rideTimer";
 import { PackageId } from "../utils/timeSlots";
+import { useAppTheme } from "./useAppTheme";
 
 const packages = [
   { title: "3 Hours", price: "₦24,000" },
@@ -45,6 +46,8 @@ export function BusinessHome() {
     Airport: "3h",
   };
   const { bookings, activeBookings, isLoading } = useBookings();
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
 
   const now = new Date();
   const thisMonth = bookings.filter((b) => {
@@ -54,8 +57,7 @@ export function BusinessHome() {
     );
   });
 
-  const tripsThisMonth = thisMonth.filter((b) => b.paymentStatus === "PAID")
-
+  const tripsThisMonth = thisMonth.filter((b) => b.paymentStatus === "PAID");
 
   const totalSpentThisMonth = thisMonth
     .filter((b) => b.paymentStatus === "PAID")
@@ -88,7 +90,7 @@ export function BusinessHome() {
     if (!activeBooking)
       return (
         <View style={{ alignItems: "center", padding: 32 }}>
-          <Text style={{ color: "#6B7280", fontSize: 14 }}>
+          <Text style={{ color: themeColors.textSecondary, fontSize: 14 }}>
             No active bookings
           </Text>
         </View>
@@ -99,7 +101,7 @@ export function BusinessHome() {
       <View style={styles.scheduleCard}>
         <View style={styles.scheduleHeaderRow}>
           <View style={styles.scheduleHeaderLeft}>
-            <Car size={20} color="#111827" />
+            <Car size={20} color={themeColors.text} />
             <Text style={styles.remainingText}>
               {getRideTimeLabel(
                 activeBooking.packageType,
@@ -292,7 +294,9 @@ export function BusinessHome() {
                 <Car size={16} color="#111827" />
               </View>
             </View>
-            <Text style={styles.activityValue}>{tripsThisMonth.length} Trips</Text>
+            <Text style={styles.activityValue}>
+              {tripsThisMonth.length} Trips
+            </Text>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <TrendingUp
                 size={12}
@@ -433,306 +437,332 @@ export function BusinessHome() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: spacing.lg, paddingBottom: 40 },
-  h1: { ...text.h1, marginBottom: spacing.lg },
-  sectionTitle: {
-    ...text.h2,
-    fontSize: 16,
-    marginTop: spacing.md,
-    marginBottom: 16,
-  },
-  offer: {
-    height: 180,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    overflow: "hidden",
-  },
-  offerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  offerDiscount: { color: "#fff", fontWeight: "900", fontSize: 18 },
-  offerTitle: { color: "#fff", fontWeight: "900", fontSize: 18, marginTop: 10 },
-  offerSubtitle: { color: "#E5E7EB", marginTop: 6, lineHeight: 18 },
-  offerBtn: {
-    marginTop: 14,
-    alignSelf: "flex-start",
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  dots: {
-    marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: spacing.lg,
-  },
-  dot: { width: 18, height: 4, borderRadius: 3, backgroundColor: "#F59E0B" },
-  dotInactive: { width: 6, backgroundColor: "#D1D5DB" },
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    content: { padding: spacing.lg, paddingBottom: 40 },
+    h1: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: themeColors.text,
+      marginBottom: spacing.lg,
+    },
+    sectionTitle: {
+      fontWeight: "600",
+      color: themeColors.text,
+      fontSize: 16,
+      marginTop: spacing.md,
+      marginBottom: 16,
+    },
+    offer: {
+      height: 180,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      overflow: "hidden",
+    },
+    offerOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.35)",
+    },
+    offerDiscount: { color: "#fff", fontWeight: "900", fontSize: 18 },
+    offerTitle: {
+      color: "#fff",
+      fontWeight: "900",
+      fontSize: 18,
+      marginTop: 10,
+    },
+    offerSubtitle: { color: "#E5E7EB", marginTop: 6, lineHeight: 18 },
+    offerBtn: {
+      marginTop: 14,
+      alignSelf: "flex-start",
+      backgroundColor: "#fff",
+      borderRadius: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+    },
+    dots: {
+      marginTop: 10,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+      marginBottom: spacing.lg,
+    },
+    dot: { width: 18, height: 4, borderRadius: 3, backgroundColor: "#F59E0B" },
+    dotInactive: { width: 6, backgroundColor: "#D1D5DB" },
 
-  activityRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    gap: 12,
-  },
-  activityCard: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  activityCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  activityLabel: { fontSize: 11, color: "#6B7280", flex: 1, paddingRight: 8 },
-  activityIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activityValue: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  activityIncrease: { fontSize: 12, color: "#10B981", fontWeight: "600" },
-  activityDesc: { fontSize: 12, color: "#6B7280" },
+    activityRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 20,
+      gap: 12,
+    },
+    activityCard: {
+      flex: 1,
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: themeColors.softBorder,
+      padding: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    activityCardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    activityLabel: {
+      fontSize: 11,
+      color: themeColors.textSecondary,
+      flex: 1,
+      paddingRight: 8,
+    },
+    activityIconCircle: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: themeColors.cardPrimary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    activityValue: {
+      fontSize: 18,
+      fontWeight: "800",
+      color: themeColors.text,
+      marginBottom: 4,
+    },
+    activityIncrease: { fontSize: 12, color: "#10B981", fontWeight: "600" },
+    activityDesc: { fontSize: 12, color: themeColors.textSecondary },
 
-  scheduleBtn: {
-    flexDirection: "row",
-    backgroundColor: "#E4C77B",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  scheduleBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
+    scheduleBtn: {
+      flexDirection: "row",
+      backgroundColor: "#E4C77B",
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 24,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    scheduleBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
 
-  tabsContainer: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    marginBottom: 20,
-  },
-  tabBtn: { flex: 1, paddingVertical: 12, alignItems: "center" },
-  activeTabBtn: { borderBottomWidth: 2, borderBottomColor: "#D97706" },
-  tabText: { fontSize: 14, color: "#6B7280", fontWeight: "600" },
-  activeTabText: { color: "#111827", fontWeight: "700" },
+    tabsContainer: {
+      flexDirection: "row",
+      borderBottomWidth: 1,
+      borderBottomColor: "#E5E7EB",
+      marginBottom: 20,
+    },
+    tabBtn: { flex: 1, paddingVertical: 12, alignItems: "center" },
+    activeTabBtn: { borderBottomWidth: 2, borderBottomColor: "#D97706" },
+    tabText: { fontSize: 14, color: "#6B7280", fontWeight: "600" },
+    activeTabText: { color: themeColors.text, fontWeight: "700" },
 
-  scheduleCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    padding: 16,
-    marginTop: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  scheduleHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  scheduleHeaderLeft: { flexDirection: "row", alignItems: "center" },
-  remainingText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    marginLeft: 10,
-  },
-  statusBadge: {
-    backgroundColor: "#DBEAFE",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusBadgeText: { color: "#2563EB", fontSize: 12, fontWeight: "600" },
+    scheduleCard: {
+      backgroundColor: themeColors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: themeColors.softBorder,
+      padding: 16,
+      marginTop: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    scheduleHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    scheduleHeaderLeft: { flexDirection: "row", alignItems: "center" },
+    remainingText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: themeColors.text,
+      marginLeft: 10,
+    },
+    statusBadge: {
+      backgroundColor: "#DBEAFE",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+    },
+    statusBadgeText: { color: "#2563EB", fontSize: 12, fontWeight: "600" },
 
-  routeContainer: { paddingLeft: 8, marginBottom: 20 },
-  routePoint: { flexDirection: "row", alignItems: "flex-start" },
-  greenDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#10B981",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-    zIndex: 2,
-  },
-  redDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#EF4444",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-    zIndex: 2,
-  },
-  dotText: { color: "#FFF", fontSize: 9, fontWeight: "bold" },
-  routeLine: {
-    width: 2,
-    height: 26,
-    backgroundColor: "#E5E7EB",
-    marginLeft: 7,
-    marginVertical: 2,
-  },
-  routeContent: { marginLeft: 12, flex: 1 },
-  routeLabel: {
-    fontSize: 10,
-    color: "#6B7280",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  routeValue: { fontSize: 14, color: "#111827", fontWeight: "500" },
+    routeContainer: { paddingLeft: 8, marginBottom: 20 },
+    routePoint: { flexDirection: "row", alignItems: "flex-start" },
+    greenDot: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: "#10B981",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 2,
+      zIndex: 2,
+    },
+    redDot: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: "#EF4444",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 2,
+      zIndex: 2,
+    },
+    dotText: { color: "#FFF", fontSize: 9, fontWeight: "bold" },
+    routeLine: {
+      width: 2,
+      height: 26,
+      backgroundColor: "#E5E7EB",
+      marginLeft: 7,
+      marginVertical: 2,
+    },
+    routeContent: { marginLeft: 12, flex: 1 },
+    routeLabel: {
+      fontSize: 10,
+      color: "#6B7280",
+      marginBottom: 4,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    routeValue: { fontSize: 14, color: "#111827", fontWeight: "500" },
 
-  infoBox: {
-    flexDirection: "row",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
-  },
-  infoCol: { flex: 1 },
-  infoLabel: {
-    fontSize: 10,
-    color: "#6B7280",
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
-  infoValue: {
-    fontSize: 13,
-    color: "#111827",
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  infoSubValue: { fontSize: 12, color: "#4B5563" },
+    infoBox: {
+      flexDirection: "row",
+      backgroundColor: themeColors.cardPrimary,
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 20,
+    },
+    infoCol: { flex: 1 },
+    infoLabel: {
+      fontSize: 10,
+      color: themeColors.textSecondary,
+      textTransform: "uppercase",
+      marginBottom: 6,
+    },
+    infoValue: {
+      fontSize: 13,
+      color: themeColors.text,
+      fontWeight: "700",
+      marginBottom: 4,
+    },
+    infoSubValue: { fontSize: 12, color: themeColors.textSecondary },
 
-  viewDetailsBtn: {
-    paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-  },
-  viewDetailsText: { color: "#3B82F6", fontWeight: "600", fontSize: 14 },
+    viewDetailsBtn: {
+      paddingVertical: 14,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: themeColors.siftBorder,
+      alignItems: "center",
+    },
+    viewDetailsText: { color: "#3B82F6", fontWeight: "600", fontSize: 14 },
 
-  historyContainer: { paddingTop: 10 },
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  historyTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
-  viewMoreText: { fontSize: 13, color: "#6B7280" },
-  historyDate: {
-    fontSize: 13,
-    color: "#111827",
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-  historyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  historyRowLabel: { fontSize: 13, color: "#4B5563" },
-  historyRowValueBlue: { fontSize: 13, color: "#1D4ED8", fontWeight: "600" },
-  historyRowValueBold: { fontSize: 13, color: "#111827", fontWeight: "700" },
-  historyRowValueSuccess: { fontSize: 13, color: "#10B981", fontWeight: "600" },
-  viewReceiptBtn: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginTop: 10,
-  },
-  viewReceiptText: {
-    color: "#78350F",
-    fontWeight: "600",
-    fontSize: 14,
-    marginRight: 6,
-  },
+    historyContainer: { paddingTop: 10 },
+    historyHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    historyTitle: { fontSize: 14, fontWeight: "700", color: themeColors.text },
+    viewMoreText: { fontSize: 13, color: themeColors.textSecondary },
+    historyDate: {
+      fontSize: 13,
+      color: themeColors.text,
+      fontWeight: "600",
+      marginBottom: 16,
+    },
+    historyRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    historyRowLabel: { fontSize: 13, color: "#4B5563" },
+    historyRowValueBlue: { fontSize: 13, color: "#1D4ED8", fontWeight: "600" },
+    historyRowValueBold: {
+      fontSize: 13,
+      color: themeColors.text,
+      fontWeight: "700",
+    },
+    historyRowValueSuccess: {
+      fontSize: 13,
+      color: "#10B981",
+      fontWeight: "600",
+    },
+    viewReceiptBtn: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 14,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: themeColors.softBorder,
+      marginTop: 10,
+    },
+    viewReceiptText: {
+      color: "#78350F",
+      fontWeight: "600",
+      fontSize: 14,
+      marginRight: 6,
+    },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  drawerContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  drawerHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#D1D5DB",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  drawerTitle: {
-    ...text.h2,
-    fontSize: 18,
-    marginBottom: spacing.lg,
-    textAlign: "center",
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-    justifyContent: "center",
-  },
-  pkg: {
-    width: "47%",
-    minHeight: 120,
-    borderRadius: radius.xl,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: colors.softBorder,
-    padding: spacing.lg,
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-});
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "flex-end",
+    },
+    drawerContent: {
+      backgroundColor: themeColors.background,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      paddingBottom: 40,
+    },
+    drawerHandle: {
+      width: 40,
+      height: 4,
+      backgroundColor: "#D1D5DB",
+      borderRadius: 2,
+      alignSelf: "center",
+      marginBottom: 20,
+    },
+    drawerTitle: {
+      fontWeight: "500",
+      color: themeColors.text,
+      fontSize: 18,
+      marginBottom: spacing.lg,
+      textAlign: "center",
+    },
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+      justifyContent: "center",
+    },
+    pkg: {
+      width: "47%",
+      minHeight: 120,
+      borderRadius: radius.xl,
+      backgroundColor: themeColors.background,
+      borderWidth: 1,
+      borderColor: colors.softBorder,
+      padding: spacing.lg,
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+  });

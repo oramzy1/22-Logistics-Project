@@ -9,8 +9,11 @@ import { InfoBanner } from '@/src/ui/InfoBanner';
 import { PrimaryButton } from '@/src/ui/PrimaryButton';
 import { colors, radius, spacing, text } from '@/src/ui/theme';
 import { Image } from 'expo-image';
+import { useAppTheme } from '@/src/ui/useAppTheme';
 
 function Row({ label, value, valueStyle }: { label: string; value: string; valueStyle?: any }) {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   return (
     <View style={styles.row}>
       <Text numberOfLines={2} style={styles.rowLabel}>{label}</Text>
@@ -52,6 +55,10 @@ export default function ConfirmationScreen() {
     duration?: string;
     outOfLGAFee?: string;
   }>();
+  const { colors: themeColors, isDark } = useAppTheme();
+  const styles = createStyles(themeColors);
+
+
 
   const formattedDate = scheduledAt
     ? new Date(scheduledAt).toLocaleDateString('en-NG', { month: 'long', day: 'numeric' })
@@ -96,7 +103,7 @@ export default function ConfirmationScreen() {
 
         <View style={styles.btnRow}>
           <View style={{ flex: 1 }}>
-            <PrimaryButton title="Cancel" variant="outline" onPress={() => router.back()} />
+            <PrimaryButton title="Cancel" variant={ isDark ? 'dark' : 'outline'} onPress={() => router.back()} />
           </View>
           <View style={{ width: spacing.md }} />
           <View style={{ flex: 1 }}>
@@ -127,15 +134,15 @@ export default function ConfirmationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.background },
   content: { padding: spacing.lg, paddingBottom: 40 },
-  title: { ...text.h2, fontSize: 18, lineHeight: 24, marginBottom: spacing.lg },
+  title: { ...text.h2, fontSize: 18, lineHeight: 24, marginBottom: spacing.lg, color: themeColors.textPrimary},
   card: {
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.softBorder,
-    backgroundColor: '#fff',
+    borderColor: themeColors.border,
+    backgroundColor: themeColors.background,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -146,8 +153,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  rowLabel: { ...text.body, color: colors.muted },
-  rowValue: { ...text.body, fontWeight: '800', width: 150, textAlign: 'right'},
+  rowLabel: { ...text.body, color: themeColors.textSecondary },
+  rowValue: { ...text.body, fontWeight: '500', width: 150, textAlign: 'right', color: themeColors.textPrimary},
   driverPending: {
     marginBottom: spacing.lg,
     height: 56,

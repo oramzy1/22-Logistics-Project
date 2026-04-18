@@ -11,6 +11,7 @@ import RNDateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { Text } from '../../components/AppText';
 import { colors, radius, spacing } from './theme';
+import { useAppTheme } from "./useAppTheme";
 
 type Props = {
   label: string;
@@ -33,6 +34,8 @@ export function DateTimePickerInput({
 }: Props) {
   const [show, setShow] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(value ?? new Date());
+    const { colors: themeColors } = useAppTheme();
+    const styles = createStyles(themeColors);
 
   const displayValue = value
     ? mode === 'date'
@@ -107,32 +110,32 @@ export function DateTimePickerInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   wrapper: { marginBottom: spacing.md },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: themeColors.textSecondary,
     marginBottom: 8,
   },
   input: {
     height: 52,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: themeColors.border,
     paddingHorizontal: 14,
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.background,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   valueText: {
     fontSize: 14,
-    color: colors.text,
+    color: themeColors.text,
     flex: 1,
   },
   placeholder: {
-    color: '#9CA3AF',
+    color: themeColors.textSecondary,
   },
   icon: { marginLeft: 8 },
   modalBackdrop: {

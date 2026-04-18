@@ -6,15 +6,18 @@ import { Home, CalendarRange, Calendar, MapPin, User, Clock } from 'lucide-react
 
 import { colors } from '@/src/ui/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '@/src/ui/useAppTheme';
 
 
 function TabBarIcon({ name, focused }: { name: string; focused: boolean }) {
+  const { colors: themeColors } = useAppTheme();
+
   const icons: { [key: string]: React.ReactNode } = {
-    index: <Home color={focused ? "#061A33" : "gray"} size={20} />,
-    activeTrip: <MapPin color={focused ? "#061A33" : "gray"} size={20} />,
-    history: <Clock color={focused ? "#061A33" : "gray"} size={20} />,
-    live: <MapPin color={focused ? "#061A33" : "gray"} size={20} />,
-    account: <User color={focused ? "#061A33" : "gray"} size={20} />,
+    index: <Home color={focused ? themeColors.text : "gray"} size={20} />,
+    activeTrip: <MapPin color={focused ? themeColors.text : "gray"} size={20} />,
+    history: <Clock color={focused ? themeColors.text : "gray"} size={20} />,
+    live: <MapPin color={focused ? themeColors.text : "gray"} size={20} />,
+    account: <User color={focused ? themeColors.text : "gray"} size={20} />,
   };
 
   return icons[name] || <Home color="gray" size={20} />;
@@ -24,6 +27,7 @@ function TabBarIcon({ name, focused }: { name: string; focused: boolean }) {
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+  const { colors: themeColors } = useAppTheme();
 
   void colorScheme;
 
@@ -33,14 +37,14 @@ export default function TabLayout() {
         headerShown: false,
         animation: "shift",
         tabBarStyle: {
-          backgroundColor: "white",
+          backgroundColor: themeColors.card,
           borderTopWidth: 1,
-          borderTopColor: "#e5e7eb",
+          borderTopColor: themeColors.border,
           height: 52 + insets.bottom,
           paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
           paddingTop: 5,
         },
-        tabBarActiveTintColor: "#061A33",
+        tabBarActiveTintColor: themeColors.text,
         tabBarInactiveTintColor: "gray",
       }}>
       <Tabs.Screen

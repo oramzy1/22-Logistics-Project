@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/AppText';
+import { useAppTheme } from '@/src/ui/useAppTheme';
 
 export default function ExtensionSuccessScreen() {
   const { reference, bookingId } = useLocalSearchParams<{
@@ -16,6 +17,9 @@ export default function ExtensionSuccessScreen() {
 
   const { fetchBookings } = useBookings();
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'failed'>('pending');
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
+
 
   useEffect(() => {
     const verify = async () => {
@@ -98,12 +102,12 @@ export default function ExtensionSuccessScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.background },
   content: { padding: spacing.lg, paddingBottom: 40, alignItems: 'center' },
   lottieContainer: { height: 200, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: '800', color: themeColors.text, marginBottom: 8 },
+  subtitle: { fontSize: 14, color: themeColors.textSecondary, textAlign: 'center', marginBottom: 16 },
   badge: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#FEF3C7', borderRadius: 20,

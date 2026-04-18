@@ -1,5 +1,7 @@
 import React from 'react';
 import { Text as RNText, TextProps, StyleSheet } from 'react-native';
+import { useAppTheme } from '@/src/ui/useAppTheme';
+
 export function Text(props: TextProps) {
   const flatStyle = StyleSheet.flatten(props.style) ?? {};
   const { fontWeight, fontFamily: _fontFamily, ...remainingStyle } = flatStyle as any;

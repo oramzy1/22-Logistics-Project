@@ -77,7 +77,13 @@ const ListItem: React.FC<any> = ({
   isDanger = false,
   isLast = false,
   onPress,
-}: any) => (
+}: any) =>{
+  
+  
+  const {  colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors)
+  
+  return (
   <TouchableOpacity
     style={[styles.listItem, !isLast && styles.listBorder]}
     activeOpacity={0.7}
@@ -86,7 +92,7 @@ const ListItem: React.FC<any> = ({
     <View style={styles.listItemLeft}>
       <Icon
         size={18}
-        color={isDanger ? "#EF4444" : "#6B7280"}
+        color={isDanger ? "#EF4444" : themeColors.textSecondary}
         style={{ marginRight: 16 }}
       />
       <View>
@@ -98,7 +104,7 @@ const ListItem: React.FC<any> = ({
     </View>
     {rightElement || <ChevronRight size={16} color="#9CA3AF" />}
   </TouchableOpacity>
-);
+);}
 
 const AccordionItem: React.FC<any> = ({
   title,
@@ -108,7 +114,8 @@ const AccordionItem: React.FC<any> = ({
 }: any) => {
   const [expanded, setExpanded] = useState(false);
 
-  const { isDark } = useAppTheme();
+  const { isDark, colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors)
 
   const toggleAccordion = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -116,7 +123,7 @@ const AccordionItem: React.FC<any> = ({
   };
 
   return (
-    <View style={[styles.accordionWrapper, { backgroundColor: isDark ? '#1a2a3a' : '#FFF', borderColor: isDark ? '#2D3F52' : 'transparent' }]}>
+    <View style={[styles.accordionWrapper, { backgroundColor: themeColors.card }]}>
       <TouchableOpacity
         style={styles.accordionHeader}
         onPress={toggleAccordion}
@@ -124,7 +131,7 @@ const AccordionItem: React.FC<any> = ({
       >
         <View style={styles.accordionHeaderLeft}>
           <View style={styles.iconBox}>
-            <Icon size={18} color={isDanger ? "#EF4444" : "#374151"} />
+            <Icon size={18} color={isDanger ? "#EF4444" : themeColors.textSecondary} />
           </View>
           <Text
             style={[styles.accordionTitle, isDanger && { color: "#EF4444" }]}
@@ -144,7 +151,8 @@ const AccordionItem: React.FC<any> = ({
 };
 
 export default function AccountTabScreen() {
-  const { isDark } = useAppTheme();
+  const { isDark, colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors)
   const [notifications, setNotifications] = useState({
     trip: true,
     driver: true,
@@ -318,13 +326,13 @@ export default function AccountTabScreen() {
     setActiveModal("editWorkingHours");
   };
 
-  if (!user) return <AccountSkeleton />;
+  if (isLoading) return <AccountSkeleton />;
 
   return (
-    <SafeAreaView edges={["top"]} style={[styles.root, { backgroundColor: isDark ? '#060F18' : colors.navy }]}>
+    <SafeAreaView edges={["top"]} style={[styles.root, { backgroundColor: themeColors.navy}]}>
       <AppHeader title="Account" rightIcons />
       <ScrollView
-        contentContainerStyle={[styles.content, { backgroundColor: isDark ? '#0B1B2B' : colors.background }]}
+        contentContainerStyle={[styles.content, { backgroundColor: themeColors.background }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl onRefresh={refreshUser} refreshing={isLoading} />
@@ -1042,8 +1050,8 @@ export default function AccountTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.navy }, // Light gray background to show white cards
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.navy }, 
   content: {
     padding: 20,
     paddingBottom: 60,
@@ -1052,7 +1060,7 @@ const styles = StyleSheet.create({
 
   profileHeader: { alignItems: "center", marginBottom: 30, marginTop: 10 },
   avatar: { width: 80, height: 80, borderRadius: 40, marginBottom: 12 },
-  name: { fontSize: 20, fontWeight: "bold", color: "#111827", marginBottom: 4 },
+  name: { fontSize: 20, fontWeight: "bold", color: themeColors.text, marginBottom: 4 },
   contact: { fontSize: 13, color: "#6B7280", marginBottom: 2 },
   email: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
   editProfileBtn: {
@@ -1068,7 +1076,7 @@ const styles = StyleSheet.create({
   editProfileText: { color: "#3E2723", fontWeight: "600", fontSize: 13 },
 
   accordionWrapper: {
-    backgroundColor: "#FFF",
+    // backgroundColor: themeColors.card,
     borderRadius: 12,
     marginBottom: 12,
     overflow: "hidden",
@@ -1089,7 +1097,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: themeColors.cardSecondary,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1097,7 +1105,7 @@ const styles = StyleSheet.create({
   accordionTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#111827",
+    color: themeColors.text,
     textTransform: "uppercase",
   },
   accordionContent: { paddingHorizontal: 16, paddingBottom: 8 },
@@ -1110,7 +1118,7 @@ const styles = StyleSheet.create({
   },
   listBorder: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
   listItemLeft: { flexDirection: "row", alignItems: "center" },
-  listItemTitle: { fontSize: 14, color: "#374151", fontWeight: "500" },
+  listItemTitle: { fontSize: 14, color: themeColors.textSecondary, fontWeight: "500" },
   listItemSubtitle: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
 
   sectionLabel: {
@@ -1122,13 +1130,13 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   dangerCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingBottom: 8,
     marginBottom: 30,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 1 }, 
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,

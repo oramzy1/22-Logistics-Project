@@ -10,11 +10,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import {
   ArrowRight,
   Bell,
+  CarFront,
   ChevronLeft,
   Clock,
   MapPin,
   Phone,
   Star,
+  ArrowBigRight
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -32,6 +34,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { BookingsSkeleton } from "@/src/ui/skeletons/BookingsSkeleton";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
+import EmptyState from "@/src/ui/EmptyState";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+import { PrimaryButton } from "@/src/ui/PrimaryButton";
 
 // Simulated Images
 const MAP_IMAGE =
@@ -42,6 +47,8 @@ const CAR_THUMB =
   "https://img.freepik.com/free-photo/black-sedan-parked-outdoors_114579-22736.jpg";
 
 export default function LiveTabScreen() {
+ const { colors: themeColors } = useAppTheme();
+ const styles = createStyles(themeColors);
   const [showDriverDetails, setShowDriverDetails] = useState(false);
   const [extendTrip, setExtendTrip] = useState(true);
   const [selectedExtension, setSelectedExtension] = useState<string | null>(
@@ -54,9 +61,14 @@ export default function LiveTabScreen() {
   const [showCancelFlow, setShowCancelFlow] = useState(false);
   const { bookingId } = useLocalSearchParams<{ bookingId?: string }>();
 
+    const bookingsWithDrivers = activeBookings.filter(
+  (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS"
+);
+
+
   const activeBooking = bookingId
-    ? (activeBookings.find((b) => b.id === bookingId) ?? activeBookings[0])
-    : activeBookings[0];
+    ? (bookingsWithDrivers.find((b) => b.id === bookingId) ?? bookingsWithDrivers[0])
+    : bookingsWithDrivers[0];
 
   const [timeResult, setTimeResult] = useState(() =>
     getRideTimeRemaining(
@@ -64,6 +76,8 @@ export default function LiveTabScreen() {
       activeBooking?.scheduledAt ?? "",
     ),
   );
+
+
 
 useBookingSocket({
   onBookingUpdated: (updatedBooking) => {
@@ -153,61 +167,28 @@ useBookingSocket({
   }
 
   // Empty state — no active bookings
-  if (activeBookings.length === 0 && !showEndFlow) {
+  if (bookingsWithDrivers.length === 0 && !showEndFlow) {
     return (
       <SafeAreaView
         style={{
           flex: 1,
-          backgroundColor: "#F3F4F6",
+          backgroundColor: themeColors.background,
           justifyContent: "center",
           alignItems: "center",
           padding: 32,
         }}
       >
-        <Text style={{ fontSize: 48 }}>🚗</Text>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "800",
-            color: "#111827",
-            marginTop: 16,
-            marginBottom: 8,
-          }}
-        >
-          No Active Trips
-        </Text>
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#6B7280",
-            textAlign: "center",
-            marginBottom: 32,
-          }}
-        >
-          You don't have any ongoing bookings right now.
-        </Text>
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#0066FF",
-            paddingHorizontal: 32,
-            paddingVertical: 14,
-            borderRadius: 24,
-          }}
-          onPress={() => router.push("/schedule")}
-        >
-          <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 15 }}>
-            Book a Ride
-          </Text>
-        </TouchableOpacity>
+       <EmptyState Icon={CarFront} title="No Active Bookings" subtitle="You currently do not have any active bookings at the moment." />
+       <PrimaryButton title="Book a Ride" onPress={()=> router.replace('/(tabs)/schedule')} style={{width: 100}} />
       </SafeAreaView>
     );
   }
 
   // Multiple active bookings — show a picker list
-  if (activeBookings.length >= 2 && !bookingId) {
+  if (bookingsWithDrivers.length >= 2 && !bookingId) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: "#F3F4F6" }}
+        style={{ flex: 1, backgroundColor: themeColors.background }}
         edges={["top"]}
       >
         <View
@@ -217,24 +198,24 @@ useBookingSocket({
             onPress={() => router.back()}
             style={{ marginRight: 12 }}
           >
-            <ChevronLeft size={24} color="#111827" />
+            <ChevronLeft size={24} color={themeColors.text} />
           </TouchableOpacity>
-          <Text style={{ fontSize: 18, fontWeight: "700", color: "#111827" }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: themeColors.text }}>
             Active Trips
           </Text>
         </View>
         <FlatList
-          data={activeBookings}
+          data={bookingsWithDrivers}
           keyExtractor={(b) => b.id}
           contentContainerStyle={{ padding: 20, gap: 12 }}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={{
-                backgroundColor: "#FFF",
+                backgroundColor: themeColors.card,
                 borderRadius: 16,
                 padding: 16,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: themeColors.border,
               }}
               onPress={() =>
                 router.push({
@@ -245,16 +226,16 @@ useBookingSocket({
             >
               <Text
                 style={{
-                  fontWeight: "700",
+                  fontWeight: "600",
                   fontSize: 15,
-                  color: "#111827",
+                  color: themeColors.textSecondary,
                   marginBottom: 4,
                 }}
               >
                 {item.packageType}
               </Text>
-              <Text style={{ color: "#6B7280", fontSize: 13, marginBottom: 8 }}>
-                {item.pickupAddress} → {item.dropoffAddress}
+              <Text style={{ color: themeColors.textSecondary, fontSize: 13, marginBottom: 8 }}>
+                {item.pickupAddress} <ArrowBigRight  size={12} color={themeColors.text} /> {' '} {item.dropoffAddress}
               </Text>
               <View
                 style={{
@@ -263,15 +244,15 @@ useBookingSocket({
                 }}
               >
                 <Text
-                  style={{ fontSize: 13, color: "#0066FF", fontWeight: "600" }}
+                  style={{ fontSize: 13, color: themeColors.textSecondary, textDecorationLine: "underline", fontWeight: "600" }}
                 >
                   {item.status === "IN_PROGRESS"
-                    ? "🟢 In Progress"
+                    ? "In Progress"
                     : item.status === "ACCEPTED"
-                    ? "🟡 Driver en route"
-                    : "🕐 Awaiting Driver"}
+                    ? "Driver en route"
+                    : "Awaiting Driver"}
                 </Text>
-                <Text style={{ fontSize: 13, fontWeight: "700" }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: themeColors.textSecondary}}>
                   ₦{item.totalAmount.toLocaleString()}
                 </Text>
               </View>
@@ -301,11 +282,11 @@ useBookingSocket({
   return (
     <View style={styles.root}>
       {/* Background Map Simulation */}
-      <ImageBackground
+      {/* <ImageBackground
         source={{ uri: MAP_IMAGE }}
         style={StyleSheet.absoluteFillObject}
         imageStyle={{ opacity: 0.8 }}
-      />
+      /> */}
       <View
         style={{
           ...StyleSheet.absoluteFillObject,
@@ -329,13 +310,13 @@ useBookingSocket({
               }
             }}
           >
-            <ChevronLeft color="#374151" size={24} />
+            <ChevronLeft color={themeColors.textSecondary} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {showDriverDetails ? "Driver Details" : "Live"}
           </Text>
           <TouchableOpacity style={styles.backBtn}>
-            <Bell color="#374151" size={20} />
+            <Bell color={themeColors.textSecondary} size={20} />
           </TouchableOpacity>
         </View>
 
@@ -399,7 +380,7 @@ useBookingSocket({
                           onPress={() => setShowDriverDetails(true)}
                         >
                           <Text style={styles.viewDetailsText}>
-                            View Driver's Details
+                            View Details
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -664,8 +645,8 @@ useBookingSocket({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F3F4F6" },
+const createStyles = (themeColors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: themeColors.background },
   mapOverlay: { flex: 1, justifyContent: "space-between" },
   header: {
     flexDirection: "row",
@@ -679,7 +660,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: themeColors.card,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -699,7 +680,7 @@ const styles = StyleSheet.create({
 
   bottomCardWrapper: {
     flex: 0.8,
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     overflow: "hidden",
@@ -716,22 +697,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
+    color: themeColors.text,
     marginBottom: 16,
   },
 
   // --- ACTIVE TRIP STYLES ---
   routeBox: {
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: themeColors.border,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
   },
   routeRow: { flexDirection: "row", alignItems: "center" },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  routeSub: { fontSize: 11, color: "#6B7280", marginBottom: 4 },
-  routeVal: { fontSize: 13, fontWeight: "600", color: "#111827" },
+  routeSub: { fontSize: 11, color: themeColors.textSecondary, marginBottom: 4 },
+  routeVal: { fontSize: 13, fontWeight: "600", color: themeColors.text },
   routeLine: {
     width: 1,
     height: 24,
@@ -741,7 +722,7 @@ const styles = StyleSheet.create({
   },
 
   quickDriverCard: {
-    backgroundColor: "#0066FF",
+    backgroundColor: themeColors.card3,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
@@ -787,12 +768,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  statusLabel: { fontSize: 13, color: "#6B7280" },
-  statusVal: { fontSize: 13, fontWeight: "bold", color: "#111827" },
+  statusLabel: { fontSize: 13, color: themeColors.textSecondary },
+  statusVal: { fontSize: 13, fontWeight: "bold", color: themeColors.text },
 
   extendSection: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: themeColors.border,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
@@ -803,18 +784,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  extendTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  extendTitle: { fontSize: 15, fontWeight: "700", color: themeColors.text },
   extendPills: { flexDirection: "row", gap: 10, marginBottom: 16 },
   extPill: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: themeColors.border,
     borderRadius: 12,
     padding: 12,
   },
   extPillSelected: { backgroundColor: "#3B82F6", borderColor: "#3B82F6" },
   extHours: { fontSize: 11, color: "#3B82F6", fontWeight: "500" },
-  extPrice: { fontSize: 14, fontWeight: "800", color: "#111827" },
+  extPrice: { fontSize: 14, fontWeight: "800", color: themeColors.text },
   proceedBtn: {
     backgroundColor: "#FDE047",
     paddingVertical: 14,
@@ -839,7 +820,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 3,
-    borderColor: "#FFF",
+    borderColor: themeColors.border,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -849,7 +830,7 @@ const styles = StyleSheet.create({
   driverName: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#111827",
+    color: themeColors.text,
     marginBottom: 10,
   },
 
@@ -861,9 +842,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: themeColors.border,
   },
-  metaText: { fontSize: 12, color: "#4B5563", marginLeft: 6 },
+  metaText: { fontSize: 12, color: themeColors.textSecondary, marginLeft: 6 },
   langIcon: { fontSize: 10, fontWeight: "bold", color: "#D97706" },
 
   ratingOverview: {
@@ -876,19 +857,19 @@ const styles = StyleSheet.create({
   ratingNumber: {
     fontSize: 40,
     fontWeight: "800",
-    color: "#111827",
+    color: themeColors.text,
     lineHeight: 45,
   },
   starsRow: { flexDirection: "row", marginVertical: 4 },
-  ratingCount: { fontSize: 10, color: "#9CA3AF" },
+  ratingCount: { fontSize: 10, color: themeColors.textSecondary },
 
   barsContainer: { flex: 0.6, paddingLeft: 10 },
   barRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  barLevelText: { fontSize: 10, color: "#4B5563", width: 8, marginRight: 2 },
+  barLevelText: { fontSize: 10, color: themeColors.textSecondary, width: 8, marginRight: 2 },
   progressTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: themeColors.border,
     borderRadius: 3,
     marginLeft: 6,
   },
@@ -898,7 +879,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: themeColors.border,
     borderRadius: 12,
     padding: 16,
     marginTop: 10,
@@ -912,20 +893,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  phoneNumber: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  phoneNumber: { fontSize: 15, fontWeight: "700", color: themeColors.text },
 
   actionFooter: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 40,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: themeColors.border,
     gap: 10,
   },
   actionBtnWhite: {

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Pressable,
+  TextInput,
 } from "react-native";
 import { ChevronDown } from "lucide-react-native";
 import Animated, {
@@ -14,6 +15,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from "react-native-reanimated";
+import { useAppTheme } from "./useAppTheme";
 
 interface DropdownInputProps {
   label?: string;
@@ -35,6 +37,9 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
 }) => {
   // const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
 
   const progress = useSharedValue(0);
 
@@ -70,6 +75,12 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
     };
   });
 
+  const filteredOptions = options.filter((item: any) => {
+    const label = typeof item === "object" ? item.label : item;
+
+    return label.toLowerCase().includes(search.toLowerCase());
+  });
+
   return (
     <View style={styles.wrapper}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -100,13 +111,34 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
             onPress={toggle}
           />
 
+         
+
           <Animated.ScrollView
             style={[styles.dropdown, dropdownStyle, styles.dropdownBody]}
             showsVerticalScrollIndicator={true}
             nestedScrollEnabled={true}
             contentContainerStyle={{ paddingVertical: 4 }}
-          >
-            {options.map((item: any, index: any) => {
+          > 
+          
+          <TextInput
+            placeholder="Search..."
+            value={search}
+            onChangeText={setSearch}
+            style={styles.searchInput}
+          />
+          {value && (
+  <TouchableOpacity
+    style={styles.clearOption}
+    onPress={() => {
+      onSelect(null);
+      setSearch("");
+      toggle();
+    }}
+  >
+    <Text style={styles.clearText}>Clear selection</Text>
+  </TouchableOpacity>
+)}
+            {filteredOptions.map((item: any, index: any) => {
               const isSelected =
                 typeof item === "object"
                   ? value?.label === item.label
@@ -141,62 +173,84 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 20,
-  },
-  dropdownBody: {
-    zIndex: 1000,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 8,
-    color: "#1F2937",
-  },
-  input: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  value: {
-    fontSize: 14,
-    color: "#111827",
-  },
-  placeholder: {
-    color: "#9CA3AF",
-  },
-  dropdown: {
-    position: "absolute",
-    top: 90,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    overflow: "hidden",
-    elevation: 6,
-  },
-  option: {
-    height: ITEM_HEIGHT,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  selectedOption: {
-    backgroundColor: "#F3F4F6",
-  },
-  optionText: {
-    fontSize: 14,
-    color: "#111827",
-  },
-  selectedText: {
-    fontWeight: "600",
-  },
-});
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    wrapper: {
+      marginBottom: 20,
+    },
+    dropdownBody: {
+      zIndex: 1000,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: "500",
+      marginBottom: 8,
+      color: themeColors.textSecondary,
+    },
+    input: {
+      height: 52,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      backgroundColor: themeColors.background,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    value: {
+      fontSize: 14,
+      color: themeColors.text,
+    },
+    placeholder: {
+      color: themeColors.textSecondary,
+    },
+    dropdown: {
+      position: "absolute",
+      top: 90,
+      left: 0,
+      right: 0,
+      backgroundColor: themeColors.background,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      overflow: "hidden",
+      elevation: 6,
+    },
+    searchInput: {
+      height: 45,
+      borderBottomWidth: 1,
+      borderColor: themeColors.border,
+      paddingHorizontal: 12,
+      marginBottom: 4,
+      color: themeColors.text,
+    },
+    option: {
+      height: ITEM_HEIGHT,
+      justifyContent: "center",
+      paddingHorizontal: 16,
+    },
+    selectedOption: {
+      backgroundColor: themeColors.card,
+    },
+    optionText: {
+      fontSize: 14,
+      color: themeColors.text,
+    },
+    selectedText: {
+      fontWeight: "600",
+    },
+    clearOption: {
+  height: ITEM_HEIGHT,
+  justifyContent: "center",
+  paddingHorizontal: 16,
+  borderBottomWidth: 1,
+  borderColor: themeColors.border,
+},
+
+clearText: {
+  fontSize: 14,
+  color: "red", // or themeColors.error if you have one
+  fontWeight: "500",
+},
+  });

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing, text } from './theme';
 import { Clock } from 'lucide-react-native';
+import { useAppTheme } from './useAppTheme';
 
 export function PillSegment({
   title,
@@ -15,29 +16,31 @@ export function PillSegment({
   active?: boolean;
   onPress?: () => void;
 }) {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
   return (
     <Pressable onPress={onPress} style={[styles.root, active && styles.rootActive]}>
       <View style={[styles.icon, active && styles.iconActive]}>
-        <Clock color={active ? '#fff' : colors.navy} size={10} />
+        <Clock color={active ? '#fff' : themeColors.navy} size={10} />
       </View>
       <Text style={[styles.title]}>{title}</Text>
-      {!!subtitle && <Text style={[styles.sub, active && { color: colors.navy }]}>{subtitle}</Text>}
+      {!!subtitle && <Text style={[styles.sub, active ? { color: themeColors.text }: { color: themeColors.text }]}>{subtitle}</Text>}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   root: {
     width: 110,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: radius.lg,
     padding: spacing.sm,
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.background,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     borderWidth: 1,
-    borderColor: colors.softBorder,
+    borderColor: themeColors.softBorder,
     elevation: 5,
   },
   rootActive: {
@@ -64,5 +67,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginTop: 4,
+    color: themeColors.text
   },
 });
