@@ -93,16 +93,20 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       return res.status(502).json({ message: "Payment gateway unavailable." });
     }
 
+    const safeAddOns: string[] = Array.isArray(addOns)
+  ? addOns.filter((item) => typeof item === "string")
+  : [];
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {
         customerId,
         pickupAddress,
         dropoffAddress,
-        pickupLat: pickupLat ? Number(pickupLat) : null,
-        pickupLng: pickupLng ? Number(pickupLng) : null,
-        dropoffLat: dropoffLat ? Number(dropoffLat) : null,
-        dropoffLng: dropoffLng ? Number(dropoffLng) : null,
+        pickupLat,
+        pickupLng,
+        dropoffLat,
+        dropoffLng,
         scheduledAt: new Date(scheduledAt), // Frontend passes full ISO Date string here
         packageType,
         duration: duration ? String(duration) : null,
@@ -112,10 +116,11 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         status: "PENDING",
         paymentStatus: "UNPAID",
         trackingId,
-        pickupDate: pickupDate ? String(pickupDate) : null,
-        pickupTime: pickupTime ? String(pickupTime) : null,
-        outsidePH: Boolean(outsidePH),
-        addOns: Array.isArray(addOns) ? addOns : [],
+        pickupDate,
+        pickupTime,
+        outsidePH: outsidePH || false,
+        addOns: safeAddOns,
+        rideType,
       },
     });
 
