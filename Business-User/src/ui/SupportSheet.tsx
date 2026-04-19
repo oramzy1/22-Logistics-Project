@@ -27,6 +27,7 @@ import {
 import { Text } from '../../components/AppText';
 import { UserService } from '@/api/user.service';
 import { showToast } from '@/app/utils/toast';
+import { useAppTheme } from './useAppTheme';
 
 // ── Types ──────────────────────────────────────────────────────
 export type SupportType = 'contact' | 'report' | 'help' | 'faq' | null;
@@ -50,6 +51,8 @@ const FAQS = [
 
 // ── Contact Info Card (Image 1 style) ──────────────────────────
 function ContactCard() {
+    const { colors: themeColors } = useAppTheme();
+    const s = createStyles(themeColors);
   return (
     <View style={s.contactCard}>
       <Text style={s.contactCardTitle}>Contact Us</Text>
@@ -94,6 +97,9 @@ function SupportForm({ userEmail, userName }: { userEmail: string; userName: str
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [subjectError, setSubjectError] = useState(false);
+  const { colors: themeColors } = useAppTheme();
+  const s = createStyles(themeColors);
+
 
   const pickScreenshot = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -117,7 +123,8 @@ function SupportForm({ userEmail, userName }: { userEmail: string; userName: str
       setSubject('');
       setDescription('');
       setScreenshot(null);
-    } catch {
+    } catch (err) {
+      console.log("Failed:", err)
       showToast.error('Failed to send. Please try again.');
     } finally {
       setLoading(false);
@@ -200,6 +207,9 @@ function SupportForm({ userEmail, userName }: { userEmail: string; userName: str
 // ── FAQ List ───────────────────────────────────────────────────
 function FAQList() {
   const [open, setOpen] = useState<number | null>(null);
+  const { colors: themeColors } = useAppTheme();
+  const s = createStyles(themeColors);
+
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <Text style={s.formTitle}>Frequently Asked Questions</Text>
@@ -235,6 +245,9 @@ interface Props {
 
 export function SupportSheet({ type, onClose, userEmail = '', userName = '' }: Props) {
   if (!type) return null;
+  const { colors: themeColors } = useAppTheme();
+  const s = createStyles(themeColors);
+
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
@@ -259,14 +272,14 @@ export function SupportSheet({ type, onClose, userEmail = '', userName = '' }: P
 }
 
 // ── Styles ─────────────────────────────────────────────────────
-const s = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FFF',
+    backgroundColor: themeColors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -281,7 +294,7 @@ const s = StyleSheet.create({
 
   // Contact card
   contactCard: { paddingTop: 8 },
-  contactCardTitle: { fontSize: 17, fontWeight: '700', color: '#0B1B2B', marginBottom: 20 },
+  contactCardTitle: { fontSize: 17, fontWeight: '700', color: themeColors.text, marginBottom: 20 },
   contactRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   contactIconBox: {
     width: 44, height: 44, borderRadius: 22,
@@ -289,34 +302,34 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginRight: 14, borderWidth: 1, borderColor: '#E5E7EB',
   },
-  contactLabel: { fontSize: 12, color: '#6B7280', marginBottom: 3 },
-  contactValue: { fontSize: 15, fontWeight: '700', color: '#0B1B2B' },
+  contactLabel: { fontSize: 12, color: themeColors.textSecondary, marginBottom: 3 },
+  contactValue: { fontSize: 15, fontWeight: '700', color: themeColors.text },
   contactDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
 
   // Form
-  formTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  formSubtitle: { fontSize: 13, color: '#4B5563', marginBottom: 20 },
+  formTitle: { fontSize: 17, fontWeight: '700', color: themeColors.text, marginBottom: 6 },
+  formSubtitle: { fontSize: 13, color: themeColors.textSecondary, marginBottom: 20 },
   subjectBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10,
+    borderWidth: 1, borderColor: themeColors.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 14, marginBottom: 4,
   },
   subjectBtnError: { borderColor: '#EF4444' },
-  subjectBtnText: { fontSize: 14, color: '#111827', fontWeight: '500' },
+  subjectBtnText: { fontSize: 14, color: themeColors.text, fontWeight: '500' },
   subjectErrorText: { fontSize: 12, color: '#EF4444', marginBottom: 12 },
   dropdownList: {
     borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10,
     marginBottom: 12, overflow: 'hidden',
   },
-  dropdownItem: { paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  dropdownItemText: { fontSize: 14, color: '#374151' },
+  dropdownItem: { paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: themeColors.border },
+  dropdownItemText: { fontSize: 14, color: themeColors.textSecondary },
   textarea: {
-    borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10,
-    padding: 12, height: 130, fontSize: 14, color: '#111827',
+    borderWidth: 1, borderColor: themeColors.border, borderRadius: 10,
+    padding: 12, height: 130, fontSize: 14, color: themeColors.text,
     marginBottom: 12,
   },
   screenshotBox: {
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 10,
+    borderWidth: 1.5, borderColor: themeColors.border, borderRadius: 10,
     borderStyle: 'dashed', marginBottom: 20, overflow: 'hidden',
     minHeight: 72,
   },
@@ -325,7 +338,7 @@ const s = StyleSheet.create({
     padding: 20,
   },
   screenshotPreview: { width: '100%', height: 120 },
-  screenshotText: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
+  screenshotText: { fontSize: 13, color: themeColors.textSecondary, fontWeight: '600' },
   sendBtn: {
     backgroundColor: '#E4C77B', borderRadius: 12,
     paddingVertical: 16, alignItems: 'center', marginBottom: 8,
@@ -334,10 +347,10 @@ const s = StyleSheet.create({
 
   // FAQ
   faqItem: {
-    borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    borderBottomWidth: 1, borderBottomColor: themeColors.border,
     paddingVertical: 14,
   },
   faqHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  faqQ: { fontSize: 14, fontWeight: '600', color: '#111827', flex: 1, marginRight: 8 },
-  faqA: { fontSize: 13, color: '#4B5563', lineHeight: 20, marginTop: 10 },
+  faqQ: { fontSize: 14, fontWeight: '600', color: themeColors.text, flex: 1, marginRight: 8 },
+  faqA: { fontSize: 13, color: themeColors.textSecondary, lineHeight: 20, marginTop: 10 },
 });
