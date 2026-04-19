@@ -248,35 +248,37 @@ export const sendSupportRequestEmail = async (
   screenshotUrl?: string
 ) => {
   const supportInbox = process.env.SUPPORT_EMAIL ?? 'hello@22logistics.com';
-  sendEmail(
-    supportInbox,
-    `[Support] ${subject} — from ${userName}`,
-    `
-    <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
-      <h2 style="color:#0B1B2B">New Support Request</h2>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-        <tr><td style="color:#6B7280;padding:6px 0;font-size:13px;width:100px">From</td><td style="color:#111;font-weight:600">${userName} &lt;${userEmail}&gt;</td></tr>
-        <tr><td style="color:#6B7280;padding:6px 0;font-size:13px">Subject</td><td style="color:#111;font-weight:600">${subject}</td></tr>
-      </table>
-      <div style="background:#F9F6F0;border-radius:10px;padding:16px;color:#374151;font-size:14px;line-height:1.6;white-space:pre-wrap">${description}</div>
-      ${screenshotUrl ? `<p style="margin-top:16px"><a href="${screenshotUrl}" style="color:#3B82F6">View Attached Screenshot</a></p>` : ''}
-    </div>
-    `
-  );
- 
-  // Auto-reply to user
-  sendEmail(
-    userEmail,
-    'We received your message — 22Logistics Support',
-    `
-    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
-      <h2 style="color:#0B1B2B">We got your message, ${userName}!</h2>
-      <p style="color:#374151">Our team will review your request and get back to you within 24 hours.</p>
-      <div style="background:#F9F6F0;border-radius:12px;padding:16px;margin:16px 0;border-left:4px solid #E4C77B">
-        <p style="color:#6B7280;font-size:13px;margin:0"><strong>Subject:</strong> ${subject}</p>
+
+  // These can run in parallel
+  await Promise.all([
+    sendEmail(
+      supportInbox,
+      `[Support] ${subject} — from ${userName}`,
+      `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+        <h2 style="color:#0B1B2B">New Support Request</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+          <tr><td style="color:#6B7280;padding:6px 0;font-size:13px;width:100px">From</td><td style="color:#111;font-weight:600">${userName} &lt;${userEmail}&gt;</td></tr>
+          <tr><td style="color:#6B7280;padding:6px 0;font-size:13px">Subject</td><td style="color:#111;font-weight:600">${subject}</td></tr>
+        </table>
+        <div style="background:#F9F6F0;border-radius:10px;padding:16px;color:#374151;font-size:14px;line-height:1.6;white-space:pre-wrap">${description}</div>
+        ${screenshotUrl ? `<p style="margin-top:16px"><a href="${screenshotUrl}" style="color:#3B82F6">View Attached Screenshot</a></p>` : ''}
       </div>
-      <p style="color:#9CA3AF;font-size:12px">📞 +1238095832217 &nbsp;|&nbsp; ✉️ hello@22logistics.com</p>
-    </div>
-    `
-  );
+      `
+    ),
+    sendEmail(
+      userEmail,
+      'We received your message — 22Logistics Support',
+      `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+        <h2 style="color:#0B1B2B">We got your message, ${userName}!</h2>
+        <p style="color:#374151">Our team will review your request and get back to you within 24 hours.</p>
+        <div style="background:#F9F6F0;border-radius:12px;padding:16px;margin:16px 0;border-left:4px solid #E4C77B">
+          <p style="color:#6B7280;font-size:13px;margin:0"><strong>Subject:</strong> ${subject}</p>
+        </div>
+        <p style="color:#9CA3AF;font-size:12px">📞 +1238095832217 &nbsp;|&nbsp; ✉️ hello@22logistics.com</p>
+      </div>
+      `
+    ),
+  ]);
 };
