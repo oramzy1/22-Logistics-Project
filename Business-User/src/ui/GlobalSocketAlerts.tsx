@@ -193,7 +193,7 @@ export function GlobalSocketAlerts() {
 
         case 'ACCEPTED':
           Alert.alert(
-            '🚗 Driver On The Way!',
+            'Driver On The Way!',
             `${updatedBooking.driver?.name ?? 'Your driver'} has accepted your booking and is heading to you.`,
             [
               { text: 'View Live', onPress: () => router.push('/(tabs)/live') },
@@ -204,7 +204,7 @@ export function GlobalSocketAlerts() {
 
         case 'IN_PROGRESS':
           Alert.alert(
-            '📍 Driver Arrived!',
+            'Driver Arrived!',
             'Your driver is at the pickup location and has started the trip.',
             [
               { text: 'View Live', onPress: () => router.push('/(tabs)/live') },
@@ -215,7 +215,7 @@ export function GlobalSocketAlerts() {
 
         case 'CANCELLED':
           Alert.alert(
-            '❌ Booking Cancelled',
+            'Booking Cancelled',
             'Your booking has been cancelled.',
             [{ text: 'OK' }]
           );

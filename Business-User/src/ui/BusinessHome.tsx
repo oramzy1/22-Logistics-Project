@@ -208,12 +208,22 @@ export function BusinessHome() {
             </View>
             <View style={styles.historyRow}>
               <Text style={styles.historyRowLabel}>Pick up location</Text>
-              <Text style={styles.historyRowValueBlue}>{b.pickupAddress}</Text>
+              <Text numberOfLines={2} style={styles.historyRowValueBlue}>{b.pickupAddress}</Text>
+            </View>
+            <View style={styles.historyRow}>
+              <Text style={styles.historyRowLabel}>Drop off location</Text>
+              <Text numberOfLines={2} style={styles.historyRowValueBlue}>{b.dropoffAddress}</Text>
             </View>
             <View style={styles.historyRow}>
               <Text style={styles.historyRowLabel}>Booking ID</Text>
               <Text style={styles.historyRowValueBold}>
                 #{b.paymentRef.slice(-12).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.historyRow}>
+              <Text style={styles.historyRowLabel}>Tracking ID</Text>
+              <Text style={styles.historyRowValueBold}>
+                {b.trackingId.slice(-12).toUpperCase()}
               </Text>
             </View>
             <View style={styles.historyRow}>
@@ -244,7 +254,7 @@ export function BusinessHome() {
               }
             >
               <Text style={styles.viewReceiptText}>View Receipt</Text>
-              <ChevronRight size={16} color="#78350F" />
+              <ChevronRight size={16} color={themeColors.textPrimary} />
             </TouchableOpacity>
           </View>
         ))}
@@ -411,6 +421,7 @@ export function BusinessHome() {
                       fontSize: 18,
                       marginTop: 6,
                       margin: "auto",
+                      color: themeColors.textPrimary
                     }}
                   >
                     {p.title}
@@ -422,6 +433,7 @@ export function BusinessHome() {
                         fontSize: 18,
                         marginTop: 6,
                         margin: "auto",
+                        color: themeColors.textSecondary
                       }}
                     >
                       {p.price}
@@ -631,12 +643,12 @@ const createStyles = (themeColors: any) =>
     routeContent: { marginLeft: 12, flex: 1 },
     routeLabel: {
       fontSize: 10,
-      color: "#6B7280",
+      color: themeColors.textSecondary,
       marginBottom: 4,
       textTransform: "uppercase",
       letterSpacing: 0.5,
     },
-    routeValue: { fontSize: 14, color: "#111827", fontWeight: "500" },
+    routeValue: { fontSize: 14, color: themeColors.text, fontWeight: "500" },
 
     infoBox: {
       flexDirection: "row",
@@ -667,7 +679,7 @@ const createStyles = (themeColors: any) =>
       borderColor: themeColors.siftBorder,
       alignItems: "center",
     },
-    viewDetailsText: { color: "#3B82F6", fontWeight: "600", fontSize: 14 },
+    viewDetailsText: { color: themeColors.textPrimary, fontWeight: "600", fontSize: 14 },
 
     historyContainer: { paddingTop: 10 },
     historyHeader: {
@@ -689,8 +701,8 @@ const createStyles = (themeColors: any) =>
       justifyContent: "space-between",
       marginBottom: 16,
     },
-    historyRowLabel: { fontSize: 13, color: "#4B5563" },
-    historyRowValueBlue: { fontSize: 13, color: "#1D4ED8", fontWeight: "600" },
+    historyRowLabel: { fontSize: 13, color: themeColors.textSecondary },
+    historyRowValueBlue: { fontSize: 13, color: themeColors.text, fontWeight: "600", width: 180, textAlign: 'right' },
     historyRowValueBold: {
       fontSize: 13,
       color: themeColors.text,
@@ -712,7 +724,7 @@ const createStyles = (themeColors: any) =>
       marginTop: 10,
     },
     viewReceiptText: {
-      color: "#78350F",
+      color: themeColors.textPrimary,
       fontWeight: "600",
       fontSize: 14,
       marginRight: 6,
@@ -755,9 +767,9 @@ const createStyles = (themeColors: any) =>
       width: "47%",
       minHeight: 120,
       borderRadius: radius.xl,
-      backgroundColor: themeColors.background,
+      backgroundColor: themeColors.card,
       borderWidth: 1,
-      borderColor: colors.softBorder,
+      borderColor: themeColors.border,
       padding: spacing.lg,
       justifyContent: "center",
       shadowColor: "#000",

@@ -313,9 +313,10 @@ export function SupportSheet({
   userEmail = "",
   userName = "",
 }: Props) {
+
+    const { colors: themeColors } = useAppTheme();
+    const s = createStyles(themeColors);
   if (!type) return null;
-  const { colors: themeColors } = useAppTheme();
-  const s = createStyles(themeColors);
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
