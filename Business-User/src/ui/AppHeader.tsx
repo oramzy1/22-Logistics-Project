@@ -57,7 +57,7 @@ export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent
         {rightIcons ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={styles.circle}>
-              <Text style={styles.circleText}><Headphones  color="#fff" size={16} /></Text>
+              <Text style={styles.circleText}><Headphones  color="#fff" size={18} /></Text>
             </View>
             {/* <TouchableOpacity style={styles.circle} onPress={() => router.push('/screens/notifications')}>
               <Text style={styles.circleText}><Bell color="#fff" size={16} /></Text>

@@ -21,7 +21,7 @@ export const sendPushNotification = async (
   } catch (error) {
     console.error('Push notification failed:', error);
   }
-};
+}; 
 export const createNotification = async (
   userId: string,
   title: string,

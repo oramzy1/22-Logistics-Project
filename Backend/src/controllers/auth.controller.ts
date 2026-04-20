@@ -9,6 +9,8 @@ import {
 } from "../lib/email.service";
 import prisma from "../lib/prisma";
 import { sendWelcomeEmail } from "../lib/email.service";
+import { OAuth2Client } from "google-auth-library";
+
 
 const base_url = process.env.BASE_URL;
 
@@ -147,7 +149,7 @@ export const register = async (
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, appType } = req.body;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -170,6 +172,18 @@ export const login = async (req: Request, res: Response) => {
       return res
         .status(403)
         .json({ message: "Please verify your email first." });
+
+    if (appType === 'driver-app' && user.role !== 'DRIVER'){
+      return res.status(403).json({
+        message: 'This account is not a driver account. Please use the correct app.',
+      })
+    }
+
+    if (appType === 'user-app' && user.role === 'DRIVER'){
+      return res.status(403).json({
+        message: 'Driver accounts must use the Driver app to sign in.',
+      })
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -295,5 +309,125 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.json({ message: "Password reset successfully." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const googleAuth = async (req: Request, res: Response) => {
+  try {
+    const { idToken, appType } = req.body;
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.email) return res.status(400).json({ message: 'Invalid Google token' });
+
+    const { email, name, picture } = payload;
+
+    let user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true, businessProfile: true } });
+
+    if (user) {
+      // Role gate — same logic as login
+      if (appType === 'driver-app' && user.role !== 'DRIVER') {
+        return res.status(403).json({ message: 'This account is not a driver account.' });
+      }
+      if (appType === 'user-app' && user.role === 'DRIVER') {
+        return res.status(403).json({ message: 'Driver accounts must use the Driver app.' });
+      }
+    } else {
+      // New user — role determined by appType
+      // Drivers still need license upload after OAuth, flagged by needsProfileCompletion
+      const role = appType === 'driver-app' ? 'DRIVER' : 'INDIVIDUAL';
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: name ?? email,
+          password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+          role,
+          isVerified: true, // Google already verified their email
+          avatarUrl: picture ?? null,
+          ...(role === 'DRIVER' && {
+            driverProfile: { create: { licenseStatus: 'PENDING' } },
+          }),
+        },
+        include: { driverProfile: true, businessProfile: true },
+      });
+      try { await sendWelcomeEmail(email, user.name, role); } catch {}
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+
+    // needsProfileCompletion tells the app to show the license/profile completion screen
+    const needsProfileCompletion = user.role === 'DRIVER' && !user.driverProfile?.licenseImageUrl;
+
+    res.json({
+      token,
+      needsProfileCompletion,
+      user: {
+        id: user.id, email: user.email, phone: user.phone, name: user.name,
+        role: user.role, avatarUrl: user.avatarUrl,
+        isActive: user.isActive, isVerified: user.isVerified,
+        businessProfile: user.businessProfile ? { logoUrl: user.businessProfile.logoUrl } : null,
+        driverProfile: user.driverProfile ?? null,
+      },
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({ message: 'Google authentication failed', error });
+  }
+};
+
+export const appleAuth = async (req: Request, res: Response) => {
+  try {
+    const { identityToken, fullName, appType } = req.body;
+
+    // Decode Apple's JWT (verify with Apple's public keys in production)
+    const decoded = jwt.decode(identityToken) as any;
+    if (!decoded?.email) return res.status(400).json({ message: 'Invalid Apple token' });
+
+    const email = decoded.email;
+    const name = fullName?.givenName ? `${fullName.givenName} ${fullName.familyName ?? ''}`.trim() : email.split('@')[0];
+
+    let user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true, businessProfile: true } });
+
+    if (user) {
+      if (appType === 'driver-app' && user.role !== 'DRIVER') {
+        return res.status(403).json({ message: 'This account is not a driver account.' });
+      }
+      if (appType === 'user-app' && user.role === 'DRIVER') {
+        return res.status(403).json({ message: 'Driver accounts must use the Driver app.' });
+      }
+    } else {
+      const role = appType === 'driver-app' ? 'DRIVER' : 'INDIVIDUAL';
+      user = await prisma.user.create({
+        data: {
+          email, name,
+          password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+          role, isVerified: true,
+          ...(role === 'DRIVER' && {
+            driverProfile: { create: { licenseStatus: 'PENDING' } },
+          }),
+        },
+        include: { driverProfile: true, businessProfile: true },
+      });
+      try { await sendWelcomeEmail(email, name, role); } catch {}
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+    const needsProfileCompletion = user.role === 'DRIVER' && !user.driverProfile?.licenseImageUrl;
+
+    res.json({
+      token, needsProfileCompletion,
+      user: {
+        id: user.id, email: user.email, phone: user.phone, name: user.name,
+        role: user.role, avatarUrl: user.avatarUrl,
+        isActive: user.isActive, isVerified: user.isVerified,
+        businessProfile: user.businessProfile ? { logoUrl: user.businessProfile.logoUrl } : null,
+        driverProfile: user.driverProfile ?? null,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Apple authentication failed', error });
   }
 };

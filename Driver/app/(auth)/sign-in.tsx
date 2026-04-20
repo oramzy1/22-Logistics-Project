@@ -70,7 +70,7 @@ export default function SignInScreen() {
     }
     try {
       setLoading(true);
-      const data = await AuthService.login({ email, password });
+      const data = await AuthService.login({ email, password, appType: 'driver-app' });
       await setAuthData(data.token, data.user);
       await refreshUser();
      if (!hasLaunched){

@@ -299,7 +299,7 @@ export function BusinessHome() {
         <View style={styles.activityRow}>
           <View style={styles.activityCard}>
             <View style={styles.activityCardHeader}>
-              <Text style={styles.activityLabel}>Total Trip This Month</Text>
+              <Text style={styles.activityLabel}>Trips This Month</Text>
               <View style={styles.activityIconCircle}>
                 <Car size={16} color="#111827" />
               </View>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "986510137107",
+    "project_id": "logistics-69f96",
+    "storage_bucket": "logistics-69f96.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:986510137107:android:2625527d3dc938dcd92ce6",
+        "android_client_info": {
+          "package_name": "com.vendoramarketplace.logistics"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHUXwz3C9ASA2E83tI095VbNFxBhuyD6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

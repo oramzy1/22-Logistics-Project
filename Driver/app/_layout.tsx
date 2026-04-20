@@ -17,6 +17,36 @@ import { BookingProvider } from "@/context/BookingContext";
 import { ScheduleProvider } from "@/context/ScheduleContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
+import { NotificationService } from '@/api/notification.service';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+  }),
+});
+
+async function registerPushToken() {
+  if (!Device.isDevice) return; // simulators don't get push tokens
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  const { status } = existing === 'granted'
+    ? { status: existing }
+    : await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') return;
+
+  const token = (await Notifications.getExpoPushTokenAsync({
+    projectId: process.env.EXPO_PUBLIC_PROJECT_ID, // from app.json extra.eas.projectId
+  })).data;
+
+  try {
+    await NotificationService.savePushToken(token);
+  } catch {}
+}
+
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -38,6 +68,7 @@ export default function RootLayout() {
     "Grotesque-SemiBold": require("../assets/fonts/BricolageGrotesque-SemiBold.ttf"),
   });
 
+
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
@@ -49,9 +80,14 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+  registerPushToken();
+}, []);
+
   if (!loaded) {
     return null;
   }
+
 
   return <RootLayoutNav />;
 }

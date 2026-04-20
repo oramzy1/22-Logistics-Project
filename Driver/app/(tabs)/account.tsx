@@ -59,6 +59,7 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import {
   isProfileComplete,
 } from "@/src/ui/ProfileCompletionCard";
+import { SupportSheet } from "@/src/ui/SupportSheet";
 
 // Enable LayoutAnimation for Android
 if (
@@ -196,6 +197,7 @@ export default function AccountTabScreen() {
     vehicleColor: "",
     workingHours: "",
   });
+  const [supportSheet, setSupportSheet] = useState<SupportType>(null);
 
   const handleEditProfile = () => {
     setModalValues((v) => ({
@@ -414,11 +416,6 @@ export default function AccountTabScreen() {
             onPress={handleEditProfile}
           />
           <ListItem
-            icon={Phone}
-            title="Change Phone Number"
-            onPress={handleChangePassword}
-          />
-          <ListItem
             icon={Mail}
             title="Change Email"
             onPress={handleChangeEmail}
@@ -594,10 +591,27 @@ export default function AccountTabScreen() {
         </AccordionItem>
 
         <AccordionItem title="SUPPORT" icon={HelpCircle}>
-          <ListItem icon={HelpCircle} title="Help Center" />
-          <ListItem icon={Info} title="FAQs" />
-          <ListItem icon={Phone} title="Contact Support" />
-          <ListItem icon={MessageCircle} title="Report an Issue" isLast />
+          <ListItem
+            icon={HelpCircle}
+            title="Help Center"
+            onPress={() => setSupportSheet("help")}
+          />
+          <ListItem
+            icon={Info}
+            title="FAQs"
+            onPress={() => setSupportSheet("faq")}
+          />
+          <ListItem
+            icon={Phone}
+            title="Contact Support"
+            onPress={() => setSupportSheet("contact")}
+          />
+          <ListItem
+            icon={MessageCircle}
+            title="Report an Issue"
+            isLast
+            onPress={() => setSupportSheet("report")}
+          />
         </AccordionItem>
 
         <AccordionItem title="LEGAL" icon={Shield}>
@@ -1046,6 +1060,12 @@ export default function AccountTabScreen() {
           </KeyboardAvoidingView>
         </Modal>
       )}
+      <SupportSheet
+        type={supportSheet}
+        onClose={() => setSupportSheet(null)}
+        userEmail={user?.email ?? ""}
+        userName={user?.name ?? ""}
+      />
     </SafeAreaView>
   );
 }
@@ -1153,7 +1173,7 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: themeColors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
@@ -1162,24 +1182,24 @@ const createStyles = (themeColors: any) => StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: themeColors.text,
     marginBottom: 20,
   },
   modalLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#374151",
+    color: themeColors.textSecondary,
     marginBottom: 6,
     marginTop: 12,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: themeColors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 48,
     fontSize: 14,
-    color: "#111827",
+    color: themeColors.text,
   },
   modalButtons: { flexDirection: "row", gap: 12, marginTop: 24 },
   modalCancelBtn: {
@@ -1187,10 +1207,10 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: themeColors.border,
     alignItems: "center",
   },
-  modalCancelText: { color: "#6B7280", fontWeight: "600" },
+  modalCancelText: { color: themeColors.textSecondary, fontWeight: "600" },
   modalSaveBtn: {
     flex: 1,
     paddingVertical: 14,

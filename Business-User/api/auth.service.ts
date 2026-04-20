@@ -13,7 +13,7 @@ export const AuthService = {
     return response.data;
   },
 
-  login: async (credentials: any) => {
+  login: async (credentials: { email: string; password: string; appType: 'user-app' | 'driver-app' }) => {
     const response = await apiClient.post("/auth/login", credentials);
     return response.data;
   },
@@ -39,4 +39,14 @@ export const AuthService = {
     });
     return response.data;
   },
+
+  googleAuth: async (data: { idToken: string; appType: string }) => {
+  const response = await apiClient.post('/auth/google', data);
+  return response.data;
+},
+
+appleAuth: async (data: { identityToken: string; fullName: any; appType: string }) => {
+  const response = await apiClient.post('/auth/apple', data);
+  return response.data;
+},
 };

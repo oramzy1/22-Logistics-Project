@@ -6,7 +6,7 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { AuthProvider } from "../context/AuthContext";
 
@@ -18,6 +18,38 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { GlobalSocketAlerts } from "@/src/ui/GlobalSocketAlerts";
 import { I18nContext, useI18nState } from '@/src/i18n/useTranslation';
+import { NotificationService } from '@/api/notification.service';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { initI18n } from "@/src/i18n";
+import { I18nextProvider } from "react-i18next";
+import i18n from "@/src/i18n";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowList: true,
+  }),
+});
+
+async function registerPushToken() {
+  if (!Device.isDevice) return; // simulators don't get push tokens
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  const { status } = existing === 'granted'
+    ? { status: existing }
+    : await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') return;
+
+  const token = (await Notifications.getExpoPushTokenAsync({
+    projectId: process.env.EXPO_PUBLIC_PROJECT_ID, // from app.json extra.eas.projectId
+  })).data;
+
+  try {
+    await NotificationService.savePushToken(token);
+  } catch {}
+}
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -38,6 +70,11 @@ export default function RootLayout() {
     "Grotesque-Bold": require("../assets/fonts/BricolageGrotesque-Bold.ttf"),
     "Grotesque-SemiBold": require("../assets/fonts/BricolageGrotesque-SemiBold.ttf"),
   });
+  const [i18nReady, setI18nReady] = useState(false);
+
+    useEffect(() => {
+    initI18n().then(() => setI18nReady(true));
+  }, []);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -49,6 +86,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  useEffect(() => {
+  registerPushToken();
+}, []);
 
   if (!loaded) {
     return null;
@@ -65,7 +106,7 @@ function RootLayoutNav() {
 
   return (
     <GestureHandlerRootView>
-      <I18nContext.Provider value={i18n}>
+      <I18nextProvider i18n={i18n}>
         <ScheduleProvider>
         <BookingProvider>
           <AuthProvider>
@@ -97,7 +138,7 @@ function RootLayoutNav() {
         </BookingProvider>
       </ScheduleProvider>
       <Toast config={toastConfig} />
-      </I18nContext.Provider>
+      </I18nextProvider>
     </GestureHandlerRootView>
   );
 }

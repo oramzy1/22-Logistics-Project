@@ -31,7 +31,7 @@ import {
   User,
   UserX,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Appearance,
@@ -55,6 +55,14 @@ import { AccountSkeleton } from "@/src/ui/skeletons/AccountSkeleton";
 import { useAppTheme } from "@/src/ui/useAppTheme";
 import { SupportSheet, SupportType } from "@/src/ui/SupportSheet";
 import { LanguagePickerItem } from "@/src/ui/LanguagePicker";
+import { NotificationPrefs } from "@/hooks/useNotificationPrefs";
+
+export type NotifPrefs = {
+  trip: boolean;
+  driver: boolean;
+  payment: boolean;
+  promos: boolean;
+};
 
 // Enable LayoutAnimation for Android
 if (
@@ -152,7 +160,7 @@ const AccordionItem = ({
 export default function AccountTabScreen() {
   const { colors: themeColors, isDark } = useAppTheme();
   const styles = createStyles(themeColors);
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<NotifPrefs>({
     trip: true,
     driver: true,
     payment: true,
@@ -176,6 +184,16 @@ export default function AccountTabScreen() {
     deletePassword: "",
   });
   const [supportSheet, setSupportSheet] = useState<SupportType>(null);
+
+  useEffect(() => {
+  NotificationPrefs.load().then(setNotifications);
+}, []);
+
+const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
+  const updated = { ...notifications, [key]: value };
+  setNotifications(updated);
+  await NotificationPrefs.save(updated);
+};
 
   const handleEditProfile = () => {
     setModalValues((v) => ({
@@ -343,11 +361,6 @@ export default function AccountTabScreen() {
             onPress={handleEditProfile}
           />
           <ListItem
-            icon={Phone}
-            title="Change Phone Number"
-            onPress={handleChangePassword}
-          />
-          <ListItem
             icon={Mail}
             title="Change Email"
             onPress={handleChangeEmail}
@@ -384,9 +397,7 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={notifications.trip}
-                onValueChange={(v) =>
-                  setNotifications({ ...notifications, trip: v })
-                }
+               onValueChange={(v) => updatePref('trip', v)}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -397,9 +408,7 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={notifications.driver}
-                onValueChange={(v) =>
-                  setNotifications({ ...notifications, driver: v })
-                }
+                onValueChange={(v) => updatePref('driver', v)}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -410,9 +419,7 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={notifications.payment}
-                onValueChange={(v) =>
-                  setNotifications({ ...notifications, payment: v })
-                }
+                onValueChange={(v) => updatePref('payment', v)}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -424,9 +431,7 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={notifications.promos}
-                onValueChange={(v) =>
-                  setNotifications({ ...notifications, promos: v })
-                }
+                onValueChange={(v) => updatePref('promos', v)}
                 trackColor={{ true: "#111827" }}
               />
             }

@@ -66,7 +66,7 @@ export default function SignInScreen() {
     }
     try {
       setLoading(true);
-      const data = await AuthService.login({ email, password });
+      const data = await AuthService.login({ email, password, appType:'user-app' });
       await setAuthData(data.token, data.user);
       await refreshUser();
       showToast.success("Login Successful", "Welcome back!");

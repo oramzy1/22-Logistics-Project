@@ -9,12 +9,13 @@ import {
 } from 'react-native';
 import { Check, Globe, X } from 'lucide-react-native';
 import { Text } from '../../components/AppText';
-import { LANGUAGES, LangCode, useTranslation } from '@/src/i18n/useTranslation';
+import { changeLanguage, LANGUAGES, LangCode } from '@/src/i18n';
+import { useTranslation } from 'react-i18next';
 
 export function LanguagePickerItem() {
-  const { language, setLanguage, t } = useTranslation();
+  const { i18n, t  } = useTranslation();
   const [open, setOpen] = useState(false);
-  const current = LANGUAGES.find((l) => l.code === language);
+  const current = LANGUAGES.find(l => l.code === i18n.language);
 
   return (
     <>
@@ -45,22 +46,22 @@ export function LanguagePickerItem() {
               {LANGUAGES.map((lang) => (
                 <TouchableOpacity
                   key={lang.code}
-                  style={[s.langRow, language === lang.code && s.langRowActive]}
+                  style={[s.langRow, LANGUAGES === lang.code && s.langRowActive]}
                   onPress={async () => {
-                    await setLanguage(lang.code as LangCode);
+                    await changeLanguage(lang.code as LangCode);
                     setOpen(false);
                   }}
                   activeOpacity={0.75}
                 >
                   <View>
-                    <Text style={[s.langNative, language === lang.code && { color: '#0B1B2B' }]}>
+                    <Text style={[s.langNative, LANGUAGES === lang.code && { color: '#0B1B2B' }]}>
                       {lang.nativeLabel}
                     </Text>
                     {lang.nativeLabel !== lang.label && (
                       <Text style={s.langEnglish}>{lang.label}</Text>
                     )}
                   </View>
-                  {language === lang.code && <Check size={18} color="#0B1B2B" />}
+                  {LANGUAGES === lang.code && <Check size={18} color="#0B1B2B" />}
                 </TouchableOpacity>
               ))}
             </ScrollView>
