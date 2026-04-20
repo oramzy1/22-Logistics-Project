@@ -20,20 +20,20 @@ export function useOAuth(appType: 'user-app' | 'driver-app') {
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
   });
 
-  const handleOAuthSuccess = async (
-    token: string,
-    user: any,
-    needsProfileCompletion: boolean
-  ) => {
-    await setAuthData(token, user);
-    await refreshUser();
-    if (needsProfileCompletion && appType === 'user-app') {
-      // Driver signed in via OAuth but hasn't uploaded license yet
-      router.replace('/(driver-auth)/complete-profile');
-    } else {
-      router.replace(appType === 'driver-app' ? '/(driver-tabs)' : '/(tabs)');
-    }
-  };
+ const handleOAuthSuccess = async (
+  token: string,
+  user: any,
+  flags: { needsLicenseUpload: boolean; needsBusinessProfile: boolean }
+) => {
+  await setAuthData(token, user);
+  await refreshUser();
+
+  if (flags.needsBusinessProfile && appType === 'user-app') {
+    router.replace('/(auth)/complete-business-profile')
+  } else {
+    router.replace('/(tabs)');
+  }
+};
 
   const signInWithGoogle = async () => {
     try {

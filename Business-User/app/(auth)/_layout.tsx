@@ -10,6 +10,7 @@ export default function AuthLayout() {
       <Stack.Screen name="register-business" />
       <Stack.Screen name="verify" />
       <Stack.Screen name="congratulations" />
+      <Stack.Screen name="complete-business-profile" />
     </Stack>
   );
 }

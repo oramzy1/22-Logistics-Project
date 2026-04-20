@@ -30,7 +30,7 @@ export function useOAuth(appType: 'user-app' | 'driver-app') {
       // Driver signed in via OAuth but hasn't uploaded license yet
       router.replace('/(driver-auth)/complete-profile');
     } else {
-      router.replace(appType === 'driver-app' ? '/(driver-tabs)' : '/(tabs)');
+      router.replace('/(tabs)');
     }
   };
 

@@ -8,6 +8,9 @@ export default function AuthLayout() {
       <Stack.Screen name="register" />
       <Stack.Screen name="verify" />
       <Stack.Screen name="congratulations" />
+      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="reset-password" />
+      <Stack.Screen name="complete-profile" />
     </Stack>
   );
 }
