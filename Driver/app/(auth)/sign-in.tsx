@@ -24,6 +24,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { showToast } from "../utils/toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SocialButton } from "@/src/ui/SocialButtons";
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -221,26 +222,8 @@ export default function SignInScreen() {
             <View style={styles.line} />
           </View>
 
-          <TouchableOpacity style={styles.socialBtnList}>
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 16,
-                marginRight: 10,
-                color: "#EA4335",
-              }}
-            >
-              G
-            </Text>
-            <Text style={styles.socialBtnListText}>SIGN IN with Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.socialBtnList}>
-            <Text style={{ fontWeight: "bold", fontSize: 18, marginRight: 10 }}>
-              
-            </Text>
-            <Text style={styles.socialBtnListText}>SIGN IN with Apple</Text>
-          </TouchableOpacity>
+         <SocialButton type="google" />
+         <SocialButton type="apple" />
 
           <View style={{ flex: 1 }} />
 

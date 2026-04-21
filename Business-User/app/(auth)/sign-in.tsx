@@ -23,6 +23,8 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { showToast } from "../utils/toast";
+import { useOAuth } from "@/hooks/useAuth";
+import { SocialButton } from "@/src/ui/SocialButtons";
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -34,6 +36,7 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const { signInWithGoogle, signInWithApple } = useOAuth("user-app");
 
   // Animation values for error state
   const emailShake = useSharedValue(0);
@@ -66,7 +69,11 @@ export default function SignInScreen() {
     }
     try {
       setLoading(true);
-      const data = await AuthService.login({ email, password, appType:'user-app' });
+      const data = await AuthService.login({
+        email,
+        password,
+        appType: "user-app",
+      });
       await setAuthData(data.token, data.user);
       await refreshUser();
       showToast.success("Login Successful", "Welcome back!");
@@ -213,33 +220,15 @@ export default function SignInScreen() {
             <Text style={styles.dividerText}>Or continue with</Text>
             <View style={styles.line} />
           </View>
+          <SocialButton type="google" onPress={signInWithGoogle} />
 
-          <TouchableOpacity style={styles.socialBtnList}>
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 16,
-                marginRight: 10,
-                color: "#EA4335",
-              }}
-            >
-              G
-            </Text>
-            <Text style={styles.socialBtnListText}>SIGN IN with Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.socialBtnList}>
-            <Text style={{ fontWeight: "bold", fontSize: 18, marginRight: 10 }}>
-              
-            </Text>
-            <Text style={styles.socialBtnListText}>SIGN IN with Apple</Text>
-          </TouchableOpacity>
+          <SocialButton type="apple" onPress={signInWithApple} />
 
           <View style={{ flex: 1 }} />
 
           <TouchableOpacity
             style={styles.footerLink}
-            onPress={() => router.push("/(auth)/register-business")}
+            onPress={() => router.push("/(auth)/register-individual")}
           >
             <Text style={styles.footerText}>
               Don't Have an account{" "}

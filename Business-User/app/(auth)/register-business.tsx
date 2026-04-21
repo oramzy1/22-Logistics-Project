@@ -34,6 +34,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
+import { SocialButton } from "@/src/ui/SocialButtons";
+import { PhoneInput } from "@/src/ui/PhoneInput";
 
 const STEPS = [
   "Company Info",
@@ -93,7 +95,7 @@ export default function RegisterBusinessScreen() {
     });
     if (!result.canceled) {
       setLogoUri(result.assets[0].uri);
-    } 
+    }
   };
 
   const handleNext = async () => {
@@ -148,7 +150,8 @@ export default function RegisterBusinessScreen() {
       formData.append("cacNumber", cacNumber);
 
       if (logoUri) {
-        const safeUri = Platform.OS === "ios" ? logoUri.replace("file://", "") : logoUri;
+        const safeUri =
+          Platform.OS === "ios" ? logoUri.replace("file://", "") : logoUri;
         formData.append("logo", {
           uri: safeUri,
           type: "image/jpeg",
@@ -291,7 +294,7 @@ export default function RegisterBusinessScreen() {
                 </View>
 
                 <Text style={styles.label}>Company Phone Number</Text>
-                <View style={styles.phoneContainer}>
+                {/* <View style={styles.phoneContainer}>
                   <View style={styles.countryCode}>
                     <View style={styles.flagPlaceholder} />
                     <Text style={styles.countryCodeText}>+123</Text>
@@ -302,7 +305,8 @@ export default function RegisterBusinessScreen() {
                     style={styles.phoneInput}
                     keyboardType="phone-pad"
                   />
-                </View>
+                </View> */}
+                <PhoneInput value={companyPhone} onChangeText={setCompanyPhone} placeholder="Company Phone" />
 
                 <Text style={styles.errorText}>{error}</Text>
 
@@ -362,7 +366,7 @@ export default function RegisterBusinessScreen() {
                 <Text style={styles.label}>
                   Admin contact person Phone Number
                 </Text>
-                <View style={styles.phoneContainer}>
+                {/* <View style={styles.phoneContainer}>
                   <View style={styles.countryCode}>
                     <View style={styles.flagPlaceholder} />
                     <Text style={styles.countryCodeText}>+123</Text>
@@ -373,7 +377,9 @@ export default function RegisterBusinessScreen() {
                     style={styles.phoneInput}
                     keyboardType="phone-pad"
                   />
-                </View>
+                </View> */}
+                <PhoneInput value={adminPhone} onChangeText={setAdminPhone} placeholder="Admin Phone" />
+
 
                 {/* Radio Buttons */}
                 <TouchableOpacity
@@ -551,45 +557,22 @@ export default function RegisterBusinessScreen() {
                   <Text style={styles.dividerText}>Or continue with</Text>
                   <View style={styles.line} />
                 </View>
-                <TouchableOpacity style={styles.socialBtnOutlined}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 16,
-                      marginRight: 10,
-                      color: "#EA4335",
-                    }}
-                  >
-                    G
-                  </Text>
-                  <Text style={styles.socialBtnText}>SIGN IN with Google</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialBtnOutlined}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      marginRight: 10,
-                    }}
-                  >
-                    
-                  </Text>
-                  <Text style={styles.socialBtnText}>SIGN IN with Apple</Text>
-                </TouchableOpacity>
-                  {currentStep === 3 && error ? (
-                    <Text style={styles.errorText}>{error}</Text>
-                  ) : null}
+                <SocialButton type="google" appType="user-app" role="BUSINESS" />
+                {Platform.OS === 'ios' && (
+                  <SocialButton type="apple" appType="user-app" role="BUSINESS" />
+                )}
+                {currentStep === 3 && error ? (
+                  <Text style={styles.errorText}>{error}</Text>
+                ) : null}
                 <View style={[styles.rowButtons, { marginTop: 20 }]}>
-                 {
-                  !isLoading && (
-                     <TouchableOpacity
-                    style={styles.outlineBtn}
-                    onPress={handlePrev}
-                  >
-                    <Text style={styles.outlineBtnText}>Previous</Text>
-                  </TouchableOpacity>
-                  )
-                 }
+                  {!isLoading && (
+                    <TouchableOpacity
+                      style={styles.outlineBtn}
+                      onPress={handlePrev}
+                    >
+                      <Text style={styles.outlineBtnText}>Previous</Text>
+                    </TouchableOpacity>
+                  )}
 
                   <TouchableOpacity
                     style={styles.filledBtn}
@@ -845,7 +828,7 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 1, backgroundColor: "#E5E7EB" },
   dividerText: { marginHorizontal: 15, color: "#6B7280", fontSize: 12 },
   socialBtnOutlined: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,

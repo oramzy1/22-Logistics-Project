@@ -40,12 +40,12 @@ export const AuthService = {
     return response.data;
   },
 
-  googleAuth: async (data: { idToken: string; appType: string }) => {
+  googleAuth: async (data: { idToken: string; appType: string, role: string, mode: string }) => {
   const response = await apiClient.post('/auth/google', data);
   return response.data;
 },
 
-appleAuth: async (data: { identityToken: string; fullName: any; appType: string }) => {
+appleAuth: async (data: { identityToken: string; fullName: any; appType: string, role: string, mode: string }) => {
   const response = await apiClient.post('/auth/apple', data);
   return response.data;
 },

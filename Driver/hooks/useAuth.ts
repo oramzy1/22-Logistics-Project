@@ -6,17 +6,35 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { showToast } from '@/app/utils/toast';
 import { Platform } from 'react-native';
+import * as AuthSession from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
+
+const iosId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID 
+const androidId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '552515162391-ekrt13fnht06vo0cmm4f1nbr5puqtkdd.apps.googleusercontent.com'
+const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID
+
+console.log('ios:', iosId, 'android:', androidId, 'web:', clientId)
+
 
 export function useOAuth(appType: 'user-app' | 'driver-app') {
   const { setAuthData, refreshUser } = useAuth();
   const router = useRouter();
 
+    const redirectUri = AuthSession.makeRedirectUri({
+    native: Platform.select({
+      ios: "com.vendoramarketplace.logisticsdriver:/oauthredirect",
+      android: "com.vendoramarketplace.logisticsdriver:/oauthredirect",
+    }),
+    // useProxy: false,
+  });
+
   const [_, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    clientId: clientId,
+    iosClientId: iosId,
+    androidClientId: androidId,
+    redirectUri: redirectUri,
+    scopes: ['profile', 'email'],
   });
 
   const handleOAuthSuccess = async (
@@ -28,7 +46,7 @@ export function useOAuth(appType: 'user-app' | 'driver-app') {
     await refreshUser();
     if (needsProfileCompletion && appType === 'driver-app') {
       // Driver signed in via OAuth but hasn't uploaded license yet
-      router.replace('/(driver-auth)/complete-profile');
+      router.replace('/(auth)/complete-profile');
     } else {
       router.replace('/(tabs)');
     }

@@ -140,24 +140,33 @@ export const LANGUAGES = [
 
 export type LangCode = typeof LANGUAGES[number]['code'];
 
-const initI18n = async () => {
+
+// Configure i18next immediately with a default so the instance is always valid
+i18n.use(initReactI18next).init({
+  resources,
+  lng: 'en',           // safe default — overridden by initI18n()
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false },
+  detection: undefined,
+});
+
+// Call this in _layout.tsx to apply the persisted/device language
+export const initI18n = async (): Promise<void> => {
   const stored = await AsyncStorage.getItem(LANG_KEY);
   const deviceLang = Localization.getLocales()[0]?.languageCode ?? 'en';
-  const lng = (stored ?? deviceLang) as LangCode;
-  const safeLng = LANGUAGES.find(l => l.code === lng) ? lng : 'en';
+  const preferred = stored ?? deviceLang;
+  const safeLng = (LANGUAGES.find(l => l.code === preferred) ? preferred : 'en') as LangCode;
 
-  await i18n.use(initReactI18next).init({
-    resources,
-    lng: safeLng,
-    fallbackLng: 'en',
-    interpolation: { escapeValue: false },
-  });
+  if (i18n.language !== safeLng) {
+    await i18n.changeLanguage(safeLng);
+  }
 };
 
-export const changeLanguage = async (code: LangCode) => {
+export const changeLanguage = async (code: LangCode): Promise<void> => {
   await i18n.changeLanguage(code);
   await AsyncStorage.setItem(LANG_KEY, code);
 };
 
-export { initI18n };
+// export { LANGUAGES };
+// export type { LangCode };
 export default i18n;

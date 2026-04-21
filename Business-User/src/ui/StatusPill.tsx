@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { colors } from './theme';
 
-export function StatusPill({ status }: { status: 'Successful' | 'Pay Later' | 'Monthly Billing' | 'Completed' | null}) {
+export function StatusPill({ status }: { status: 'Successful' | 'Pay Later' | 'Monthly Billing' | 'Completed' | 'Cancelled' | 'Active' | null}) {
   const { c } = getStyle(status || '');
   return (
     <View style={[styles.root, { borderColor: c }] }>

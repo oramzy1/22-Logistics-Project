@@ -14,6 +14,7 @@ import {
 import { Text } from '../../components/AppText';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
+import { SocialButton } from "@/src/ui/SocialButtons";
 
 export default function RegisterIndividualScreen() {
   const router = useRouter();
@@ -214,16 +215,8 @@ export default function RegisterIndividualScreen() {
             </View>
 
             <View style={styles.socialContainer}>
-              {/* Placeholders for Social Icons */}
-              <TouchableOpacity style={styles.socialBtn}>
-                <Text style={{ color: "#1877F2", fontWeight: "bold" }}>f</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
-                <Text style={{ fontWeight: "bold", fontSize: 18 }}></Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
-                <Text style={{ color: "#EA4335", fontWeight: "bold" }}>G</Text>
-              </TouchableOpacity>
+              <SocialButton type="google" />
+              { Platform.OS === "ios" && <SocialButton type="apple" appType="user-app" role="INDIVIDUAL" /> }
             </View>
 
             <TouchableOpacity
@@ -362,9 +355,9 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 1, backgroundColor: "#E5E7EB" },
   dividerText: { marginHorizontal: 15, color: "#6B7280", fontSize: 12 },
   socialContainer: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "center",
-    gap: 20,
+    gap: 10,
     marginBottom: 30,
   },
   socialBtn: {

@@ -91,7 +91,7 @@ export default function RootLayout() {
   registerPushToken();
 }, []);
 
-  if (!loaded) {
+  if (!loaded || !i18nReady) {
     return null;
   }
 
@@ -100,7 +100,6 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const i18n = useI18nState();
   
 
 

@@ -4,8 +4,8 @@
     "slug": "22-Logistics",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "com.vendoramarketplace.logistics",
     "icon": "./assets/images/icon.png",
-    "scheme": "22logistics",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -43,7 +43,9 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-web-browser",
-      "expo-localization"
+      "expo-localization",
+      "expo-notifications",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

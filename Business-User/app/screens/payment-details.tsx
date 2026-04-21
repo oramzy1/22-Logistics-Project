@@ -7,6 +7,8 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 function Row({
   label,
@@ -35,6 +37,58 @@ export default function PaymentHistoryScreen() {
   const booking = bookings.find((b) => b.id === id);
   const extensions: TripExtension[] = booking?.extensions ?? [];
   const paidExtensions = extensions.filter((e) => e.paymentStatus === "PAID");
+
+  const handleDownload = async () => {
+  const booking = bookings.find((b) => b.id === id);
+  const html = `
+    <html><body style="font-family:sans-serif;padding:32px;max-width:600px;margin:auto">
+      <div style="text-align:center;background:#0B1B2B;padding:20px;border-radius:12px;margin-bottom:24px">
+        <h1 style="color:#E4C77B;margin:0;letter-spacing:2px">22Logistics</h1>
+        <p style="color:#9CA3AF;margin:4px 0 0">Official Receipt</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Invoice Number</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">22LOG${booking?.id.slice(-8).toUpperCase()}</td></tr>
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Package</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.packageType}</td></tr>
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Date</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${formattedDate}</td></tr>
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Pick-up</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.pickupAddress}</td></tr>
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Drop-off</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.dropoffAddress}</td></tr>
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Driver</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.driver ? booking.driver.name : 'Pending'}</td></tr>
+        <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Payment Status</td>
+            <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:${booking?.paymentStatus === 'PAID' ? '#22C55E' : '#EF4444'}">${booking?.paymentStatus}</td></tr>
+        <tr><td style="padding:14px 0;color:#111827;font-weight:800;font-size:16px">Total Amount</td>
+            <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${booking?.totalAmount.toLocaleString()}</td></tr>
+        ${paidExtensions.length > 0 ? `
+        <tr><td style="padding:10px 0;color:#6B7280">Extensions Total</td>
+            <td style="padding:10px 0;font-weight:700;text-align:right">₦${paidExtensions.reduce((s, e) => s + e.amount, 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:14px 0;color:#111827;font-weight:800">Grand Total</td>
+            <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${(booking?.totalAmount + paidExtensions.reduce((s, e) => s + e.amount, 0)).toLocaleString()}</td></tr>
+        ` : ''}
+      </table>
+      <p style="text-align:center;color:#9CA3AF;font-size:12px;margin-top:32px">
+        Thank you for riding with 22Logistics<br>
+        📞 +1238095832217 · ✉️ hello@22logistics.com
+      </p>
+    </body></html>
+  `;
+
+  try {
+    const { uri } = await Print.printToFileAsync({ html, base64: false });
+    await Sharing.shareAsync(uri, {
+      mimeType: 'application/pdf',
+      dialogTitle: `Receipt - ${booking?.packageType}`,
+      UTI: 'com.adobe.pdf',
+    });
+  } catch (err) {
+    console.error('Download failed:', err);
+  }
+};
+
 
   if (!booking) {
     return (
@@ -165,7 +219,7 @@ export default function PaymentHistoryScreen() {
         </View>
 
         {/* Download Button */}
-        <TouchableOpacity style={styles.downloadBtn}>
+        <TouchableOpacity style={styles.downloadBtn}onPress={handleDownload}>
           <Download size={16} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.downloadText}>Download</Text>
         </TouchableOpacity>

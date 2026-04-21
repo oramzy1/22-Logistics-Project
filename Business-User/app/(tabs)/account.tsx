@@ -29,7 +29,8 @@ import {
   Shield,
   Trash2,
   User,
-  UserX,
+  UserPlus,
+  UserX
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -186,14 +187,14 @@ export default function AccountTabScreen() {
   const [supportSheet, setSupportSheet] = useState<SupportType>(null);
 
   useEffect(() => {
-  NotificationPrefs.load().then(setNotifications);
-}, []);
+    NotificationPrefs.load().then(setNotifications);
+  }, []);
 
-const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
-  const updated = { ...notifications, [key]: value };
-  setNotifications(updated);
-  await NotificationPrefs.save(updated);
-};
+  const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
+    const updated = { ...notifications, [key]: value };
+    setNotifications(updated);
+    await NotificationPrefs.save(updated);
+  };
 
   const handleEditProfile = () => {
     setModalValues((v) => ({
@@ -379,16 +380,46 @@ const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
             title="Active Bookings"
             subtitle="View your current bookings"
           />
-          <ListItem icon={History} title="Trip History" />
-          <ListItem icon={UserX} title="Cancelled Trips" />
+          <ListItem
+            icon={History}
+            title="Trip History"
+            onPress={() =>
+              router.replace({
+                pathname: "/(tabs)/bookings",
+                params: { tab: "Completed" },
+              })
+            }
+          />
+
+          <ListItem
+            icon={UserPlus}
+            title="Upcoming Trips"
+            onPress={() =>
+              router.replace({
+                pathname: "/(tabs)/bookings",
+                params: { tab: "Upcoming" },
+              })
+            }
+          />
+
+          <ListItem
+            icon={UserX}
+            title="Cancelled Trips"
+            onPress={() =>
+              router.replace({
+                pathname: "/(tabs)/bookings",
+                params: { tab: "Cancelled" },
+              })
+            }
+          />
           <ListItem icon={Download} title="Download Trip Receipt" isLast />
         </AccordionItem>
 
-        <AccordionItem title="PAYMENT" icon={CreditCard}>
+        {/* <AccordionItem title="PAYMENT" icon={CreditCard}>
           <ListItem icon={CreditCard} title="Payment Method" />
           <ListItem icon={History} title="Transaction History" />
           <ListItem icon={FileText} title="Download Invoice" isLast />
-        </AccordionItem>
+        </AccordionItem> */}
 
         <AccordionItem title="NOTIFICATIONS" icon={Bell}>
           <ListItem
@@ -397,7 +428,7 @@ const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
             rightElement={
               <Switch
                 value={notifications.trip}
-               onValueChange={(v) => updatePref('trip', v)}
+                onValueChange={(v) => updatePref("trip", v)}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -408,7 +439,7 @@ const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
             rightElement={
               <Switch
                 value={notifications.driver}
-                onValueChange={(v) => updatePref('driver', v)}
+                onValueChange={(v) => updatePref("driver", v)}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -419,7 +450,7 @@ const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
             rightElement={
               <Switch
                 value={notifications.payment}
-                onValueChange={(v) => updatePref('payment', v)}
+                onValueChange={(v) => updatePref("payment", v)}
                 trackColor={{ true: "#111827" }}
               />
             }
@@ -431,7 +462,7 @@ const updatePref = async (key: keyof NotifPrefs, value: boolean) => {
             rightElement={
               <Switch
                 value={notifications.promos}
-                onValueChange={(v) => updatePref('promos', v)}
+                onValueChange={(v) => updatePref("promos", v)}
                 trackColor={{ true: "#111827" }}
               />
             }

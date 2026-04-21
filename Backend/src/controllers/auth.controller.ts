@@ -336,7 +336,7 @@ async function verifyGoogleToken(idToken: string) {
 
 export const googleAuth = async (req: Request, res: Response) => {
   try {
-    const { idToken, appType } = req.body;
+    const { idToken, role: explicitRole, appType, mode='signin' } = req.body;
 
     
     const payload = await verifyGoogleToken(idToken);
@@ -358,10 +358,16 @@ export const googleAuth = async (req: Request, res: Response) => {
         return res.status(403).json({ message: 'Driver accounts must use the Driver app.' });
       }
     } else {
-      // New user — role determined by appType
-      // user-app can be INDIVIDUAL or BUSINESS; OAuth defaults to INDIVIDUAL.
-      // Business accounts created via OAuth must complete their business profile after sign-in.
-      const role: Role = appType === 'driver-app' ? 'DRIVER' : 'INDIVIDUAL';
+       if (mode === 'signin') {
+        // Sign-in page: reject unknown users entirely
+        return res.status(404).json({
+          message: 'No account found with this Google account. Please register first.',
+        });
+      }
+
+      // Register mode: create with explicit role
+      const role: Role = (explicitRole as Role) ?? (appType === 'driver-app' ? 'DRIVER' : 'INDIVIDUAL');
+
 
       user = await prisma.user.create({
         data: {
@@ -412,7 +418,7 @@ export const googleAuth = async (req: Request, res: Response) => {
 // Add appleAuth (was missing entirely):
 export const appleAuth = async (req: Request, res: Response) => {
   try {
-    const { identityToken, fullName, appType } = req.body;
+    const { identityToken, fullName, appType, role: explicitRole, mode='signin'} = req.body;
 
     if (!identityToken) return res.status(400).json({ message: 'Missing identity token' });
 
@@ -441,7 +447,13 @@ export const appleAuth = async (req: Request, res: Response) => {
         return res.status(403).json({ message: 'Driver accounts must use the Driver app.' });
       }
     } else {
-      const role: Role = appType === 'driver-app' ? 'DRIVER' : 'INDIVIDUAL';
+       if (mode === 'signin') {
+        return res.status(404).json({
+          message: 'No account found with this Apple account. Please register first.',
+        });
+      }
+
+      const role: Role = (explicitRole as Role) ?? (appType === 'driver-app' ? 'DRIVER' : 'INDIVIDUAL');
 
       user = await prisma.user.create({
         data: {

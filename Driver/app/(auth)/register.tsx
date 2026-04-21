@@ -35,6 +35,7 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SocialButton } from "@/src/ui/SocialButtons";
 
 const STEPS = [
   "Personal Info",
@@ -429,7 +430,7 @@ export default function RegisterDriverScreen() {
                   <Text style={styles.dividerText}>Or continue with</Text>
                   <View style={styles.line} />
                 </View>
-                <TouchableOpacity style={styles.socialBtnOutlined}>
+                {/* <TouchableOpacity style={styles.socialBtnOutlined}>
                   <Text
                     style={{
                       fontWeight: "bold",
@@ -453,7 +454,9 @@ export default function RegisterDriverScreen() {
                     
                   </Text>
                   <Text style={styles.socialBtnText}>SIGN IN with Apple</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+                <SocialButton type="google" />
+                <SocialButton type="apple" /> 
                   {currentStep === 2 && error ? (
                     <Text style={styles.errorText}>{error}</Text>
                   ) : null}

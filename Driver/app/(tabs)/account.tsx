@@ -197,7 +197,7 @@ export default function AccountTabScreen() {
     vehicleColor: "",
     workingHours: "",
   });
-  const [supportSheet, setSupportSheet] = useState<SupportType>(null);
+  const [supportSheet, setSupportSheet] = useState<any>(null);
 
   const handleEditProfile = () => {
     setModalValues((v) => ({
