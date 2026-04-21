@@ -57,6 +57,7 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import { SupportSheet, SupportType } from "@/src/ui/SupportSheet";
 import { LanguagePickerItem } from "@/src/ui/LanguagePicker";
 import { NotificationPrefs } from "@/hooks/useNotificationPrefs";
+import { useLoading } from "@/context/LoadingContext";
 
 export type NotifPrefs = {
   trip: boolean;
@@ -185,6 +186,7 @@ export default function AccountTabScreen() {
     deletePassword: "",
   });
   const [supportSheet, setSupportSheet] = useState<SupportType>(null);
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
     NotificationPrefs.load().then(setNotifications);
@@ -234,12 +236,15 @@ export default function AccountTabScreen() {
           text: "Deactivate",
           style: "destructive",
           onPress: async () => {
+            showLoading('Deactivating Account...')
             try {
               await UserService.deactivateAccount();
               await clearAuthData();
               router.replace("/(auth)/sign-in");
             } catch (err: any) {
               Alert.alert("Error", err?.response?.data?.message || "Failed");
+            }finally{
+              hideLoading()
             }
           },
         },
@@ -272,8 +277,16 @@ export default function AccountTabScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
+          showLoading('Removing Session...')
+          try{
           await signOut();
           router.replace("/(auth)/sign-in");
+          showToast.success('Signed out successfully', "See you Soon!")
+          }catch(err){
+            showToast.error('Failed to Sign out')
+          }finally{
+            hideLoading();
+          }
         },
       },
     ]);

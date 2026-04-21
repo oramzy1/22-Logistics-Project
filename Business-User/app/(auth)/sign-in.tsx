@@ -36,7 +36,7 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const { signInWithGoogle, signInWithApple } = useOAuth("user-app");
+  // const { signInWithGoogle, signInWithApple } = useOAuth("user-app");
 
   // Animation values for error state
   const emailShake = useSharedValue(0);
@@ -220,9 +220,9 @@ export default function SignInScreen() {
             <Text style={styles.dividerText}>Or continue with</Text>
             <View style={styles.line} />
           </View>
-          <SocialButton type="google" onPress={signInWithGoogle} />
+          <SocialButton type="google" appType="user-app"/>
 
-          <SocialButton type="apple" onPress={signInWithApple} />
+          <SocialButton type="apple" appType="user-app" />
 
           <View style={{ flex: 1 }} />
 
@@ -242,14 +242,14 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: { flex: 1, backgroundColor: "#0B1B2B" },
   headerBar: {
     height: 70,
     backgroundColor: "#0B1B2B",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
   },
-  content: { flex: 1, padding: 24, paddingTop: 20 },
+  content: { flex: 1, padding: 24, paddingTop: 20, backgroundColor: "#FFF", 
+    borderTopRightRadius: 20,
+    borderTopLeftRadius: 20, },
   title: { fontSize: 24, fontWeight: "600", color: "#111827", marginBottom: 8 },
   subtitle: {
     fontSize: 15,

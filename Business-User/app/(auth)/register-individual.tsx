@@ -11,10 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text } from '../../components/AppText';
+import { Text } from "../../components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { SocialButton } from "@/src/ui/SocialButtons";
+import { PhoneInput } from "@/src/ui/PhoneInput";
 
 export default function RegisterIndividualScreen() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function RegisterIndividualScreen() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [countryCode, setCountryCode] = useState("+234");
 
   const handleSignUp = async () => {
     setError("");
@@ -43,10 +45,11 @@ export default function RegisterIndividualScreen() {
     }
     try {
       setIsLoading(true);
+      const fullPhone = `${countryCode}${phone.replace(/^0/, "")}`;
       const data = await AuthService.register({
         name: `${firstName} ${lastName}`,
         email,
-        phone,
+        phone: fullPhone,
         password,
         role: "INDIVIDUAL",
       });
@@ -133,19 +136,12 @@ export default function RegisterIndividualScreen() {
 
             {/* Phone */}
             <Text style={styles.label}>Phone Number</Text>
-            <View style={styles.phoneContainer}>
-              <View style={styles.countryCode}>
-                {/* Flag placeholder */}
-                <View style={styles.flagPlaceholder} />
-                <Text style={styles.countryCodeText}>+123</Text>
-              </View>
-              <TextInput
-                value={phone}
-                onChangeText={setPhone}
-                style={styles.phoneInput}
-                keyboardType="phone-pad"
-              />
-            </View>
+            <PhoneInput
+              value={phone}
+              onCountryChange={setCountryCode}
+              onChangeText={setPhone}
+              placeholder="Phone Number"
+            />
 
             {/* Password */}
             <Text style={styles.label}>Password</Text>
@@ -206,7 +202,12 @@ export default function RegisterIndividualScreen() {
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <PrimaryButton onPress={handleSignUp} title='SIGN UP' loading={isLoading} disabled={isLoading} />
+            <PrimaryButton
+              onPress={handleSignUp}
+              title="SIGN UP"
+              loading={isLoading}
+              disabled={isLoading}
+            />
 
             <View style={styles.dividerContainer}>
               <View style={styles.line} />
@@ -215,8 +216,19 @@ export default function RegisterIndividualScreen() {
             </View>
 
             <View style={styles.socialContainer}>
-              <SocialButton type="google" />
-              { Platform.OS === "ios" && <SocialButton type="apple" appType="user-app" role="INDIVIDUAL" /> }
+              <SocialButton
+                type="google"
+                appType="user-app"
+                role="INDIVIDUAL"
+                
+              />
+              {Platform.OS === "ios" && (
+                <SocialButton
+                  type="apple"
+                  appType="user-app"
+                  role="INDIVIDUAL"
+                />
+              )}
             </View>
 
             <TouchableOpacity

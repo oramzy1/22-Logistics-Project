@@ -102,10 +102,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { showToast } from '@/app/utils/toast';
 import { Alert, Platform } from 'react-native';
+import { useLoading } from '@/context/LoadingContext';
 
 GoogleSignin.configure({
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   offlineAccess: false,
   scopes: ['profile', 'email'],
 });
@@ -118,6 +119,7 @@ interface OAuthOptions {
 }
 
 export function useOAuth({ appType, role }: OAuthOptions) {
+  const { showLoading, hideLoading } = useLoading();
   const { setAuthData, refreshUser } = useAuth();
   const router = useRouter();
 
@@ -133,17 +135,19 @@ export function useOAuth({ appType, role }: OAuthOptions) {
     await refreshUser();
 
     if (flags.needsLicenseUpload && appType === 'driver-app') {
-      router.replace('/(driver-auth)/complete-profile');
+      return null;
     } else if (flags.needsBusinessProfile && appType === 'user-app') {
       router.replace('/(auth)/complete-business-profile');
     } else {
-      router.replace(appType === 'driver-app' ? '/(driver-tabs)' : '/(tabs)');
+      router.replace('/(tabs)');
     }
   };
 
   const signInWithGoogle = async () => {
+    showLoading('Please Wait...');
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await GoogleSignin.signOut(); 
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken;
       if (!idToken) { showToast.error('No token received from Google'); return; }
@@ -163,10 +167,16 @@ export function useOAuth({ appType, role }: OAuthOptions) {
       // Surface the backend message directly — covers the 404 "not registered" case
       const message = err?.response?.data?.message || 'Google sign-in failed';
       showToast.error(message);
+      if (err?.response?.status === 404){
+        router.replace('/(auth)/register-individual')
+      }
+    }finally{
+      hideLoading();
     }
   };
 
   const signInWithApple = async () => {
+    showLoading('Please Wait...');
     if (Platform.OS !== 'ios') return;
     try {
       const credential = await AppleAuthentication.signInAsync({
@@ -193,6 +203,11 @@ export function useOAuth({ appType, role }: OAuthOptions) {
       if (err.code === 'ERR_CANCELED') return;
       const message = err?.response?.data?.message || 'Apple sign-in failed';
       showToast.error(message);
+       if (err?.response?.status === 404){
+        router.replace('/(auth)/register-individual')
+      }
+    }finally{
+      hideLoading();
     }
   };
 
