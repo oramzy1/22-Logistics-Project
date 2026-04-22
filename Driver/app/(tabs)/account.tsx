@@ -32,7 +32,7 @@ import {
   User,
   UserX,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -157,30 +157,52 @@ const AccordionItem: React.FC<any> = ({
   );
 };
 
-type SetPasswordModalProps = {
+type OAuthModalMode = "action" | "emailChange"; // action = delete/deactivate, emailChange = full flow
+
+type OAuthActionModalProps = {
   visible: boolean;
+  mode: OAuthModalMode;
   onClose: () => void;
-  onSuccess: () => void; // retry the original action after setup
+  onActionVerified: (otp: string) => void; // for "action" mode — passes OTP back to caller
+  onEmailChangeComplete: () => void; // for "emailChange" mode — triggers logout
 };
 
-const SetPasswordModal = ({
+const OAuthActionModal = ({
   visible,
+  mode,
   onClose,
-  onSuccess,
-}: SetPasswordModalProps) => {
-  const [step, setStep] = useState<"intro" | "otp" | "password">("intro");
+  onActionVerified,
+  onEmailChangeComplete,
+}: OAuthActionModalProps) => {
+  const [step, setStep] = useState<
+    "requestOtp" | "enterOtp" | "newCredentials" | "verifyNewEmail"
+  >("requestOtp");
   const [otp, setOtp] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newEmailOtp, setNewEmailOtp] = useState("");
   const { showLoading, hideLoading } = useLoading();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
 
+  // Reset on open
+  useEffect(() => {
+    if (visible) {
+      setStep("requestOtp");
+      setOtp("");
+      setNewEmail("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setNewEmailOtp("");
+    }
+  }, [visible]);
+
   const handleRequestOtp = async () => {
     showLoading("Sending code...");
     try {
-      await UserService.requestPasswordSetupOtp();
-      setStep("otp");
+      await UserService.requestActionOtp();
+      setStep("enterOtp");
       showToast.success("Check your email for a verification code");
     } catch (err: any) {
       showToast.error(err?.response?.data?.message || "Failed to send code");
@@ -189,21 +211,56 @@ const SetPasswordModal = ({
     }
   };
 
-  const handleSetPassword = async () => {
+  const handleOtpContinue = () => {
+    if (otp.length !== 6) return;
+    if (mode === "action") {
+      // Pass OTP back — the caller will use it as the credential
+      onActionVerified(otp);
+      onClose();
+    } else {
+      // Email change — proceed to new credentials step
+      setStep("newCredentials");
+    }
+  };
+
+  const handleSubmitEmailChange = async () => {
     if (newPassword !== confirmPassword) {
       return showToast.error("Passwords do not match");
     }
-    showLoading("Setting password...");
+    if (!newEmail) return showToast.error("Please enter a new email");
+
+    showLoading("Processing...");
     try {
-      await UserService.setupPassword(otp, newPassword);
-      showToast.success("Password set! You can now continue.");
-      onSuccess(); // ← retries the original blocked action
-      onClose();
+      await UserService.requestEmailChange(newEmail, newPassword, otp);
+      setStep("verifyNewEmail");
+      showToast.success("Verification code sent to your new email");
     } catch (err: any) {
       showToast.error(err?.response?.data?.message || "Failed");
     } finally {
       hideLoading();
     }
+  };
+
+  const handleConfirmNewEmail = async () => {
+    showLoading("Confirming...");
+    try {
+      await UserService.confirmEmailChange(newEmailOtp);
+      showToast.success(
+        "Email changed! Please sign in with your new credentials.",
+      );
+      onEmailChangeComplete(); // triggers clearAuthData + redirect
+    } catch (err: any) {
+      showToast.error(err?.response?.data?.message || "Failed");
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const titles = {
+    requestOtp: "Verify Your Identity",
+    enterOtp: "Enter Verification Code",
+    newCredentials: "Set New Email & Password",
+    verifyNewEmail: "Verify New Email",
   };
 
   return (
@@ -218,15 +275,16 @@ const SetPasswordModal = ({
         style={styles.modalOverlay}
       >
         <View style={styles.modalCard}>
-          {step === "intro" && (
+          <Text style={styles.modalTitle}>{titles[step]}</Text>
+
+          {step === "requestOtp" && (
             <>
-              <Text style={styles.modalTitle}>Set a Password</Text>
               <Text
                 style={{ color: "#6B7280", fontSize: 13, marginBottom: 20 }}
               >
-                To perform sensitive actions on your account, you need to set a
-                password first. We'll send a verification code to your email to
-                get started.
+                {mode === "action"
+                  ? "We'll send a verification code to your email to confirm this action."
+                  : "To change your email and set a password, we'll first verify your current account."}
               </Text>
               <PrimaryButton
                 title="Send Verification Code"
@@ -241,13 +299,12 @@ const SetPasswordModal = ({
             </>
           )}
 
-          {step === "otp" && (
+          {step === "enterOtp" && (
             <>
-              <Text style={styles.modalTitle}>Enter Verification Code</Text>
               <Text
                 style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
               >
-                Check your email for the 6-digit code.
+                Enter the 6-digit code sent to your email.
               </Text>
               <TextInput
                 style={styles.modalInput}
@@ -260,32 +317,75 @@ const SetPasswordModal = ({
               <PrimaryButton
                 title="Continue"
                 style={{ marginTop: 16 }}
-                onPress={() => otp.length === 6 && setStep("password")}
+                onPress={handleOtpContinue}
               />
             </>
           )}
 
-          {step === "password" && (
+          {step === "newCredentials" && (
             <>
-              <Text style={styles.modalTitle}>Create a Password</Text>
-              <TextInput
-                style={[styles.modalInput, { marginBottom: 12 }]}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="New password"
-                secureTextEntry
-              />
+              <Text
+                style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+              >
+                Enter your new email and create a password. You'll verify the
+                new email next.
+              </Text>
+              <Text style={styles.modalLabel}>New Email</Text>
               <TextInput
                 style={styles.modalInput}
+                value={newEmail}
+                onChangeText={setNewEmail}
+                placeholder="New email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <Text style={styles.modalLabel}>New Password</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Create a password"
+                secureTextEntry
+              />
+              <Text style={styles.modalLabel}>Confirm Password</Text>
+              <TextInput
+                style={[styles.modalInput, { marginBottom: 4 }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm password"
                 secureTextEntry
               />
               <PrimaryButton
-                title="Set Password"
+                title="Send Verification to New Email"
                 style={{ marginTop: 20 }}
-                onPress={handleSetPassword}
+                onPress={handleSubmitEmailChange}
+              />
+            </>
+          )}
+
+          {step === "verifyNewEmail" && (
+            <>
+              <Text
+                style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+              >
+                Enter the verification code sent to {newEmail} to complete the
+                change.
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newEmailOtp}
+                onChangeText={setNewEmailOtp}
+                placeholder="6-digit code"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <Text style={{ color: "#9CA3AF", fontSize: 11, marginTop: 8 }}>
+                Until you verify this code, your account remains unchanged.
+              </Text>
+              <PrimaryButton
+                title="Confirm & Complete"
+                style={{ marginTop: 20 }}
+                onPress={handleConfirmNewEmail}
               />
             </>
           )}
@@ -324,6 +424,7 @@ export default function AccountTabScreen() {
     | "deleteAccount"
     | "editVehicle"
     | "editWorkingHours"
+    | "deactivateAccount"
     | null
   >(null);
   const [modalValues, setModalValues] = useState({
@@ -348,6 +449,14 @@ export default function AccountTabScreen() {
     onSuccess: () => void;
   }>({ visible: false, onSuccess: () => {} });
 
+  const isOAuthUser = user?.authProvider === "google" || user?.authProvider === "apple";
+
+  const [oauthModal, setOauthModal] = useState<{
+    visible: boolean;
+    mode: OAuthModalMode;
+    pendingAction?: (otp: string) => Promise<void>;
+  }>({ visible: false, mode: "action" });
+
   const withPasswordSetup = (action: () => Promise<void>) => async () => {
     try {
       await action();
@@ -370,14 +479,19 @@ export default function AccountTabScreen() {
     setActiveModal("editProfile");
   };
 
-  const handleChangeEmail = () => {
-    setModalValues((v) => ({
-      ...v,
-      newEmail: user?.email ?? "",
-      password: "",
-    }));
-    setActiveModal("changeEmail");
+const handleChangeEmail = () => {
+    if (isOAuthUser) {
+      setOauthModal({ visible: true, mode: "emailChange" });
+    } else {
+      setModalValues((v) => ({
+        ...v,
+        newEmail: user?.email ?? "",
+        password: "",
+      }));
+      setActiveModal("changeEmail");
+    }
   };
+
 
   const handleChangePassword = () => {
     setModalValues((v) => ({
@@ -398,16 +512,28 @@ export default function AccountTabScreen() {
         {
           text: "Deactivate",
           style: "destructive",
-          onPress: async () => {
-            showLoading("Deactivating Account...");
-            try {
-              await UserService.deactivateAccount();
-              await clearAuthData();
-              router.replace("/(auth)/sign-in");
-            } catch (err: any) {
-              Alert.alert("Error", err?.response?.data?.message || "Failed");
-            } finally {
-              hideLoading();
+          onPress: () => {
+            if (isOAuthUser) {
+              setOauthModal({
+                visible: true,
+                mode: "action",
+                pendingAction: async (otp: string) => {
+                  showLoading("Deactivating Account...");
+                  try {
+                    await UserService.deactivateAccount(otp);
+                    await clearAuthData();
+                    router.replace("/(auth)/sign-in");
+                  } catch (err: any) {
+                    showToast.error(err?.response?.data?.message || "Failed");
+                  } finally {
+                    hideLoading();
+                  }
+                },
+              });
+            } else {
+              // existing email/hybrid flow — prompt for password in modal
+              setModalValues((v) => ({ ...v, deletePassword: "" }));
+              setActiveModal("deactivateAccount"); // add this modal type
             }
           },
         },
@@ -416,23 +542,39 @@ export default function AccountTabScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This is permanent and cannot be undone. All your data will be removed.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
+    Alert.alert("Delete Account", "This is permanent and cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          if (isOAuthUser) {
+            setOauthModal({
+              visible: true,
+              mode: "action",
+              pendingAction: async (otp: string) => {
+                showLoading("Deleting Account...");
+                try {
+                  await UserService.deleteAccount(otp);
+                  await clearAuthData();
+                  router.replace("/(auth)/sign-in");
+                } catch (err: any) {
+                  showToast.error(
+                    err?.response?.data?.message || "Deletion failed",
+                  );
+                } finally {
+                  hideLoading();
+                }
+              },
+            });
+          } else {
             setModalValues((v) => ({ ...v, deletePassword: "" }));
             setActiveModal("deleteAccount");
-          },
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
-
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -599,11 +741,16 @@ export default function AccountTabScreen() {
             title="Change Email"
             onPress={handleChangeEmail}
           />
-          <ListItem
+         <ListItem
             icon={Lock}
             title="Change Password"
+            subtitle={
+              isOAuthUser
+                ? "Change your email first to set a password"
+                : undefined
+            }
             isLast
-            onPress={handleChangePassword}
+            onPress={isOAuthUser ? undefined : handleChangePassword}
           />
         </AccordionItem>
 
@@ -1052,6 +1199,64 @@ export default function AccountTabScreen() {
                   </View>
                 </>
               )}
+              {/* DEACTIVATE ACCOUNT */}
+              {activeModal === "deactivateAccount" && (
+                <>
+                  <Text style={styles.modalTitle}>Deactivate Account</Text>
+                  <Text
+                    style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+                  >
+                    Enter your password to temporarily disable your account.
+                  </Text>
+                  <Text style={styles.modalLabel}>Password</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.deletePassword}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, deletePassword: t }))
+                    }
+                    placeholder="Your password"
+                    secureTextEntry
+                    autoFocus
+                  />
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={styles.modalCancelBtn}
+                      onPress={() => setActiveModal(null)}
+                    >
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <PrimaryButton
+                      style={[
+                        styles.modalSaveBtn,
+                        { backgroundColor: "#F59E0B" },
+                      ]}
+                      title="Deactivate"
+                      onPress={async () => {
+                        if (!modalValues.deletePassword) {
+                          showToast.error("Please enter your password");
+                          return;
+                        }
+                        showLoading("Deactivating Account...");
+                        try {
+                          await UserService.deactivateAccount(
+                            modalValues.deletePassword,
+                          );
+                          setActiveModal(null);
+                          await clearAuthData();
+                          router.replace("/(auth)/sign-in");
+                        } catch (err: any) {
+                          showToast.error(
+                            err?.response?.data?.message || "Failed",
+                          );
+                        } finally {
+                          hideLoading();
+                        }
+                      }}
+                    />
+                  </View>
+                </>
+              )}
               {activeModal === "editVehicle" && (
                 <>
                   <Text style={styles.modalTitle}>Vehicle Information</Text>
@@ -1212,15 +1417,18 @@ export default function AccountTabScreen() {
         userEmail={user?.email ?? ""}
         userName={user?.name ?? ""}
       />
-      <SetPasswordModal
-  visible={passwordSetupModal.visible}
-  onClose={() => setPasswordSetupModal({ visible: false, onSuccess: () => {} })}
-  onSuccess={() => {
-    // Update local user state to reflect hybrid
-    updateUser({ authProvider: "hybrid" });
-    passwordSetupModal.onSuccess();
-  }}
-/>
+      <OAuthActionModal
+        visible={oauthModal.visible}
+        mode={oauthModal.mode}
+        onClose={() => setOauthModal({ visible: false, mode: "action" })}
+        onActionVerified={async (otp) => {
+          await oauthModal.pendingAction?.(otp);
+        }}
+        onEmailChangeComplete={async () => {
+          await clearAuthData();
+          router.replace("/(auth)/sign-in");
+        }}
+      />
     </SafeAreaView>
   );
 }

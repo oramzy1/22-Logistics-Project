@@ -31,14 +31,23 @@ export const UserService = {
     });
     return response.data;
   },
-  requestPasswordSetupOtp: async () => {
-  return apiClient.post("/users/request-password-setup-otp");
-},
 
-setupPassword: async (otp: string, newPassword: string) => {
-  return apiClient.post("/users/setup-password", { otp, newPassword });
-},
-
+  requestActionOtp: async () => {
+    const response = await apiClient.post("/users/request-action-otp");
+    return response.data;
+  },
+  
+  requestEmailChange: async (newEmail: string, newPassword: string, otp: string) => {
+    const response = await apiClient.post("/users/request-email-change", {
+      newEmail, newPassword, otp
+    });
+    return response.data;
+  },
+  
+  confirmEmailChange: async (otp: string) => {
+    const response = await apiClient.post("/users/confirm-email-change", { otp });
+    return response.data;
+  },
   uploadAvatar: async (imageUri: string) => {
     const token = await AsyncStorage.getItem("token");
 
@@ -77,14 +86,14 @@ setupPassword: async (otp: string, newPassword: string) => {
     return response.json();
   },
 
-  deactivateAccount: async () => {
-    const response = await apiClient.patch("/users/deactivate");
+  deactivateAccount: async (credential: string) => {
+    const response = await apiClient.patch("/users/deactivate", { credential });
     return response.data;
   },
 
-  deleteAccount: async (password: string) => {
+  deleteAccount: async (credential: string) => {
     const response = await apiClient.delete("/users/delete", {
-      data: { password },
+      data: { credential },
     });
     return response.data;
   },

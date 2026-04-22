@@ -11,13 +11,12 @@ import prisma from "../lib/prisma";
 import { sendWelcomeEmail } from "../lib/email.service";
 import { OAuth2Client } from "google-auth-library";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { validatePassword } from "../lib/password.validator";
 
 const ALLOWED_GOOGLE_CLIENT_IDS = [
   process.env.GOOGLE_CLIENT_ID_USER_APP, // user/business app client ID
   process.env.GOOGLE_CLIENT_ID_DRIVER_APP, // driver app client ID
 ].filter(Boolean) as string[];
-
-const base_url = process.env.BASE_URL;
 
 const generateCode = () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -54,6 +53,13 @@ export const register = async (
         cacNumber,
       } = req.body;
       const adminEmailNormalized = adminEmail.trim().toLowerCase();
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        return res.status(400).json({
+          message: "Password does not meet requirements",
+          errors: passwordCheck.errors,
+        });
+      }
 
       // adminEmail is the login identity for business accounts
       const existingUser = await prisma.user.findUnique({
@@ -196,11 +202,11 @@ export const login = async (req: Request, res: Response) => {
         message: "Driver accounts must use the Driver app to sign in.",
       });
     }
-    
-    if (!user.password){
+
+    if (!user.password) {
       return res.status(400).json({
-        message: `This account uses ${user.authProvider} sign-in. PLease use that instead.`
-      })
+        message: `This account uses ${user.authProvider} sign-in. PLease use that instead.`,
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -304,6 +310,13 @@ export const resetPassword = async (req: Request, res: Response) => {
     const { email, code, newPassword } = req.body;
     const hashed = crypto.createHash("sha256").update(code).digest("hex");
     const normalizedEmail = email.trim().toLowerCase();
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        message: "Password does not meet requirements",
+        errors: passwordCheck.errors,
+      });
+    }
 
     const user = await prisma.user.findFirst({
       where: {
@@ -406,7 +419,7 @@ export const googleAuth = async (req: Request, res: Response) => {
           email,
           name: name ?? email,
           password: null,
-          authProvider: 'google',
+          authProvider: "google",
           role,
           isVerified: true,
           avatarUrl: picture ?? null,
@@ -458,7 +471,6 @@ export const googleAuth = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Google authentication failed", error });
   }
 };
-
 
 export const appleAuth = async (req: Request, res: Response) => {
   try {
@@ -531,7 +543,7 @@ export const appleAuth = async (req: Request, res: Response) => {
           email,
           name: resolvedName,
           password: null,
-          authProvider: 'apple',
+          authProvider: "apple",
           role,
           isVerified: true,
           ...(role === "DRIVER" && {
@@ -605,11 +617,11 @@ export const completeBusiness = async (req: AuthRequest, res: Response) => {
         .json({ message: "Business profile already exists" });
     }
 
-      const authUser = await prisma.user.findUnique({
+    const authUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       select: { name: true, email: true },
     });
-    if (!authUser) return res.status(404).json({ message: 'User not found' });
+    if (!authUser) return res.status(404).json({ message: "User not found" });
 
     await prisma.user.update({
       where: { id: req.user!.id },

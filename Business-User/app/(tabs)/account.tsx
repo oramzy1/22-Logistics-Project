@@ -412,7 +412,12 @@ export default function AccountTabScreen() {
   const { user, clearAuthData, updateUser, signOut, isBusiness } = useAuth();
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<
-    "editProfile" | "changeEmail" | "changePassword" | "deleteAccount" | null
+    | "editProfile"
+    | "changeEmail"
+    | "changePassword"
+    | "deleteAccount"
+    | "deactivateAccount"
+    | null
   >(null);
   const [modalValues, setModalValues] = useState({
     name: "",
@@ -621,7 +626,7 @@ export default function AccountTabScreen() {
     }
   };
 
-  if (!user) return <AccountSkeleton />;
+  // if (isLoading) return <AccountSkeleton />;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.root}>
@@ -1118,6 +1123,65 @@ export default function AccountTabScreen() {
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
+                          );
+                        } finally {
+                          hideLoading();
+                        }
+                      }}
+                    />
+                  </View>
+                </>
+              )}
+
+              {/* DEACTIVATE ACCOUNT */}
+              {activeModal === "deactivateAccount" && (
+                <>
+                  <Text style={styles.modalTitle}>Deactivate Account</Text>
+                  <Text
+                    style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+                  >
+                    Enter your password to temporarily disable your account.
+                  </Text>
+                  <Text style={styles.modalLabel}>Password</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalValues.deletePassword}
+                    onChangeText={(t) =>
+                      setModalValues((v) => ({ ...v, deletePassword: t }))
+                    }
+                    placeholder="Your password"
+                    secureTextEntry
+                    autoFocus
+                  />
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={styles.modalCancelBtn}
+                      onPress={() => setActiveModal(null)}
+                    >
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <PrimaryButton
+                      style={[
+                        styles.modalSaveBtn,
+                        { backgroundColor: "#F59E0B" },
+                      ]}
+                      title="Deactivate"
+                      onPress={async () => {
+                        if (!modalValues.deletePassword) {
+                          showToast.error("Please enter your password");
+                          return;
+                        }
+                        showLoading("Deactivating Account...");
+                        try {
+                          await UserService.deactivateAccount(
+                            modalValues.deletePassword,
+                          );
+                          setActiveModal(null);
+                          await clearAuthData();
+                          router.replace("/(auth)/sign-in");
+                        } catch (err: any) {
+                          showToast.error(
+                            err?.response?.data?.message || "Failed",
                           );
                         } finally {
                           hideLoading();

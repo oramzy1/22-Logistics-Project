@@ -7,6 +7,7 @@ import {
 } from "../lib/email.service";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { validatePassword } from "../lib/password.validator";
 
 const base_url = process.env.BASE_URL;
 
@@ -215,6 +216,14 @@ if (!check.ok) return res.status(check.status).json({
   message: check.message,
   requiresPasswordSetup: check.requiresPasswordSetup
 });
+
+const passwordCheck = validatePassword(newPassword);
+if (!passwordCheck.valid) {
+  return res.status(400).json({
+    message: "Password does not meet requirements",
+    errors: passwordCheck.errors,
+  });
+}
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: req.user!.id },
