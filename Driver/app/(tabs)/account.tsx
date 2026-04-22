@@ -56,10 +56,10 @@ import { showToast } from "../utils/toast";
 import { AccountSkeleton } from "@/src/ui/skeletons/AccountSkeleton";
 import { DriverService } from "@/api/driver.service";
 import { useAppTheme } from "@/src/ui/useAppTheme";
-import {
-  isProfileComplete,
-} from "@/src/ui/ProfileCompletionCard";
+import { isProfileComplete } from "@/src/ui/ProfileCompletionCard";
 import { SupportSheet } from "@/src/ui/SupportSheet";
+import { useLoading } from "@/context/LoadingContext";
+import { PrimaryButton } from "@/src/ui/PrimaryButton";
 
 // Enable LayoutAnimation for Android
 if (
@@ -78,34 +78,35 @@ const ListItem: React.FC<any> = ({
   isDanger = false,
   isLast = false,
   onPress,
-}: any) =>{
-  
-  
-  const {  colors: themeColors } = useAppTheme();
-  const styles = createStyles(themeColors)
-  
+}: any) => {
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
+
   return (
-  <TouchableOpacity
-    style={[styles.listItem, !isLast && styles.listBorder]}
-    activeOpacity={0.7}
-    onPress={onPress}
-  >
-    <View style={styles.listItemLeft}>
-      <Icon
-        size={18}
-        color={isDanger ? "#EF4444" : themeColors.textSecondary}
-        style={{ marginRight: 16 }}
-      />
-      <View>
-        <Text style={[styles.listItemTitle, isDanger && { color: "#EF4444" }]}>
-          {title}
-        </Text>
-        {subtitle && <Text style={styles.listItemSubtitle}>{subtitle}</Text>}
+    <TouchableOpacity
+      style={[styles.listItem, !isLast && styles.listBorder]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      <View style={styles.listItemLeft}>
+        <Icon
+          size={18}
+          color={isDanger ? "#EF4444" : themeColors.textSecondary}
+          style={{ marginRight: 16 }}
+        />
+        <View>
+          <Text
+            style={[styles.listItemTitle, isDanger && { color: "#EF4444" }]}
+          >
+            {title}
+          </Text>
+          {subtitle && <Text style={styles.listItemSubtitle}>{subtitle}</Text>}
+        </View>
       </View>
-    </View>
-    {rightElement || <ChevronRight size={16} color="#9CA3AF" />}
-  </TouchableOpacity>
-);}
+      {rightElement || <ChevronRight size={16} color="#9CA3AF" />}
+    </TouchableOpacity>
+  );
+};
 
 const AccordionItem: React.FC<any> = ({
   title,
@@ -116,7 +117,7 @@ const AccordionItem: React.FC<any> = ({
   const [expanded, setExpanded] = useState(false);
 
   const { isDark, colors: themeColors } = useAppTheme();
-  const styles = createStyles(themeColors)
+  const styles = createStyles(themeColors);
 
   const toggleAccordion = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -124,7 +125,9 @@ const AccordionItem: React.FC<any> = ({
   };
 
   return (
-    <View style={[styles.accordionWrapper, { backgroundColor: themeColors.card }]}>
+    <View
+      style={[styles.accordionWrapper, { backgroundColor: themeColors.card }]}
+    >
       <TouchableOpacity
         style={styles.accordionHeader}
         onPress={toggleAccordion}
@@ -132,7 +135,10 @@ const AccordionItem: React.FC<any> = ({
       >
         <View style={styles.accordionHeaderLeft}>
           <View style={styles.iconBox}>
-            <Icon size={18} color={isDanger ? "#EF4444" : themeColors.textSecondary} />
+            <Icon
+              size={18}
+              color={isDanger ? "#EF4444" : themeColors.textSecondary}
+            />
           </View>
           <Text
             style={[styles.accordionTitle, isDanger && { color: "#EF4444" }]}
@@ -153,7 +159,7 @@ const AccordionItem: React.FC<any> = ({
 
 export default function AccountTabScreen() {
   const { isDark, colors: themeColors } = useAppTheme();
-  const styles = createStyles(themeColors)
+  const styles = createStyles(themeColors);
   const [notifications, setNotifications] = useState({
     trip: true,
     driver: true,
@@ -172,7 +178,7 @@ export default function AccountTabScreen() {
     isBusiness,
   } = useAuth();
   const router = useRouter();
-    const profileComplete = isProfileComplete(user);
+  const profileComplete = isProfileComplete(user);
   const [activeModal, setActiveModal] = useState<
     | "editProfile"
     | "changeEmail"
@@ -198,6 +204,7 @@ export default function AccountTabScreen() {
     workingHours: "",
   });
   const [supportSheet, setSupportSheet] = useState<any>(null);
+  const { showLoading, hideLoading } = useLoading();
 
   const handleEditProfile = () => {
     setModalValues((v) => ({
@@ -237,12 +244,15 @@ export default function AccountTabScreen() {
           text: "Deactivate",
           style: "destructive",
           onPress: async () => {
+            showLoading("Deactivating Account...");
             try {
               await UserService.deactivateAccount();
               await clearAuthData();
               router.replace("/(auth)/sign-in");
             } catch (err: any) {
               Alert.alert("Error", err?.response?.data?.message || "Failed");
+            } finally {
+              hideLoading();
             }
           },
         },
@@ -275,8 +285,16 @@ export default function AccountTabScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          await signOut();
-          router.replace("/(auth)/sign-in");
+          showLoading("Removing Session...");
+          try {
+            await signOut();
+            router.replace("/(auth)/sign-in");
+            showToast.success("Signed out successfully", "See you Soon!");
+          } catch (err) {
+            showToast.error("Failed to Sign out");
+          } finally {
+            hideLoading();
+          }
         },
       },
     ]);
@@ -331,10 +349,16 @@ export default function AccountTabScreen() {
   if (isLoading) return <AccountSkeleton />;
 
   return (
-    <SafeAreaView edges={["top"]} style={[styles.root, { backgroundColor: themeColors.navy}]}>
+    <SafeAreaView
+      edges={["top"]}
+      style={[styles.root, { backgroundColor: themeColors.navy }]}
+    >
       <AppHeader title="Account" rightIcons />
       <ScrollView
-        contentContainerStyle={[styles.content, { backgroundColor: themeColors.background }]}
+        contentContainerStyle={[
+          styles.content,
+          { backgroundColor: themeColors.background },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl onRefresh={refreshUser} refreshing={isLoading} />
@@ -483,7 +507,10 @@ export default function AccountTabScreen() {
             rightElement={
               <Switch
                 value={user?.driverProfile?.onlineStatus !== "OFFLINE"}
-                disabled={user?.driverProfile?.onlineStatus === "OFFLINE" && !profileComplete}
+                disabled={
+                  user?.driverProfile?.onlineStatus === "OFFLINE" &&
+                  !profileComplete
+                }
                 onValueChange={async (v) => {
                   const newStatus = v ? "ONLINE" : "OFFLINE";
                   try {
@@ -690,9 +717,13 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
+                    <PrimaryButton
                       style={styles.modalSaveBtn}
+                      
+                      title="Save"
+                      variant="primary"
                       onPress={async () => {
+                        showLoading("Updating Profile...");
                         try {
                           await UserService.updateProfile({
                             name: modalValues.name,
@@ -709,11 +740,11 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
+                        } finally {
+                          hideLoading();
                         }
                       }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity>
+                    />
                   </View>
                 </>
               )}
@@ -750,9 +781,8 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.modalSaveBtn}
-                      onPress={async () => {
+                   <PrimaryButton style={styles.modalSaveBtn} title="Save" variant="primary"  onPress={async () => {
+                      showLoading('Updating Email...')
                         try {
                           await UserService.updateEmail(
                             modalValues.newEmail,
@@ -769,11 +799,10 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
+                        }finally{
+                          hideLoading();
                         }
-                      }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity>
+                      }}/>
                   </View>
                 </>
               )}
@@ -819,9 +848,8 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.modalSaveBtn}
-                      onPress={async () => {
+                    <PrimaryButton style={styles.modalSaveBtn} title="Save"  onPress={async () => {
+                      showLoading('Updating Password...')
                         if (
                           modalValues.newPassword !==
                           modalValues.confirmPassword
@@ -843,11 +871,10 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
+                        }finally{
+                          hideLoading();
                         }
-                      }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity>
+                      }} />
                   </View>
                 </>
               )}
@@ -879,12 +906,8 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.modalSaveBtn,
-                        { backgroundColor: "#EF4444" },
-                      ]}
-                      onPress={async () => {
+                   <PrimaryButton style={[styles.modalSaveBtn, {backgroundColor: '#EF4444'}]} title="Delete Forever" onPress={async () => {
+                      showLoading('Deleting Account...')
                         if (!modalValues.deletePassword) {
                           showToast.error("Please enter your password");
                           return;
@@ -896,17 +919,14 @@ export default function AccountTabScreen() {
                           setActiveModal(null);
                           await clearAuthData();
                           router.replace("/(auth)/sign-in");
-                        } catch (err) {
+                        } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
                           );
+                        }finally{
+                          hideLoading();
                         }
-                      }}
-                    >
-                      <Text style={[styles.modalSaveText, { color: "#fff" }]}>
-                        Delete Forever
-                      </Text>
-                    </TouchableOpacity>
+                      }} />
                   </View>
                 </>
               )}
@@ -957,9 +977,11 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
+                    <PrimaryButton
+                      title="Save"
                       style={styles.modalSaveBtn}
                       onPress={async () => {
+                        showLoading('Updating')
                         try {
                           await DriverService.updateProfile({
                             vehicleType: modalValues.vehicleType,
@@ -991,11 +1013,11 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
+                        }finally{
+                          hideLoading();
                         }
                       }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity>
+                    />
                   </View>
                 </>
               )}
@@ -1020,9 +1042,11 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
+                    <PrimaryButton
+                    title='Save'
                       style={styles.modalSaveBtn}
-                      onPress={async () => {
+                       onPress={async () => {
+                        showLoading('Adjusting Working Hours...')
                         try {
                           await DriverService.updateProfile({
                             workingHours: modalValues.workingHours,
@@ -1048,11 +1072,12 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
+                        }finally{
+                          hideLoading();
                         }
                       }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity>
+                     
+                    />
                   </View>
                 </>
               )}
@@ -1070,176 +1095,186 @@ export default function AccountTabScreen() {
   );
 }
 
-const createStyles = (themeColors: any) => StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.navy }, 
-  content: {
-    padding: 20,
-    paddingBottom: 60,
-    backgroundColor: colors.background,
-  },
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.navy },
+    content: {
+      padding: 20,
+      paddingBottom: 60,
+      backgroundColor: colors.background,
+    },
 
-  profileHeader: { alignItems: "center", marginBottom: 30, marginTop: 10 },
-  avatar: { width: 80, height: 80, borderRadius: 40, marginBottom: 12 },
-  name: { fontSize: 20, fontWeight: "bold", color: themeColors.text, marginBottom: 4 },
-  contact: { fontSize: 13, color: "#6B7280", marginBottom: 2 },
-  email: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
-  editProfileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F9F6F0",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  editProfileText: { color: "#3E2723", fontWeight: "600", fontSize: 13 },
+    profileHeader: { alignItems: "center", marginBottom: 30, marginTop: 10 },
+    avatar: { width: 80, height: 80, borderRadius: 40, marginBottom: 12 },
+    name: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: themeColors.text,
+      marginBottom: 4,
+    },
+    contact: { fontSize: 13, color: "#6B7280", marginBottom: 2 },
+    email: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
+    editProfileBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#F9F6F0",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    },
+    editProfileText: { color: "#3E2723", fontWeight: "600", fontSize: 13 },
 
-  accordionWrapper: {
-    // backgroundColor: themeColors.card,
-    borderRadius: 12,
-    marginBottom: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  accordionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-  },
-  accordionHeaderLeft: { flexDirection: "row", alignItems: "center" },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: themeColors.cardSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  accordionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: themeColors.text,
-    textTransform: "uppercase",
-  },
-  accordionContent: { paddingHorizontal: 16, paddingBottom: 8 },
+    accordionWrapper: {
+      // backgroundColor: themeColors.card,
+      borderRadius: 12,
+      marginBottom: 12,
+      overflow: "hidden",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    accordionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 16,
+    },
+    accordionHeaderLeft: { flexDirection: "row", alignItems: "center" },
+    iconBox: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      backgroundColor: themeColors.cardSecondary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    accordionTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: themeColors.text,
+      textTransform: "uppercase",
+    },
+    accordionContent: { paddingHorizontal: 16, paddingBottom: 8 },
 
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-  },
-  listBorder: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
-  listItemLeft: { flexDirection: "row", alignItems: "center" },
-  listItemTitle: { fontSize: 14, color: themeColors.textSecondary, fontWeight: "500" },
-  listItemSubtitle: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
+    listItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+    },
+    listBorder: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
+    listItemLeft: { flexDirection: "row", alignItems: "center" },
+    listItemTitle: {
+      fontSize: 14,
+      color: themeColors.textSecondary,
+      fontWeight: "500",
+    },
+    listItemSubtitle: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
 
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginTop: 10,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  dangerCard: {
-    backgroundColor: themeColors.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 }, 
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  versionText: {
-    textAlign: "center",
-    fontSize: 11,
-    color: "#9CA3AF",
-    marginBottom: 20,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: themeColors.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: themeColors.text,
-    marginBottom: 20,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: themeColors.textSecondary,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    fontSize: 14,
-    color: themeColors.text,
-  },
-  modalButtons: { flexDirection: "row", gap: 12, marginTop: 24 },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    alignItems: "center",
-  },
-  modalCancelText: { color: themeColors.textSecondary, fontWeight: "600" },
-  modalSaveBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: "#E4C77B",
-    alignItems: "center",
-  },
-  modalSaveText: { color: "#3E2723", fontWeight: "700" },
-  avatarWrapper: { position: "relative", marginBottom: 12 },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#0B1B2B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitial: { color: "#fff", fontSize: 28, fontWeight: "700" },
-  avatarEditBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#E4C77B",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-});
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: "#6B7280",
+      marginTop: 10,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
+    dangerCard: {
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      marginBottom: 30,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    versionText: {
+      textAlign: "center",
+      fontSize: 11,
+      color: "#9CA3AF",
+      marginBottom: 20,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: themeColors.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 24,
+      paddingBottom: 40,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: themeColors.text,
+      marginBottom: 20,
+    },
+    modalLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: themeColors.textSecondary,
+      marginBottom: 6,
+      marginTop: 12,
+    },
+    modalInput: {
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      height: 48,
+      fontSize: 14,
+      color: themeColors.text,
+    },
+    modalButtons: { flexDirection: "row", gap: 12, marginTop: 24 },
+    modalCancelBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      alignItems: "center",
+    },
+    modalCancelText: { color: themeColors.textSecondary, fontWeight: "600" },
+    modalSaveBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 8,
+      backgroundColor: "#E4C77B",
+      alignItems: "center",
+    },
+    modalSaveText: { color: "#3E2723", fontWeight: "700" },
+    avatarWrapper: { position: "relative", marginBottom: 12 },
+    avatarPlaceholder: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: "#0B1B2B",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarInitial: { color: "#fff", fontSize: 28, fontWeight: "700" },
+    avatarEditBadge: {
+      position: "absolute",
+      bottom: 0,
+      right: 0,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: "#E4C77B",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: "#fff",
+    },
+  });

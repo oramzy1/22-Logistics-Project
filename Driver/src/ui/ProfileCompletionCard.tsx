@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
-import { AlertCircle, Check, ChevronRight, Shield, Car, Image, CheckCircle } from 'lucide-react-native';
-import React from 'react';
+import { AlertCircle, Check, ChevronRight, Shield, CarFront, Image, CheckCircle, Phone } from 'lucide-react-native';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../../components/AppText';
 
@@ -27,7 +26,7 @@ export function getCompletionSteps(user: any): CompletionStep[] {
       label: 'Add Vehicle Details',
       description: 'Vehicle type, brand/model, plate number & color',
       done: !!(dp?.vehicleType && dp?.brandModel && dp?.plateNumber && dp?.vehicleColor),
-      icon: Car,
+      icon: CarFront,
     },
     {
       key: 'license',
@@ -42,6 +41,13 @@ export function getCompletionSteps(user: any): CompletionStep[] {
       description: 'Admin review typically takes 24–48 hours',
       done: dp?.licenseStatus === 'APPROVED',
       icon: CheckCircle,
+    },
+    {
+      key: 'phone',
+      label: 'Add Phone Number',
+      description: 'Add your phone number.',
+      done: !!user?.phone,
+      icon: Phone,
     },
   ];
 }

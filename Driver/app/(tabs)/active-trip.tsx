@@ -147,9 +147,9 @@ export default function ActiveTripScreen() {
             </View>
 
             {activeTrip.status === "ACCEPTED" ? (
-              <PrimaryButton loading={isLoading} disabled={isLoading} onPress={handleStartTrip} title="Start Trip"/>
+              <PrimaryButton marginTop loading={isLoading} disabled={isLoading} onPress={handleStartTrip} title="Start Trip"/>
             ) : (
-              <PrimaryButton  loading={isLoading} disabled={isLoading} onPress={handleEndTrip} title="End Trip"/>
+              <PrimaryButton marginTop loading={isLoading} disabled={isLoading} onPress={handleEndTrip} title="End Trip"/>
             )}
          </View>
       </SafeAreaView>

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMe, updateProfile, updateEmail, changePassword, deactivateAccount, deleteAccount, uploadAvatar, savePushToken } from '../controllers/user.controller';
+import { getMe, updateProfile, updateEmail, changePassword, deactivateAccount, deleteAccount, uploadAvatar, savePushToken, setupPassword, requestPasswordSetupOtp } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { upload } from '../lib/upload';
 
@@ -21,6 +21,8 @@ router.post('/avatar', (req, res, next) => {
     next();
   });
 }, uploadAvatar);
+router.post('/request-password-setup-otp', requestPasswordSetupOtp);
+router.post('/setup-password', setupPassword)
 router.post('/push-token', savePushToken);
 router.patch('/deactivate', deactivateAccount);
 router.delete('/delete', deleteAccount);

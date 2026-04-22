@@ -302,6 +302,7 @@ export default function AccountTabScreen() {
     });
 
     if (!result.canceled) {
+      showLoading('Please wait...')
       try {
         const data = await UserService.uploadAvatar(result.assets[0].uri);
 
@@ -317,6 +318,8 @@ export default function AccountTabScreen() {
       } catch (err) {
         console.log("Error:", err);
         showToast.error("Failed to upload photo");
+      }finally{
+        hideLoading();
       }
     }
   };
@@ -602,30 +605,6 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    {/* <TouchableOpacity
-                      style={styles.modalSaveBtn}
-                      onPress={async () => {
-                        try {
-                          await UserService.updateProfile({
-                            name: modalValues.name,
-                            phone: modalValues.phone,
-                          });
-                          await updateUser({
-                            name: modalValues.name,
-                            phone: modalValues.phone,
-                          });
-                          setActiveModal(null);
-                          Alert.alert("Success", "Profile updated");
-                        } catch (err: any) {
-                          Alert.alert(
-                            "Error",
-                            err?.response?.data?.message || "Update failed",
-                          );
-                        }
-                      }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity> */}
                     <PrimaryButton style={styles.modalSaveBtn} title="Save" variant="primary" onPress={async () => {
                       showLoading('Updating Profile...')
                         try {
@@ -684,30 +663,6 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    {/* <TouchableOpacity
-                      style={styles.modalSaveBtn}
-                      onPress={async () => {
-                        try {
-                          await UserService.updateEmail(
-                            modalValues.newEmail,
-                            modalValues.password,
-                          );
-                          await clearAuthData();
-                          setActiveModal(null);
-                          router.replace({
-                            pathname: "/(auth)/verify",
-                            params: { email: modalValues.newEmail },
-                          });
-                        } catch (err: any) {
-                          Alert.alert(
-                            "Error",
-                            err?.response?.data?.message || "Update failed",
-                          );
-                        }
-                      }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity> */}
                     <PrimaryButton style={styles.modalSaveBtn} title="Save" variant="primary"  onPress={async () => {
                       showLoading('Updating Email...')
                         try {
@@ -775,35 +730,6 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    {/* <TouchableOpacity
-                      style={styles.modalSaveBtn}
-                      onPress={async () => {
-                        if (
-                          modalValues.newPassword !==
-                          modalValues.confirmPassword
-                        ) {
-                          return Alert.alert("Error", "Passwords do not match");
-                        }
-                        try {
-                          await UserService.changePassword(
-                            modalValues.currentPassword,
-                            modalValues.newPassword,
-                          );
-                          setActiveModal(null);
-                          Alert.alert(
-                            "Success",
-                            "Password changed successfully",
-                          );
-                        } catch (err: any) {
-                          Alert.alert(
-                            "Error",
-                            err?.response?.data?.message || "Update failed",
-                          );
-                        }
-                      }}
-                    >
-                      <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity> */}
                     <PrimaryButton style={styles.modalSaveBtn} title="Save"  onPress={async () => {
                       showLoading('Updating Password...')
                         if (
@@ -862,35 +788,7 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    {/* <TouchableOpacity
-                      style={[
-                        styles.modalSaveBtn,
-                        { backgroundColor: "#EF4444" },
-                      ]}
-                      onPress={async () => {
-                        if (!modalValues.deletePassword) {
-                          showToast.error("Please enter your password");
-                          return;
-                        }
-                        try {
-                          await UserService.deleteAccount(
-                            modalValues.deletePassword,
-                          );
-                          setActiveModal(null);
-                          await clearAuthData();
-                          router.replace("/(auth)/sign-in");
-                        } catch (err: any) {
-                          showToast.error(
-                            err?.response?.data?.message || "Deletion failed",
-                          );
-                        }
-                      }}
-                    >
-                      <Text style={[styles.modalSaveText, { color: "#fff" }]}>
-                        Delete Forever
-                      </Text>
-                    </TouchableOpacity> */}
-                    <PrimaryButton style={styles.modalSaveBtn} title="Delete Forever" onPress={async () => {
+                    <PrimaryButton style={[styles.modalSaveBtn, {backgroundColor: '#EF4444'}]} title="Delete Forever" onPress={async () => {
                       showLoading('Deleting Account...')
                         if (!modalValues.deletePassword) {
                           showToast.error("Please enter your password");

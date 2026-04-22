@@ -114,9 +114,7 @@ GoogleSignin.configure({
 
 interface OAuthOptions {
   appType: 'user-app' | 'driver-app';
-  // Only set on registration screens — omit on sign-in screen
   role?: 'INDIVIDUAL' | 'BUSINESS' | 'DRIVER';
-  // Derived automatically: if role is provided → 'register', else → 'signin'
 }
 
 export function useOAuth({ appType, role }: OAuthOptions) {
@@ -135,13 +133,12 @@ export function useOAuth({ appType, role }: OAuthOptions) {
     await setAuthData(token, user);
     await refreshUser();
 
-    if (flags.needsLicenseUpload && appType === 'user-app') {
-      return null;
-    } else if (flags.needsBusinessProfile && appType === 'driver-app') {
-      router.replace('/(auth)/complete-profile');
-    } else {
-      router.replace('/(tabs)');
-    }
+     if (flags.needsLicenseUpload && appType === 'driver-app') {
+    // ← was: appType === 'user-app' — completely wrong, never matched
+    router.replace('/(auth)/complete-profile');
+  } else {
+    router.replace('/(tabs)');
+  }
   };
 
   const signInWithGoogle = async () => {
@@ -156,7 +153,7 @@ export function useOAuth({ appType, role }: OAuthOptions) {
       const data = await AuthService.googleAuth({ idToken, appType, role, mode });
       showToast.success(
         mode === "register" ? "Account created!" : "Login Successful",
-        mode === "register" ? "Login Succesful" : "Welcome back!",
+        mode === "register" ? "Welcome Aboard" : "Welcome back!",
       );;
       await handleOAuthSuccess(data.token, data.user, {
         needsLicenseUpload:   data.needsLicenseUpload   ?? false,
@@ -168,7 +165,7 @@ export function useOAuth({ appType, role }: OAuthOptions) {
       if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         Alert.alert('Google Sign-In', 'Google Play Services not available.'); return;
       }
-      // Surface the backend message directly — covers the 404 "not registered" case
+      
       const message = err?.response?.data?.message || 'Google sign-in failed';
       showToast.error(message);
       if (err?.response?.status === 404){

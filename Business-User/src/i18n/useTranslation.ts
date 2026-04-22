@@ -68,7 +68,7 @@ const translations: Record<LangCode, Record<string, string>> = {
     sign_out: 'Fita',
     deactivate: 'Kashe Asusun',
     delete_account: 'Goge Asusun',
-    language: 'Harshe',
+    language: 'Harshe', 
     dark_mode: 'Yanayin Duhun',
     help_center: 'Cibiyar Taimako',
     faqs: 'Tambayoyin Yau da Kullum',

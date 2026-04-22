@@ -17,7 +17,6 @@ import { ScheduleProvider } from "@/context/ScheduleContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { GlobalSocketAlerts } from "@/src/ui/GlobalSocketAlerts";
-import { I18nContext, useI18nState } from "@/src/i18n/useTranslation";
 import { NotificationService } from "@/api/notification.service";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";

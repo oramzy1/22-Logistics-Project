@@ -137,6 +137,7 @@ export default function RegisterBusinessScreen() {
     try {
       setIsLoading(true);
     const fullPhone = `${countryCode}${adminPhone.replace(/^0+/, "")}`;
+    const fullPhone1 = `${countryCode1}${companyPhone.replace(/^0+/, "")}`;
 
       const formData = new FormData();
       formData.append("role", "BUSINESS");
@@ -144,11 +145,11 @@ export default function RegisterBusinessScreen() {
       formData.append("companyName", companyName);
       formData.append("companyEmail", companyEmail);
       formData.append("companyAddress", companyAddress);
-      formData.append("companyPhone", companyPhone);
+      formData.append("companyPhone", fullPhone1);
       formData.append("adminName", adminName);
       formData.append("adminEmail", adminEmail);
       formData.append("department", department);
-      formData.append("adminPhone", adminPhone);
+      formData.append("adminPhone", fullPhone);
       formData.append("scheduleType", scheduleType);
       formData.append("cacNumber", cacNumber);
 

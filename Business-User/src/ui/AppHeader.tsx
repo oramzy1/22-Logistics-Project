@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { Pressable, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
 import { Headphones, Bell, ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +7,7 @@ import { useAppTheme } from './useAppTheme';
 
 import { colors, spacing } from './theme';
 import { NotificationBell } from './NotificationBell';
+import { Text } from '@/components/AppText';
 
 type Props = {
   title: string | React.ReactNode;

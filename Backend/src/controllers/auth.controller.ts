@@ -196,6 +196,12 @@ export const login = async (req: Request, res: Response) => {
         message: "Driver accounts must use the Driver app to sign in.",
       });
     }
+    
+    if (!user.password){
+      return res.status(400).json({
+        message: `This account uses ${user.authProvider} sign-in. PLease use that instead.`
+      })
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -399,10 +405,8 @@ export const googleAuth = async (req: Request, res: Response) => {
         data: {
           email,
           name: name ?? email,
-          password: await bcrypt.hash(
-            crypto.randomBytes(16).toString("hex"),
-            10,
-          ),
+          password: null,
+          authProvider: 'google',
           role,
           isVerified: true,
           avatarUrl: picture ?? null,
@@ -526,10 +530,8 @@ export const appleAuth = async (req: Request, res: Response) => {
         data: {
           email,
           name: resolvedName,
-          password: await bcrypt.hash(
-            crypto.randomBytes(16).toString("hex"),
-            10,
-          ),
+          password: null,
+          authProvider: 'apple',
           role,
           isVerified: true,
           ...(role === "DRIVER" && {

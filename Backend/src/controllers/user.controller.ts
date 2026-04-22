@@ -17,6 +17,43 @@ const generateCode = () => {
   return { code, hashed, expiry };
 };
 
+type VerifyResult = 
+  | { ok: true } 
+  | { ok: false; status: number; message: string; requiresPasswordSetup: boolean };
+
+
+async function verifyUserCredential(
+  user: {
+    id: string;
+    authProvider: string;
+    password: string | null;
+    actionOtp: string | null;
+    actionOtpExpiry: Date | null;
+  },
+  credential: string
+): Promise<VerifyResult> {
+  if (user.authProvider === "email" || user.authProvider === "hybrid") {
+    if (!user.password) {
+      return { ok: false, status: 400, message: "No password set", requiresPasswordSetup: false };
+    }
+    const match = await bcrypt.compare(credential, user.password);
+    if (!match) {
+      return { ok: false, status: 400, message: "Incorrect password", requiresPasswordSetup: false };
+    }
+    return { ok: true };
+  }
+
+  // Pure OAuth user — must set password first
+  return {
+    ok: false,
+    status: 403,
+    message: "Please set a password for your account before performing this action.",
+    requiresPasswordSetup: true, // ← frontend keys off this
+  };
+}
+
+
+
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
@@ -24,6 +61,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
       select: {
         id: true,
         email: true,
+        authProvider: true,
         name: true,
         role: true,
         phone: true,
@@ -73,13 +111,27 @@ export const updateEmail = async (req: AuthRequest, res: Response) => {
   try {
     const { newEmail, password } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { 
+        id: true, password: true, authProvider: true, 
+        actionOtp: true, actionOtpExpiry: true 
+      }
+    });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Confirm password before allowing email change
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Incorrect password" });
+    if (user.authProvider === "google" || user.authProvider === "apple") {
+      return res.status(400).json({
+        message: `Your email is managed by ${user.authProvider === "google" ? "Google" : "Apple"} and cannot be changed here.`,
+        requiresPasswordSetup: true, // still nudge them to set a password
+      });
+    }
+
+    const check = await verifyUserCredential(user, password);
+    if (!check.ok) return res.status(check.status).json({ 
+      message: check.message, 
+      requiresPasswordSetup: check.requiresPasswordSetup 
+    });
 
     const existing = await prisma.user.findUnique({
       where: { email: newEmail },
@@ -118,13 +170,17 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await prisma.user.findUnique({
+  where: { id: req.user!.id },
+  select: { id: true, password: true, authProvider: true, actionOtp: true, actionOtpExpiry: true }
+});
+if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Current password is incorrect" });
-
+const check = await verifyUserCredential(user, currentPassword);
+if (!check.ok) return res.status(check.status).json({ 
+  message: check.message,
+  requiresPasswordSetup: check.requiresPasswordSetup
+});
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: req.user!.id },
@@ -139,8 +195,22 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 
 export const deactivateAccount = async (req: AuthRequest, res: Response) => {
   try {
-    await prisma.user.update({
+    const { password } = req.body; // add this to the request
+
+    const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
+      select: { id: true, password: true, authProvider: true, actionOtp: true, actionOtpExpiry: true }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const check = await verifyUserCredential(user, password);
+    if (!check.ok) return res.status(check.status).json({ 
+      message: check.message,
+      requiresPasswordSetup: check.requiresPasswordSetup
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
       data: { isActive: false },
     });
     res.json({ message: "Account deactivated" });
@@ -155,10 +225,11 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Incorrect password" });
-
+    const check = await verifyUserCredential(user, password);
+if (!check.ok) return res.status(check.status).json({ 
+  message: check.message,
+  requiresPasswordSetup: check.requiresPasswordSetup
+});
     // Delete related records first due to FK constraints
     // await prisma.order.deleteMany({ where: { customerId: req.user!.id } });
     await prisma.businessProfile.deleteMany({
@@ -227,6 +298,93 @@ export const savePushToken = async (req: AuthRequest, res: Response) => {
       data: { pushToken },
     });
     res.json({ message: "Push token saved" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const requestPasswordSetupOtp = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.user!.id },
+      select: { id: true, email: true, authProvider: true, password: true }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.authProvider === "email") {
+      return res.status(400).json({ 
+        message: "Email accounts already have a password." 
+      });
+    }
+
+    if (user.authProvider === "hybrid") {
+      return res.status(400).json({ 
+        message: "You have already set a password." 
+      });
+    }
+
+    const { code, hashed, expiry } = generateCode();
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { actionOtp: hashed, actionOtpExpiry: expiry },
+    });
+
+    await sendVerificationEmail(user.email, code);
+    res.json({ message: "A verification code has been sent to your email." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const setupPassword = async (req: AuthRequest, res: Response) => {
+  try {
+    const { otp, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { 
+        id: true, authProvider: true, 
+        actionOtp: true, actionOtpExpiry: true 
+      }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.authProvider === "email") {
+      return res.status(400).json({ message: "Use change password instead." });
+    }
+
+    if (!user.actionOtp || !user.actionOtpExpiry) {
+      return res.status(400).json({ 
+        message: "No OTP requested. Please request a verification code first." 
+      });
+    }
+
+    if (new Date() > user.actionOtpExpiry) {
+      return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+    }
+
+    const hashed = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hashed !== user.actionOtp) {
+      return res.status(400).json({ message: "Invalid verification code." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        authProvider: "hybrid",   // ← graduated to full account
+        actionOtp: null,
+        actionOtpExpiry: null,
+      },
+    });
+
+    res.json({ 
+      message: "Password set successfully. You can now use all account features.",
+      authProvider: "hybrid"
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }

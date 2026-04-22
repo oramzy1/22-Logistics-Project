@@ -96,6 +96,7 @@ export default function CompleteBusinessProfileScreen() {
       return setCurrentStep(2);
     }
     const fullPhone = `${countryCode}${adminPhone.replace(/^0+/, "")}`;
+    const fullPhone1 = `${countryCode1}${companyPhone.replace(/^0+/, "")}`;
     // Final step — submit
     if (!cacNumber) return setError("Please enter your CAC number.");
     setIsLoading(true);
@@ -105,7 +106,7 @@ export default function CompleteBusinessProfileScreen() {
       formData.append("companyName", companyName);
       formData.append("companyEmail", companyEmail);
       formData.append("companyAddress", companyAddress);
-      formData.append("companyPhone", companyPhone);
+      formData.append("companyPhone", fullPhone1);
       formData.append("department", department);
       formData.append("adminPhone", fullPhone);
       formData.append("scheduleType", scheduleType);

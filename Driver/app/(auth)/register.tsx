@@ -36,6 +36,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SocialButton } from "@/src/ui/SocialButtons";
+import { PhoneInput } from "@/src/ui/PhoneInput";
 
 const STEPS = [
   "Personal Info",
@@ -57,10 +58,7 @@ export default function RegisterDriverScreen() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [companyEmail, setCompanyEmail] = useState("");
-  const [companyAddress, setCompanyAddress] = useState("");
-  const [companyPhone, setCompanyPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+234");
   // Step 2
   const [driverLicenseNumber, setDriverLicenseNumber] = useState("");
   // Step 3
@@ -130,13 +128,14 @@ export default function RegisterDriverScreen() {
     try {
       setIsLoading(true);
       const name = `${firstName} ${lastName}`;
+      const fullPhone = `${countryCode}${phone.replace(/^0+/, "")}`;
 
       const formData = new FormData();
       formData.append("role", "DRIVER");
       formData.append("password", password);
       formData.append("name", name);
       formData.append("email", email);
-      formData.append("phone", phone);
+      formData.append("phone", fullPhone);
       formData.append("licenseNumber", driverLicenseNumber);
 
      if (licenseUri) {
@@ -216,16 +215,16 @@ export default function RegisterDriverScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.headerBar}></View>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
+          <View>
             <Text style={styles.title}>
-              {currentStep === 0 && "Tell us about yourself"}
+              {currentStep === 0 && "Register"}
               {currentStep === 1 && "Set Up your account"}
               {currentStep === 2 && "Set a secure password"}
             </Text>
@@ -274,18 +273,14 @@ export default function RegisterDriverScreen() {
                 </View>
 
                 <Text style={styles.label}>Phone Number</Text>
-                <View style={styles.phoneContainer}>
-                  <View style={styles.countryCode}>
-                    <View style={styles.flagPlaceholder} />
-                    <Text style={styles.countryCodeText}>+123</Text>
-                  </View>
-                  <TextInput
-                    value={phone}
-                    onChangeText={setPhone}
-                    style={styles.phoneInput}
-                    keyboardType="phone-pad"
-                  />
-                </View>
+                             <PhoneInput value={phone} onChangeText={setPhone}  onCountryChange={setCountryCode}  placeholder="Phone Number" />
+
+                 <Text style={styles.phoneHint}>
+                                Full number:{" "}
+                                {phone
+                                  ? `${countryCode}${phone.replace(/^0+/, "")}`
+                                  : "—"}
+                              </Text>
 
                 <Text style={styles.errorText}>{error}</Text>
 
@@ -295,6 +290,14 @@ export default function RegisterDriverScreen() {
                 >
                   <Text style={styles.submitBtnText}>Next</Text>
                 </TouchableOpacity>
+                
+                <View style={styles.dividerContainer}>
+                  <View style={styles.line} />
+                  <Text style={styles.dividerText}>Or continue with</Text>
+                  <View style={styles.line} />
+                </View>
+                <SocialButton type="google" appType="driver-app" role="DRIVER" />
+                <SocialButton type="apple" appType="driver-app" role="DRIVER" /> 
               </View>
             )}
 
@@ -425,38 +428,6 @@ export default function RegisterDriverScreen() {
                     <Text style={styles.linkText}>Terms & Condition</Text>
                   </Text>
                 </View>
-                <View style={styles.dividerContainer}>
-                  <View style={styles.line} />
-                  <Text style={styles.dividerText}>Or continue with</Text>
-                  <View style={styles.line} />
-                </View>
-                {/* <TouchableOpacity style={styles.socialBtnOutlined}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 16,
-                      marginRight: 10,
-                      color: "#EA4335",
-                    }}
-                  >
-                    G
-                  </Text>
-                  <Text style={styles.socialBtnText}>SIGN IN with Google</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialBtnOutlined}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      marginRight: 10,
-                    }}
-                  >
-                    
-                  </Text>
-                  <Text style={styles.socialBtnText}>SIGN IN with Apple</Text>
-                </TouchableOpacity> */}
-                <SocialButton type="google" appType="driver-app" role="DRIVER" />
-                <SocialButton type="apple" appType="driver-app" role="DRIVER" /> 
                   {currentStep === 2 && error ? (
                     <Text style={styles.errorText}>{error}</Text>
                   ) : null}
@@ -500,13 +471,13 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   scrollContent: { padding: 24, paddingBottom: 40 },
-  header: { marginBottom: 20 },
+  // header: { marginBottom: 20 },
   title: {
     fontSize: 20,
     fontWeight: "600",
     color: "#3E2723",
-    marginBottom: 20,
-    lineHeight: 28,
+    // marginBottom: 10,
+    // lineHeight: 28,
   },
   tabContainer: {
     flexDirection: "row",
@@ -677,7 +648,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 30,
+    marginTop: 5,
   },
   rowButtons: {
     flexDirection: "row",
@@ -721,7 +692,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 30,
+    marginVertical: 10,
   },
   line: { flex: 1, height: 1, backgroundColor: "#E5E7EB" },
   dividerText: { marginHorizontal: 15, color: "#6B7280", fontSize: 12 },
@@ -743,4 +714,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
   },
+   phoneHint: {
+  fontSize: 11,
+  color: '#9CA3AF',
+  marginTop: 5,
+  marginLeft: 2,
+},
 });
