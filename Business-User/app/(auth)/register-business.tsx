@@ -60,6 +60,8 @@ export default function RegisterBusinessScreen() {
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
   const [companyPhone, setCompanyPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+234");
+  const [countryCode1, setCountryCode1] = useState("+234");
   // Step 2
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -134,6 +136,7 @@ export default function RegisterBusinessScreen() {
 
     try {
       setIsLoading(true);
+    const fullPhone = `${countryCode}${adminPhone.replace(/^0+/, "")}`;
 
       const formData = new FormData();
       formData.append("role", "BUSINESS");
@@ -307,6 +310,12 @@ export default function RegisterBusinessScreen() {
                   />
                 </View> */}
                 <PhoneInput value={companyPhone} onChangeText={setCompanyPhone} placeholder="Company Phone" />
+                 <Text style={styles.phoneHint}>
+                Full number:{" "}
+                {companyPhone
+                  ? `${countryCode1}${companyPhone.replace(/^0+/, "")}`
+                  : "—"}
+              </Text>
 
                 <Text style={styles.errorText}>{error}</Text>
 
@@ -316,6 +325,14 @@ export default function RegisterBusinessScreen() {
                 >
                   <Text style={styles.submitBtnText}>Next</Text>
                 </TouchableOpacity>
+                <View style={styles.dividerContainer}>
+                  <View style={styles.line} />
+                  <Text style={styles.dividerText}>Or continue with</Text>
+                  <View style={styles.line} />
+                </View>
+                <SocialButton type="google" appType="user-app" role="BUSINESS" />
+                <SocialButton type="apple" appType="user-app" role="BUSINESS" />
+      
               </View>
             )}
 
@@ -378,7 +395,14 @@ export default function RegisterBusinessScreen() {
                     keyboardType="phone-pad"
                   />
                 </View> */}
-                <PhoneInput value={adminPhone} onChangeText={setAdminPhone} placeholder="Admin Phone" />
+                <PhoneInput value={adminPhone} onChangeText={setAdminPhone}  onCountryChange={setCountryCode}  placeholder="Admin Phone" />
+
+                 <Text style={styles.phoneHint}>
+                                Full number:{" "}
+                                {adminPhone
+                                  ? `${countryCode}${adminPhone.replace(/^0+/, "")}`
+                                  : "—"}
+                              </Text>
 
 
                 {/* Radio Buttons */}
@@ -536,29 +560,7 @@ export default function RegisterBusinessScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
-                {/* Terms */}
-                <View style={styles.termsContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.checkbox,
-                      agreeTerms && styles.checkboxActive,
-                    ]}
-                    onPress={() => setAgreeTerms(!agreeTerms)}
-                  >
-                    {agreeTerms && <CheckCircle2 size={14} color="#FFF" />}
-                  </TouchableOpacity>
-                  <Text style={styles.termsText}>
-                    Agree with{" "}
-                    <Text style={styles.linkText}>Terms & Condition</Text>
-                  </Text>
-                </View>
-                <View style={styles.dividerContainer}>
-                  <View style={styles.line} />
-                  <Text style={styles.dividerText}>Or continue with</Text>
-                  <View style={styles.line} />
-                </View>
-                <SocialButton type="google" appType="user-app" role="BUSINESS" />
-                <SocialButton type="apple" appType="user-app" role="BUSINESS" />
+
                 {currentStep === 3 && error ? (
                   <Text style={styles.errorText}>{error}</Text>
                 ) : null}
@@ -582,6 +584,22 @@ export default function RegisterBusinessScreen() {
                     </Text>
                   </TouchableOpacity>
                 </View>
+                {/* Terms */}
+                <View style={styles.termsContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.checkbox,
+                      agreeTerms && styles.checkboxActive,
+                    ]}
+                    onPress={() => setAgreeTerms(!agreeTerms)}
+                  >
+                    {agreeTerms && <CheckCircle2 size={14} color="#FFF" />}
+                  </TouchableOpacity>
+                  <Text style={styles.termsText}>
+                    Agree with{" "}
+                    <Text style={styles.linkText}>Terms & Condition</Text>
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -600,7 +618,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 24, paddingBottom: 40, 
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  backgroundColor: '#FFF' },
+  backgroundColor: '#FFF', height: "auto" },
   header: { marginBottom: 20 },
   title: {
     fontSize: 20,
@@ -805,7 +823,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
-  termsContainer: { flexDirection: "row", alignItems: "center", marginTop: 20 },
+  termsContainer: { flexDirection: "row", alignItems: "center", marginTop: 20, marginBottom: 100 },
   checkbox: {
     width: 18,
     height: 18,
@@ -817,7 +835,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxActive: { backgroundColor: "#E4C77B", borderColor: "#E4C77B" },
-  termsText: { fontSize: 12, color: "#111827", fontWeight: "500" },
+  termsText: { fontSize: 12, color: "#111827", fontWeight: "500",  },
   linkText: { color: "#E4C77B", textDecorationLine: "underline" },
   dividerContainer: {
     flexDirection: "row",
@@ -844,4 +862,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
   },
+  phoneHint: {
+  fontSize: 11,
+  color: '#9CA3AF',
+  marginTop: 5,
+  marginLeft: 2,
+},
 });

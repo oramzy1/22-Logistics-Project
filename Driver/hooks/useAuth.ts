@@ -154,7 +154,10 @@ export function useOAuth({ appType, role }: OAuthOptions) {
       if (!idToken) { showToast.error('No token received from Google'); return; }
 
       const data = await AuthService.googleAuth({ idToken, appType, role, mode });
-      showToast.success(mode === 'register' ? 'Account created!' : 'Welcome back!');
+      showToast.success(
+        mode === "register" ? "Account created!" : "Login Successful",
+        mode === "register" ? "Login Succesful" : "Welcome back!",
+      );;
       await handleOAuthSuccess(data.token, data.user, {
         needsLicenseUpload:   data.needsLicenseUpload   ?? false,
         needsBusinessProfile: data.needsBusinessProfile ?? false,
@@ -195,7 +198,10 @@ export function useOAuth({ appType, role }: OAuthOptions) {
         role,
         mode,
       });
-      showToast.success(mode === 'register' ? 'Account created!' : 'Welcome back!');
+      showToast.success(
+        mode === "register" ? "Account created!" : "Login Successful",
+        mode === "register" ? "Login Succesful" : "Welcome back!",
+      );
       await handleOAuthSuccess(data.token, data.user, {
         needsLicenseUpload:   data.needsLicenseUpload   ?? false,
         needsBusinessProfile: data.needsBusinessProfile ?? false,

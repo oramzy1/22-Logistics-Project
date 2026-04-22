@@ -613,6 +613,7 @@ export const completeBusiness = async (req: AuthRequest, res: Response) => {
       where: { id: req.user!.id },
       data: {
         role: "BUSINESS",
+        phone: adminPhone,
         businessProfile: {
           create: {
             companyName,

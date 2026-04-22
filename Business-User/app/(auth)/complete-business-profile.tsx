@@ -44,6 +44,7 @@ export default function CompleteBusinessProfileScreen() {
   const { refreshUser, user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [countryCode, setCountryCode] = useState("+234");
+  const [countryCode1, setCountryCode1] = useState("+234");
   const [scheduleType, setScheduleType] = useState<"self" | "others">("others");
   const [logoUri, setLogoUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +90,7 @@ export default function CompleteBusinessProfileScreen() {
       return setCurrentStep(1);
     }
     if (currentStep === 1) {
-      if ( !department || !adminPhone) {
+      if (!department || !adminPhone) {
         return setError("Please fill all admin fields.");
       }
       return setCurrentStep(2);
@@ -210,14 +211,6 @@ export default function CompleteBusinessProfileScreen() {
                   icon: Map,
                   placeholder: "Address",
                 },
-                {
-                  label: "Company Phone",
-                  value: companyPhone,
-                  set: setCompanyPhone,
-                  icon: Phone,
-                  placeholder: "Phone",
-                  kb: "phone-pad",
-                },
               ].map(
                 ({ label, value, set, icon: Icon, placeholder, kb }: any) => (
                   <View key={label}>
@@ -237,6 +230,19 @@ export default function CompleteBusinessProfileScreen() {
                   </View>
                 ),
               )}
+              <Text style={s.label}>Company Phone</Text>
+              <PhoneInput
+                value={companyPhone}
+                onChangeText={setCompanyPhone}
+                onCountryChange={setCountryCode1}
+                placeholder="Phone number"
+              />
+              <Text style={s.phoneHint}>
+                Full number:{" "}
+                {companyPhone
+                  ? `${countryCode1}${companyPhone.replace(/^0+/, "")}`
+                  : "—"}
+              </Text>
               {!!error && <Text style={s.errorText}>{error}</Text>}
               <TouchableOpacity style={s.btn} onPress={handleNext}>
                 <Text style={s.btnText}>Next</Text>
@@ -280,7 +286,7 @@ export default function CompleteBusinessProfileScreen() {
                 onChangeText={setAdminPhone}
                 onCountryChange={setCountryCode}
                 placeholder="Phone number"
-              />{" "}
+              />
               <Text style={s.phoneHint}>
                 Full number:{" "}
                 {adminPhone
@@ -502,7 +508,6 @@ const s = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 32,
   },
   btnText: { color: "#3E2723", fontWeight: "700", fontSize: 15 },
   rowButtons: { flexDirection: "row", gap: 12, marginTop: 32 },
@@ -522,30 +527,30 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   readonlyContainer: {
-  backgroundColor: '#F9FAFB',
-  borderColor: '#E5E7EB',
-},
-readonlyText: {
-  flex: 1,
-  fontSize: 14,
-  color: '#6B7280',
-  fontStyle: 'italic',
-},
-prefillBadge: {
-  backgroundColor: '#EFF6FF',
-  borderRadius: 6,
-  paddingHorizontal: 8,
-  paddingVertical: 3,
-},
-prefillBadgeText: {
-  fontSize: 10,
-  color: '#3B82F6',
-  fontWeight: '600',
-},
-phoneHint: {
-  fontSize: 11,
-  color: '#9CA3AF',
-  marginTop: 5,
-  marginLeft: 2,
-},
+    backgroundColor: "#F9FAFB",
+    borderColor: "#E5E7EB",
+  },
+  readonlyText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#6B7280",
+    fontStyle: "italic",
+  },
+  prefillBadge: {
+    backgroundColor: "#EFF6FF",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  prefillBadgeText: {
+    fontSize: 10,
+    color: "#3B82F6",
+    fontWeight: "600",
+  },
+  phoneHint: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 5,
+    marginLeft: 2,
+  },
 });
