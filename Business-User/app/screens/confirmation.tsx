@@ -103,12 +103,13 @@ export default function ConfirmationScreen() {
 
         <View style={styles.btnRow}>
           <View style={{ flex: 1 }}>
-            <PrimaryButton title="Cancel" variant={ isDark ? 'dark' : 'outline'} onPress={() => router.back()} />
+            <PrimaryButton marginTop title="Cancel" variant={ isDark ? 'dark' : 'outline'} onPress={() => router.back()} />
           </View>
           <View style={{ width: spacing.md }} />
           <View style={{ flex: 1 }}>
             <PrimaryButton
               title="Proceed to Payment"
+              marginTop
               onPress={() =>
                 router.push({
                   pathname: '/screens/payment',

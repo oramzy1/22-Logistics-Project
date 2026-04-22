@@ -455,7 +455,7 @@ export const googleAuth = async (req: Request, res: Response) => {
   }
 };
 
-// Add appleAuth (was missing entirely):
+
 export const appleAuth = async (req: Request, res: Response) => {
   try {
     const {
@@ -587,8 +587,6 @@ export const completeBusiness = async (req: AuthRequest, res: Response) => {
       companyEmail,
       companyAddress,
       companyPhone,
-      adminName,
-      adminEmail,
       department,
       adminPhone,
       scheduleType,
@@ -605,6 +603,12 @@ export const completeBusiness = async (req: AuthRequest, res: Response) => {
         .json({ message: "Business profile already exists" });
     }
 
+      const authUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { name: true, email: true },
+    });
+    if (!authUser) return res.status(404).json({ message: 'User not found' });
+
     await prisma.user.update({
       where: { id: req.user!.id },
       data: {
@@ -615,8 +619,8 @@ export const completeBusiness = async (req: AuthRequest, res: Response) => {
             companyEmail,
             companyAddress,
             companyPhone,
-            adminName,
-            adminEmail,
+            adminName: authUser.name,
+            adminEmail: authUser.email,
             department: department ?? "",
             adminPhone,
             scheduleType: scheduleType || "others",

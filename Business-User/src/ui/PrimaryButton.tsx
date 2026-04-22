@@ -10,6 +10,7 @@ type Props = {
   variant?: 'primary' | 'outline' | 'dark';
   loading?: boolean;
   disabled?: boolean;
+  marginTop?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 };
@@ -20,6 +21,7 @@ export function PrimaryButton({
   variant = 'primary',
   loading = false,
   disabled = false,
+  marginTop = false,
   style,
   textStyle,
 }: Props) {
@@ -37,6 +39,7 @@ export function PrimaryButton({
         isDark && styles.dark,
         isDisabled && styles.disabled,
         pressed && !isDisabled && { opacity: 0.85 },
+        marginTop && { marginTop: spacing.md },
         style
       ]}
     >
@@ -69,7 +72,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.goldSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.md,
+    // marginTop: spacing.md,
   },
 
   text: {

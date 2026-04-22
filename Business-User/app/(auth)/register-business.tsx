@@ -160,7 +160,7 @@ export default function RegisterBusinessScreen() {
       }
 
       const data = await AuthService.registerBusiness(formData);
-      router.push({
+      router.replace({
         pathname: "/(auth)/verify",
         params: { email: data.email },
       });
@@ -558,9 +558,7 @@ export default function RegisterBusinessScreen() {
                   <View style={styles.line} />
                 </View>
                 <SocialButton type="google" appType="user-app" role="BUSINESS" />
-                {Platform.OS === 'ios' && (
-                  <SocialButton type="apple" appType="user-app" role="BUSINESS" />
-                )}
+                <SocialButton type="apple" appType="user-app" role="BUSINESS" />
                 {currentStep === 3 && error ? (
                   <Text style={styles.errorText}>{error}</Text>
                 ) : null}
@@ -594,14 +592,15 @@ export default function RegisterBusinessScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: { flex: 1, backgroundColor: "#0B1B2B" },
   headerBar: {
     height: 70,
     backgroundColor: "#0B1B2B",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
   },
-  scrollContent: { padding: 24, paddingBottom: 40 },
+  scrollContent: { padding: 24, paddingBottom: 40, 
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  backgroundColor: '#FFF' },
   header: { marginBottom: 20 },
   title: {
     fontSize: 20,

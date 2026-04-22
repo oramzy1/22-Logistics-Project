@@ -513,6 +513,7 @@ export default function ScheduleTabScreen() {
           <PrimaryButton
             title={isSubmitting ? "Scheduling..." : "Schedule Ride"}
             onPress={handleSchedule}
+            marginTop
             disabled={isSubmitting}
           />
           <TouchableOpacity style={{ height: 12 }} activeOpacity={1} />

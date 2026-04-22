@@ -35,12 +35,14 @@ interface Props {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  onCountryChange?: (code: string) => void;
 }
 
 export function PhoneInput({
   value,
   onChangeText,
   placeholder = "Phone number",
+  onCountryChange,
 }: Props) {
   const [selected, setSelected] = useState(COUNTRIES[0]); // Nigeria default
   const [open, setOpen] = useState(false);
@@ -118,8 +120,9 @@ export function PhoneInput({
                   ]}
                   onPress={() => {
                     setSelected(item);
+                    onCountryChange?.(item.code);
                     setOpen(false);
-                    onChangeText?.(item.code);
+                    // onChangeText?.(item.code);
                     setSearch("");
                   }}
                   activeOpacity={0.75}

@@ -55,12 +55,16 @@ export default function HomeTabScreen() {
               <View>
                 <Text
                   style={{
-                    color: themeColors.textPrimary,
+                    color: '#fff',
                     fontWeight: "800",
                     fontSize: 16,
+                    width: 150,
+                    flexShrink: 1
                   }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
-                  Hello {user?.name}
+                  Hello, {user?.name}
                 </Text>
                 <Text
                   style={{

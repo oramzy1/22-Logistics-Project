@@ -179,7 +179,7 @@ useBookingSocket({
         }}
       >
        <EmptyState Icon={CarFront} title="No Active Bookings" subtitle="You currently do not have any active bookings at the moment." />
-       <PrimaryButton title="Book a Ride" onPress={()=> router.replace('/(tabs)/schedule')} style={{width: 100}} />
+       <PrimaryButton marginTop title="Book a Ride" onPress={()=> router.replace('/(tabs)/schedule')} style={{width: 100}} />
       </SafeAreaView>
     );
   }

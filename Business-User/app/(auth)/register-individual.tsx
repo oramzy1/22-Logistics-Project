@@ -53,7 +53,7 @@ export default function RegisterIndividualScreen() {
         password,
         role: "INDIVIDUAL",
       });
-      router.push({
+      router.replace({
         pathname: "/(auth)/verify",
         params: { email: data.email },
       });
@@ -207,6 +207,7 @@ export default function RegisterIndividualScreen() {
               title="SIGN UP"
               loading={isLoading}
               disabled={isLoading}
+              marginTop
             />
 
             <View style={styles.dividerContainer}>
@@ -248,14 +249,16 @@ export default function RegisterIndividualScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: { flex: 1, backgroundColor: "#0B1B2B" },
   headerBar: {
     height: 70,
     backgroundColor: "#0B1B2B",
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  scrollContent: { padding: 24, paddingBottom: 40 },
+  scrollContent: { padding: 24, paddingBottom: 40, backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20, },
   header: { marginBottom: 20 },
   title: {
     fontSize: 20,

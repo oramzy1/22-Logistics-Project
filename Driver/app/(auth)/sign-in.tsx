@@ -222,8 +222,8 @@ export default function SignInScreen() {
             <View style={styles.line} />
           </View>
 
-         <SocialButton type="google" />
-         <SocialButton type="apple" />
+         <SocialButton type="google" appType="driver-app" />
+         <SocialButton type="apple" appType="driver-app" />
 
           <View style={{ flex: 1 }} />
 

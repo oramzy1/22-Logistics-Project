@@ -455,8 +455,8 @@ export default function RegisterDriverScreen() {
                   </Text>
                   <Text style={styles.socialBtnText}>SIGN IN with Apple</Text>
                 </TouchableOpacity> */}
-                <SocialButton type="google" />
-                <SocialButton type="apple" /> 
+                <SocialButton type="google" appType="driver-app" role="DRIVER" />
+                <SocialButton type="apple" appType="driver-app" role="DRIVER" /> 
                   {currentStep === 2 && error ? (
                     <Text style={styles.errorText}>{error}</Text>
                   ) : null}

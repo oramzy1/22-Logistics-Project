@@ -1,21 +1,29 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, View, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useOAuth } from "@/hooks/useAuth";
 
 type Props = {
   type: "google" | "apple";
   title?: string;
-  onPress: () => void;
+  appType?: 'user-app' | 'driver-app',
+  role?: 'INDIVIDUAL' | 'DRIVER' | 'BUSINESS',
+  onPress?: () => void;
 };
 
-export const SocialButton = ({ type, title, onPress }: Props) => {
-  const isGoogle = type === "google";
+export const SocialButton = ({ type, title, onPress, appType = 'user-app', role }: Props) => {
+   const { signInWithGoogle, signInWithApple } = useOAuth({ appType, role });
+  const isGoogle = type === 'google';
+
+  const handlePress = onPress ?? (isGoogle ? signInWithGoogle : signInWithApple);
+
+  if (type === 'apple' && Platform.OS !== 'ios') return null;
 
   return (
     <TouchableOpacity
       style={[styles.button, isGoogle ? styles.googleBtn : styles.appleBtn]}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.8}
     >
       <View style={styles.content}>

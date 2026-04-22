@@ -26,7 +26,7 @@ export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent
 
   return (
     <View style={[styles.root, translucent && styles.translucent, { backgroundColor: themeColors.navy }]}>
-      <View>
+      <View style={{flex: 1}}>
         {showBack ? (
           <Pressable onPress={() => router.back()} hitSlop={10} style={styles.circle}>
             <ChevronLeft color="#fff" size={17} />
@@ -37,12 +37,12 @@ export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent
         <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
       ) : (
         <View style={[styles.circle, { backgroundColor: '#111827' }]}>
-          <Text style={[styles.circleText, { color: '#fff' }]}>
+          <Text style={[styles.circleText, { color: '#fff' }]}  ellipsizeMode='tail'>
             {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
           </Text>
         </View>
       )}
-        {typeof title === 'string' ? <Text style={styles.title}>{title}</Text> : title}
+        {typeof title === 'string' ? <Text style={styles.title} ellipsizeMode='tail'>{title}</Text> : title}
          </View>
         ) : (
           <View style={{ width: 40 }} />
@@ -87,7 +87,8 @@ const styles = StyleSheet.create({
   translucent: {
     backgroundColor: 'transparent',
   },
-  leftSection: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  leftSection: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1,
+  overflow: 'hidden', },
   center: { flex: 1, alignItems: 'center' },
   right: { width: 80, alignItems: 'flex-end' },
   title: { color: '#ffffff', fontSize: 16, fontWeight: '800' },

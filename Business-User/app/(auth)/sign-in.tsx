@@ -213,6 +213,7 @@ export default function SignInScreen() {
             title="SIGN IN"
             loading={loading}
             disabled={loading}
+            marginTop
           />
 
           <View style={styles.dividerContainer}>
