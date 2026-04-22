@@ -37,6 +37,10 @@ model User {
   authProvider     String    @default("email") // "email" | "google" | "apple" | "hybrid"
   actionOtp        String?
   actionOtpExpiry  DateTime?
+  pendingEmail         String?   // new email awaiting verification
+  pendingPassword      String?   // hashed password awaiting email confirmation
+  pendingEmailToken    String?   // hashed OTP for new email verification
+  pendingEmailExpiry   DateTime?
 
   pushToken String? // for Expo push notifications
 

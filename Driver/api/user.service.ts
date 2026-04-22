@@ -31,6 +31,13 @@ export const UserService = {
     });
     return response.data;
   },
+  requestPasswordSetupOtp: async () => {
+  return apiClient.post("/users/request-password-setup-otp");
+},
+
+setupPassword: async (otp: string, newPassword: string) => {
+  return apiClient.post("/users/setup-password", { otp, newPassword });
+},
 
   uploadAvatar: async (imageUri: string) => {
     const token = await AsyncStorage.getItem("token");

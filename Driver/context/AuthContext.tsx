@@ -17,6 +17,7 @@ interface AuthUser {
   name: string;
   phone: string;
   role: Role;
+  authProvider: "email" | "google" | "apple" | "hybrid";
   avatarUrl?: string;
   businessProfile?: { logoUrl?: string } | null;
   driverProfile?: any;

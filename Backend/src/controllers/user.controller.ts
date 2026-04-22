@@ -19,7 +19,7 @@ const generateCode = () => {
 
 type VerifyResult = 
   | { ok: true } 
-  | { ok: false; status: number; message: string; requiresPasswordSetup: boolean };
+  | { ok: false; status: number; message: string; requiresPasswordSetup: boolean; useOtp?: boolean};
 
 
 async function verifyUserCredential(
@@ -43,13 +43,39 @@ async function verifyUserCredential(
     return { ok: true };
   }
 
-  // Pure OAuth user — must set password first
-  return {
-    ok: false,
-    status: 403,
-    message: "Please set a password for your account before performing this action.",
-    requiresPasswordSetup: true, // ← frontend keys off this
-  };
+  // Pure OAuth user — verify via otp
+   if (!user.actionOtp || !user.actionOtpExpiry) {
+    return {
+      ok: false, status: 403,
+      message: "Please request a verification code to proceed.",
+      requiresPasswordSetup: false,
+      useOtp: true,
+    };
+  }
+  if (new Date() > user.actionOtpExpiry) {
+    return {
+      ok: false, status: 403,
+      message: "Verification code expired. Please request a new one.",
+      requiresPasswordSetup: false,
+      useOtp: true,
+    };
+  }
+  const hashed = crypto.createHash("sha256").update(credential).digest("hex");
+  if (hashed !== user.actionOtp) {
+    return {
+      ok: false, status: 400,
+      message: "Invalid verification code.",
+      requiresPasswordSetup: false,
+      useOtp: true,
+    };
+  }
+
+  // Consume OTP
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { actionOtp: null, actionOtpExpiry: null },
+  });
+  return { ok: true };
 }
 
 
@@ -176,6 +202,14 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 });
 if (!user) return res.status(404).json({ message: "User not found" });
 
+    // OAuth users have no password to change — direct them to email change flow
+    if (user.authProvider === "google" || user.authProvider === "apple") {
+      return res.status(400).json({
+        message: "Your account uses social sign-in. To set a password, please use the Change Email flow.",
+        requiresEmailChange: true,
+      });
+    }
+
 const check = await verifyUserCredential(user, currentPassword);
 if (!check.ok) return res.status(check.status).json({ 
   message: check.message,
@@ -195,7 +229,7 @@ if (!check.ok) return res.status(check.status).json({
 
 export const deactivateAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const { password } = req.body; // add this to the request
+    const { credential } = req.body; // add this to the request
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -203,10 +237,10 @@ export const deactivateAccount = async (req: AuthRequest, res: Response) => {
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const check = await verifyUserCredential(user, password);
+    const check = await verifyUserCredential(user, credential);
     if (!check.ok) return res.status(check.status).json({ 
       message: check.message,
-      requiresPasswordSetup: check.requiresPasswordSetup
+      useOtp: (check as any).useOtp
     });
 
     await prisma.user.update({
@@ -221,18 +255,24 @@ export const deactivateAccount = async (req: AuthRequest, res: Response) => {
 
 export const deleteAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const { password } = req.body;
+    const { credential } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const check = await verifyUserCredential(user, password);
+    const check = await verifyUserCredential(user, credential);
 if (!check.ok) return res.status(check.status).json({ 
   message: check.message,
-  requiresPasswordSetup: check.requiresPasswordSetup
+  useOtp: (check as any).useOtp
 });
     // Delete related records first due to FK constraints
     // await prisma.order.deleteMany({ where: { customerId: req.user!.id } });
     await prisma.businessProfile.deleteMany({
+      where: { userId: req.user!.id },
+    });
+    await prisma.notification.deleteMany({
+      where: { userId: req.user!.id },
+    });
+    await prisma.driverProfile.deleteMany({
       where: { userId: req.user!.id },
     });
     await prisma.user.delete({ where: { id: req.user!.id } });
@@ -384,6 +424,147 @@ export const setupPassword = async (req: AuthRequest, res: Response) => {
     res.json({ 
       message: "Password set successfully. You can now use all account features.",
       authProvider: "hybrid"
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const requestActionOtp = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, email: true, authProvider: true }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.authProvider === "email" || user.authProvider === "hybrid") {
+      return res.status(400).json({ message: "Use your password instead." });
+    }
+
+    const { code, hashed, expiry } = generateCode();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { actionOtp: hashed, actionOtpExpiry: expiry },
+    });
+
+    await sendVerificationEmail(user.email, code);
+    res.json({ message: "Verification code sent to your email." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const requestEmailChange = async (req: AuthRequest, res: Response) => {
+  try {
+    const { newEmail, newPassword, otp } = req.body;
+    // otp = action OTP for OAuth users (already verified they control the account)
+    // For email/hybrid users this endpoint isn't needed — they use updateEmail directly
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        id: true, email: true, authProvider: true,
+        password: true, actionOtp: true, actionOtpExpiry: true
+      }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Block if new email already taken
+    const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+    if (existing) return res.status(400).json({ message: "Email already in use" });
+
+    // Verify they control the account via OTP
+    const check = await verifyUserCredential(user, otp);
+    if (!check.ok) return res.status(check.status).json({
+      message: check.message,
+      useOtp: (check as any).useOtp
+    });
+
+    // Stage the pending changes — nothing commits yet
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { code, hashed, expiry } = generateCode();
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        pendingEmail: newEmail,
+        pendingPassword: hashedPassword,
+        pendingEmailToken: hashed,
+        pendingEmailExpiry: expiry,
+      },
+    });
+
+    // Send verification to the NEW email
+    await sendVerificationEmail(newEmail, code);
+
+    res.json({
+      message: "A verification code has been sent to your new email address. Please verify it to complete the change.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const confirmEmailChange = async (req: AuthRequest, res: Response) => {
+  try {
+    const { otp } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        pendingEmail: true,
+        pendingPassword: true,
+        pendingEmailToken: true,
+        pendingEmailExpiry: true,
+        authProvider: true,
+      }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.pendingEmail || !user.pendingEmailToken || !user.pendingEmailExpiry) {
+      return res.status(400).json({ message: "No pending email change found." });
+    }
+
+    if (new Date() > (user.pendingEmailExpiry as Date)) {
+      // Clean up expired staging
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          pendingEmail: null, pendingPassword: null,
+          pendingEmailToken: null, pendingEmailExpiry: null,
+        }
+      });
+      return res.status(400).json({ message: "Verification code expired. Please start over." });
+    }
+
+    const hashed = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hashed !== user.pendingEmailToken) {
+      return res.status(400).json({ message: "Invalid verification code." });
+    }
+
+    // Atomic commit — everything changes at once
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: user.pendingEmail,
+        password: user.pendingPassword,
+        authProvider: "hybrid",       // ← only NOW does provider change
+        isVerified: true,
+        pendingEmail: null,
+        pendingPassword: null,
+        pendingEmailToken: null,
+        pendingEmailExpiry: null,
+        actionOtp: null,
+        actionOtpExpiry: null,
+      },
+    });
+
+    // Force logout — they must re-login with new credentials
+    res.json({
+      message: "Email changed successfully. Please sign in with your new email and password.",
+      forceLogout: true,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

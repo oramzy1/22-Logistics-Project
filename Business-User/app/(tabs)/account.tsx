@@ -30,7 +30,7 @@ import {
   Trash2,
   User,
   UserPlus,
-  UserX
+  UserX,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -160,6 +160,244 @@ const AccordionItem = ({
   );
 };
 
+type OAuthModalMode = "action" | "emailChange"; // action = delete/deactivate, emailChange = full flow
+
+type OAuthActionModalProps = {
+  visible: boolean;
+  mode: OAuthModalMode;
+  onClose: () => void;
+  onActionVerified: (otp: string) => void; // for "action" mode — passes OTP back to caller
+  onEmailChangeComplete: () => void; // for "emailChange" mode — triggers logout
+};
+
+const OAuthActionModal = ({
+  visible,
+  mode,
+  onClose,
+  onActionVerified,
+  onEmailChangeComplete,
+}: OAuthActionModalProps) => {
+  const [step, setStep] = useState<
+    "requestOtp" | "enterOtp" | "newCredentials" | "verifyNewEmail"
+  >("requestOtp");
+  const [otp, setOtp] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newEmailOtp, setNewEmailOtp] = useState("");
+  const { showLoading, hideLoading } = useLoading();
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
+
+  // Reset on open
+  useEffect(() => {
+    if (visible) {
+      setStep("requestOtp");
+      setOtp("");
+      setNewEmail("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setNewEmailOtp("");
+    }
+  }, [visible]);
+
+  const handleRequestOtp = async () => {
+    showLoading("Sending code...");
+    try {
+      await UserService.requestActionOtp();
+      setStep("enterOtp");
+      showToast.success("Check your email for a verification code");
+    } catch (err: any) {
+      showToast.error(err?.response?.data?.message || "Failed to send code");
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const handleOtpContinue = () => {
+    if (otp.length !== 6) return;
+    if (mode === "action") {
+      // Pass OTP back — the caller will use it as the credential
+      onActionVerified(otp);
+      onClose();
+    } else {
+      // Email change — proceed to new credentials step
+      setStep("newCredentials");
+    }
+  };
+
+  const handleSubmitEmailChange = async () => {
+    if (newPassword !== confirmPassword) {
+      return showToast.error("Passwords do not match");
+    }
+    if (!newEmail) return showToast.error("Please enter a new email");
+
+    showLoading("Processing...");
+    try {
+      await UserService.requestEmailChange(newEmail, newPassword, otp);
+      setStep("verifyNewEmail");
+      showToast.success("Verification code sent to your new email");
+    } catch (err: any) {
+      showToast.error(err?.response?.data?.message || "Failed");
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const handleConfirmNewEmail = async () => {
+    showLoading("Confirming...");
+    try {
+      await UserService.confirmEmailChange(newEmailOtp);
+      showToast.success(
+        "Email changed! Please sign in with your new credentials.",
+      );
+      onEmailChangeComplete(); // triggers clearAuthData + redirect
+    } catch (err: any) {
+      showToast.error(err?.response?.data?.message || "Failed");
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const titles = {
+    requestOtp: "Verify Your Identity",
+    enterOtp: "Enter Verification Code",
+    newCredentials: "Set New Email & Password",
+    verifyNewEmail: "Verify New Email",
+  };
+
+  return (
+    <Modal
+      transparent
+      animationType="slide"
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalOverlay}
+      >
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>{titles[step]}</Text>
+
+          {step === "requestOtp" && (
+            <>
+              <Text
+                style={{ color: "#6B7280", fontSize: 13, marginBottom: 20 }}
+              >
+                {mode === "action"
+                  ? "We'll send a verification code to your email to confirm this action."
+                  : "To change your email and set a password, we'll first verify your current account."}
+              </Text>
+              <PrimaryButton
+                title="Send Verification Code"
+                onPress={handleRequestOtp}
+              />
+              <TouchableOpacity
+                onPress={onClose}
+                style={{ marginTop: 12, alignItems: "center" }}
+              >
+                <Text style={{ color: "#6B7280" }}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {step === "enterOtp" && (
+            <>
+              <Text
+                style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+              >
+                Enter the 6-digit code sent to your email.
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={otp}
+                onChangeText={setOtp}
+                placeholder="6-digit code"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <PrimaryButton
+                title="Continue"
+                style={{ marginTop: 16 }}
+                onPress={handleOtpContinue}
+              />
+            </>
+          )}
+
+          {step === "newCredentials" && (
+            <>
+              <Text
+                style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+              >
+                Enter your new email and create a password. You'll verify the
+                new email next.
+              </Text>
+              <Text style={styles.modalLabel}>New Email</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newEmail}
+                onChangeText={setNewEmail}
+                placeholder="New email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <Text style={styles.modalLabel}>New Password</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Create a password"
+                secureTextEntry
+              />
+              <Text style={styles.modalLabel}>Confirm Password</Text>
+              <TextInput
+                style={[styles.modalInput, { marginBottom: 4 }]}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm password"
+                secureTextEntry
+              />
+              <PrimaryButton
+                title="Send Verification to New Email"
+                style={{ marginTop: 20 }}
+                onPress={handleSubmitEmailChange}
+              />
+            </>
+          )}
+
+          {step === "verifyNewEmail" && (
+            <>
+              <Text
+                style={{ color: "#6B7280", fontSize: 13, marginBottom: 16 }}
+              >
+                Enter the verification code sent to {newEmail} to complete the
+                change.
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newEmailOtp}
+                onChangeText={setNewEmailOtp}
+                placeholder="6-digit code"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <Text style={{ color: "#9CA3AF", fontSize: 11, marginTop: 8 }}>
+                Until you verify this code, your account remains unchanged.
+              </Text>
+              <PrimaryButton
+                title="Confirm & Complete"
+                style={{ marginTop: 20 }}
+                onPress={handleConfirmNewEmail}
+              />
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
+
 export default function AccountTabScreen() {
   const { colors: themeColors, isDark } = useAppTheme();
   const styles = createStyles(themeColors);
@@ -188,6 +426,32 @@ export default function AccountTabScreen() {
   });
   const [supportSheet, setSupportSheet] = useState<SupportType>(null);
   const { showLoading, hideLoading } = useLoading();
+  const [passwordSetupModal, setPasswordSetupModal] = useState<{
+    visible: boolean;
+    onSuccess: () => void;
+  }>({ visible: false, onSuccess: () => {} });
+  const isOAuthUser =
+    user?.authProvider === "google" || user?.authProvider === "apple";
+
+  const [oauthModal, setOauthModal] = useState<{
+    visible: boolean;
+    mode: OAuthModalMode;
+    pendingAction?: (otp: string) => Promise<void>;
+  }>({ visible: false, mode: "action" });
+
+  // Reusable interceptor — wrap any sensitive action with this
+  const withPasswordSetup = (action: () => Promise<void>) => async () => {
+    try {
+      await action();
+    } catch (err: any) {
+      if (err?.response?.data?.requiresPasswordSetup) {
+        setPasswordSetupModal({
+          visible: true,
+          onSuccess: action, // retry original action after password is set
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     NotificationPrefs.load().then(setNotifications);
@@ -209,12 +473,16 @@ export default function AccountTabScreen() {
   };
 
   const handleChangeEmail = () => {
-    setModalValues((v) => ({
-      ...v,
-      newEmail: user?.email ?? "",
-      password: "",
-    }));
-    setActiveModal("changeEmail");
+    if (isOAuthUser) {
+      setOauthModal({ visible: true, mode: "emailChange" });
+    } else {
+      setModalValues((v) => ({
+        ...v,
+        newEmail: user?.email ?? "",
+        password: "",
+      }));
+      setActiveModal("changeEmail");
+    }
   };
 
   const handleChangePassword = () => {
@@ -236,16 +504,28 @@ export default function AccountTabScreen() {
         {
           text: "Deactivate",
           style: "destructive",
-          onPress: async () => {
-            showLoading('Deactivating Account...')
-            try {
-              await UserService.deactivateAccount();
-              await clearAuthData();
-              router.replace("/(auth)/sign-in");
-            } catch (err: any) {
-              Alert.alert("Error", err?.response?.data?.message || "Failed");
-            }finally{
-              hideLoading()
+          onPress: () => {
+            if (isOAuthUser) {
+              setOauthModal({
+                visible: true,
+                mode: "action",
+                pendingAction: async (otp: string) => {
+                  showLoading("Deactivating Account...");
+                  try {
+                    await UserService.deactivateAccount(otp);
+                    await clearAuthData();
+                    router.replace("/(auth)/sign-in");
+                  } catch (err: any) {
+                    showToast.error(err?.response?.data?.message || "Failed");
+                  } finally {
+                    hideLoading();
+                  }
+                },
+              });
+            } else {
+              // existing email/hybrid flow — prompt for password in modal
+              setModalValues((v) => ({ ...v, deletePassword: "" }));
+              setActiveModal("deactivateAccount"); // add this modal type
             }
           },
         },
@@ -254,21 +534,38 @@ export default function AccountTabScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This is permanent and cannot be undone. All your data will be removed.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
+    Alert.alert("Delete Account", "This is permanent and cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          if (isOAuthUser) {
+            setOauthModal({
+              visible: true,
+              mode: "action",
+              pendingAction: async (otp: string) => {
+                showLoading("Deleting Account...");
+                try {
+                  await UserService.deleteAccount(otp);
+                  await clearAuthData();
+                  router.replace("/(auth)/sign-in");
+                } catch (err: any) {
+                  showToast.error(
+                    err?.response?.data?.message || "Deletion failed",
+                  );
+                } finally {
+                  hideLoading();
+                }
+              },
+            });
+          } else {
             setModalValues((v) => ({ ...v, deletePassword: "" }));
             setActiveModal("deleteAccount");
-          },
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleSignOut = () => {
@@ -278,14 +575,14 @@ export default function AccountTabScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          showLoading('Removing Session...')
-          try{
-          await signOut();
-          router.replace("/(auth)/sign-in");
-          showToast.success('Signed out successfully', "See you Soon!")
-          }catch(err){
-            showToast.error('Failed to Sign out')
-          }finally{
+          showLoading("Removing Session...");
+          try {
+            await signOut();
+            router.replace("/(auth)/sign-in");
+            showToast.success("Signed out successfully", "See you Soon!");
+          } catch (err) {
+            showToast.error("Failed to Sign out");
+          } finally {
             hideLoading();
           }
         },
@@ -302,7 +599,7 @@ export default function AccountTabScreen() {
     });
 
     if (!result.canceled) {
-      showLoading('Please wait...')
+      showLoading("Please wait...");
       try {
         const data = await UserService.uploadAvatar(result.assets[0].uri);
 
@@ -318,7 +615,7 @@ export default function AccountTabScreen() {
       } catch (err) {
         console.log("Error:", err);
         showToast.error("Failed to upload photo");
-      }finally{
+      } finally {
         hideLoading();
       }
     }
@@ -386,8 +683,13 @@ export default function AccountTabScreen() {
           <ListItem
             icon={Lock}
             title="Change Password"
+            subtitle={
+              isOAuthUser
+                ? "Change your email first to set a password"
+                : undefined
+            }
             isLast
-            onPress={handleChangePassword}
+            onPress={isOAuthUser ? undefined : handleChangePassword}
           />
         </AccordionItem>
 
@@ -605,8 +907,12 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <PrimaryButton style={styles.modalSaveBtn} title="Save" variant="primary" onPress={async () => {
-                      showLoading('Updating Profile...')
+                    <PrimaryButton
+                      style={styles.modalSaveBtn}
+                      title="Save"
+                      variant="primary"
+                      onPress={async () => {
+                        showLoading("Updating Profile...");
                         try {
                           await UserService.updateProfile({
                             name: modalValues.name,
@@ -623,10 +929,11 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
-                        }finally{
+                        } finally {
                           hideLoading();
                         }
-                      }} />
+                      }}
+                    />
                   </View>
                 </>
               )}
@@ -663,8 +970,12 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <PrimaryButton style={styles.modalSaveBtn} title="Save" variant="primary"  onPress={async () => {
-                      showLoading('Updating Email...')
+                    <PrimaryButton
+                      style={styles.modalSaveBtn}
+                      title="Save"
+                      variant="primary"
+                      onPress={async () => {
+                        showLoading("Updating Email...");
                         try {
                           await UserService.updateEmail(
                             modalValues.newEmail,
@@ -681,10 +992,11 @@ export default function AccountTabScreen() {
                             "Error",
                             err?.response?.data?.message || "Update failed",
                           );
-                        }finally{
+                        } finally {
                           hideLoading();
                         }
-                      }}/>
+                      }}
+                    />
                   </View>
                 </>
               )}
@@ -730,14 +1042,11 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <PrimaryButton style={styles.modalSaveBtn} title="Save"  onPress={async () => {
-                      showLoading('Updating Password...')
-                        if (
-                          modalValues.newPassword !==
-                          modalValues.confirmPassword
-                        ) {
-                          return Alert.alert("Error", "Passwords do not match");
-                        }
+                    <PrimaryButton
+                      style={styles.modalSaveBtn}
+                      title="Save"
+                      onPress={withPasswordSetup(async () => {
+                        showLoading("Updating...");
                         try {
                           await UserService.changePassword(
                             modalValues.currentPassword,
@@ -749,14 +1058,13 @@ export default function AccountTabScreen() {
                             "Password changed successfully",
                           );
                         } catch (err: any) {
-                          Alert.alert(
-                            "Error",
-                            err?.response?.data?.message || "Update failed",
-                          );
-                        }finally{
+                          // re-throw so withPasswordSetup can check it
+                          throw err;
+                        } finally {
                           hideLoading();
                         }
-                      }} />
+                      })}
+                    />
                   </View>
                 </>
               )}
@@ -788,8 +1096,14 @@ export default function AccountTabScreen() {
                     >
                       <Text style={styles.modalCancelText}>Cancel</Text>
                     </TouchableOpacity>
-                    <PrimaryButton style={[styles.modalSaveBtn, {backgroundColor: '#EF4444'}]} title="Delete Forever" onPress={async () => {
-                      showLoading('Deleting Account...')
+                    <PrimaryButton
+                      style={[
+                        styles.modalSaveBtn,
+                        { backgroundColor: "#EF4444" },
+                      ]}
+                      title="Delete Forever"
+                      onPress={async () => {
+                        showLoading("Deleting Account...");
                         if (!modalValues.deletePassword) {
                           showToast.error("Please enter your password");
                           return;
@@ -805,10 +1119,11 @@ export default function AccountTabScreen() {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
                           );
-                        }finally{
+                        } finally {
                           hideLoading();
                         }
-                      }} />
+                      }}
+                    />
                   </View>
                 </>
               )}
@@ -821,6 +1136,19 @@ export default function AccountTabScreen() {
         onClose={() => setSupportSheet(null)}
         userEmail={user?.email ?? ""}
         userName={user?.name ?? ""}
+      />
+
+      <OAuthActionModal
+        visible={oauthModal.visible}
+        mode={oauthModal.mode}
+        onClose={() => setOauthModal({ visible: false, mode: "action" })}
+        onActionVerified={async (otp) => {
+          await oauthModal.pendingAction?.(otp);
+        }}
+        onEmailChangeComplete={async () => {
+          await clearAuthData();
+          router.replace("/(auth)/sign-in");
+        }}
       />
     </SafeAreaView>
   );
