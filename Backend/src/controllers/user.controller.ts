@@ -515,6 +515,35 @@ export const requestEmailChange = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const verifyActionOtp = async (req: AuthRequest, res: Response) => {
+  try {
+    const { otp } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, actionOtp: true, actionOtpExpiry: true }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.actionOtp || !user.actionOtpExpiry) {
+      return res.status(400).json({ message: "No OTP requested. Please request a new code." });
+    }
+    if (new Date() > user.actionOtpExpiry) {
+      return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+    }
+
+    const hashed = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hashed !== user.actionOtp) {
+      return res.status(400).json({ message: "Invalid verification code." });
+    }
+
+    // Don't consume it yet — it's still needed for requestEmailChange
+    res.json({ message: "OTP verified." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
 export const confirmEmailChange = async (req: AuthRequest, res: Response) => {
   try {
     const { otp } = req.body;
