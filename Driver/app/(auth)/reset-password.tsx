@@ -1,120 +1,277 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Lock, EyeOff, Eye, Check } from 'lucide-react-native';
-import LoadingOverlay from '@/src/ui/LoadingOverlay';
-import { Text } from '../../components/AppText'; 
+// app/(auth)/reset-password.tsx — full replacement
+
+import { AuthService } from "@/api/auth.service";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { Lock, Eye, EyeOff, Mail } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  KeyboardAvoidingView, Platform, StyleSheet,
+  TextInput, TouchableOpacity, View, ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text } from "../../components/AppText";
+import { PrimaryButton } from "@/src/ui/PrimaryButton";
+import { showToast } from "../utils/toast";
+import {
+  PasswordStrengthIndicator,
+  isPasswordValid,
+} from "@/src/ui/PasswordStrengthIndicator";
+
+type Step = "email" | "code" | "newPassword" | "done";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { email: prefillEmail } = useLocalSearchParams<{ email?: string }>();
+
+  const [step, setStep] = useState<Step>("email");
+  const [email, setEmail] = useState(prefillEmail ?? "");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [pwFocused, setPwFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Validation
-  const hasMinLength = password.length >= 8;
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  const isMismatch = confirmPassword.length > 0 && password !== confirmPassword;
-
-  const handleReset = () => {
+  // Step 1 — request reset code
+  const handleRequestCode = async () => {
+    setError("");
+    if (!email.trim()) return setError("Please enter your email address.");
     setIsLoading(true);
-    // Simulate API call then route
-    setTimeout(() => {
+    try {
+      await AuthService.forgotPassword(email.trim().toLowerCase());
+      setStep("code");
+      showToast.success("Code sent", "Check your email for the reset code.");
+    } catch (err: any) {
+      // Always show success to avoid email enumeration
+      setStep("code");
+      showToast.success("Code sent", "If that email exists, a code was sent.");
+    } finally {
       setIsLoading(false);
-      router.push('/(auth)/sign-in');
-    }, 2500);
+    }
   };
 
-  const ValidationPill = ({ text, isValid }: { text: string, isValid: boolean }) => (
-    <View style={[styles.validationPill, isValid && styles.validationPillValid]}>
-       <Check size={12} color={isValid ? "#10B981" : "#6B7280"} style={{marginRight: 4}} />
-       <Text style={[styles.validationText, isValid && styles.validationTextValid]}>{text}</Text>
-    </View>
-  );
+  // Step 2 — just advance to password entry (code verified on submit)
+  const handleCodeContinue = () => {
+    setError("");
+    if (code.trim().length !== 6) return setError("Please enter the 6-digit code.");
+    setStep("newPassword");
+  };
+
+  // Step 3 — submit new password
+  const handleResetPassword = async () => {
+    setError("");
+    if (!isPasswordValid(password)) {
+      return setError("Password does not meet all requirements.");
+    }
+    if (password !== confirmPassword) {
+      return setError("Passwords do not match.");
+    }
+    setIsLoading(true);
+    try {
+      await AuthService.resetPassword(email.trim().toLowerCase(), code.trim(), password);
+      setStep("done");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Reset failed. The code may have expired.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerBar}></View>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Reset Password</Text>
+      <View style={styles.headerBar} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-          {/* Password Input */}
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.inputContainer}>
-            <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-            <TextInput 
-              style={styles.input} 
-              placeholder="********" 
-              secureTextEntry={!showPassword} 
-              placeholderTextColor="#9CA3AF"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              {showPassword ? <Eye size={18} color="#9CA3AF" /> : <EyeOff size={18} color="#9CA3AF" />}
-            </TouchableOpacity>
-          </View>
+          {/* STEP 1 — Email */}
+          {step === "email" && (
+            <>
+              <Text style={styles.title}>Forgot Password?</Text>
+              <Text style={styles.subtitle}>
+                Enter the email address associated with your account and we'll send you a reset code.
+              </Text>
+              <Text style={styles.label}>Email Address</Text>
+              <View style={styles.inputContainer}>
+                <Mail size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="your@email.com"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoFocus
+                />
+              </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              <PrimaryButton
+                title="Send Reset Code"
+                onPress={handleRequestCode}
+                loading={isLoading}
+                disabled={isLoading}
+                marginTop
+              />
+              <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+                <Text style={styles.backText}>Back to Sign In</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
-          {/* Check Pills */}
-          <View style={styles.validationContainer}>
-            <ValidationPill text="Minimum 8 characters" isValid={hasMinLength} />
-            <ValidationPill text="1 Uppercase character (A,B,C...)" isValid={hasUpper} />
-            <ValidationPill text="1 Lowercase character (a,b,c...)" isValid={hasLower} />
-            <ValidationPill text="1 Special character (!@,#,$...)" isValid={hasSpecial} />
-          </View>
+          {/* STEP 2 — Enter code */}
+          {step === "code" && (
+            <>
+              <Text style={styles.title}>Enter Reset Code</Text>
+              <Text style={styles.subtitle}>
+                We sent a 6-digit code to{" "}
+                <Text style={{ fontWeight: "700", color: "#111827" }}>{email}</Text>.
+                {"\n"}Check your inbox (and spam folder).
+              </Text>
+              <Text style={styles.label}>6-Digit Code</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, { letterSpacing: 6, fontSize: 18, fontWeight: "700" }]}
+                  value={code}
+                  onChangeText={(t) => setCode(t.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="------"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                />
+              </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              <PrimaryButton
+                title="Continue"
+                onPress={handleCodeContinue}
+                marginTop
+              />
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => { setStep("email"); setCode(""); setError(""); }}
+              >
+                <Text style={styles.backText}>Wrong email? Go back</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
-          {/* Confirm Password Input */}
-          <Text style={styles.label}>Confirm password</Text>
-          <View style={[styles.inputContainer, isMismatch && styles.inputErrorBorder, { marginBottom: 4 }]}>
-            <Lock size={18} color={isMismatch ? "#EF4444" : "#9CA3AF"} style={styles.inputIcon} />
-            <TextInput 
-              style={styles.input} 
-              placeholder="********" 
-              secureTextEntry={!showConfirmPassword} 
-              placeholderTextColor="#9CA3AF"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-              {showConfirmPassword ? <Eye size={18} color="#9CA3AF" /> : <EyeOff size={18} color="#9CA3AF" />}
-            </TouchableOpacity>
-          </View>
-          {isMismatch && <Text style={styles.errorText}>Password mismatch</Text>}
+          {/* STEP 3 — New password */}
+          {step === "newPassword" && (
+            <>
+              <Text style={styles.title}>Set New Password</Text>
+              <Text style={styles.subtitle}>
+                Create a strong password for your account.
+              </Text>
+              <Text style={styles.label}>New Password</Text>
+              <View style={styles.inputContainer}>
+                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="New password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPassword}
+                  onFocus={() => setPwFocused(true)}
+                  onBlur={() => setPwFocused(false)}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <Eye size={18} color="#9CA3AF" /> : <EyeOff size={18} color="#9CA3AF" />}
+                </TouchableOpacity>
+              </View>
 
-          <View style={{ marginTop: 'auto', paddingBottom: 20 }}>
-            <TouchableOpacity style={styles.submitBtn} onPress={handleReset}>
-              <Text style={styles.submitBtnText}>Reset Password</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              {/* Strength indicator — in-flow, shifts content down gracefully */}
+              <PasswordStrengthIndicator
+                password={password}
+                visible={pwFocused && password.length > 0}
+              />
+
+              <Text style={[styles.label, { marginTop: 16 }]}>Confirm New Password</Text>
+              <View style={[
+                styles.inputContainer,
+                confirmPassword.length > 0 && password !== confirmPassword && styles.inputError
+              ]}>
+                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <Eye size={18} color="#9CA3AF" /> : <EyeOff size={18} color="#9CA3AF" />}
+                </TouchableOpacity>
+              </View>
+              {confirmPassword.length > 0 && password !== confirmPassword && (
+                <Text style={styles.errorText}>Passwords do not match</Text>
+              )}
+
+              {error ? <Text style={[styles.errorText, { marginTop: 8 }]}>{error}</Text> : null}
+
+              <PrimaryButton
+                title="Reset Password"
+                onPress={handleResetPassword}
+                loading={isLoading}
+                disabled={isLoading}
+                marginTop
+              />
+            </>
+          )}
+
+          {/* STEP 4 — Success */}
+          {step === "done" && (
+            <View style={styles.successContainer}>
+              <View style={styles.successIcon}>
+                <Text style={{ fontSize: 40 }}>✓</Text>
+              </View>
+              <Text style={styles.title}>Password Reset!</Text>
+              <Text style={styles.subtitle}>
+                Your password has been updated successfully. You can now sign in with your new password.
+              </Text>
+              <PrimaryButton
+                title="Sign In"
+                style={{width: 100}}
+                onPress={() => router.replace("/(auth)/sign-in")}
+                marginTop
+              />
+            </View>
+          )}
+
+        </ScrollView>
       </KeyboardAvoidingView>
-
-      <LoadingOverlay visible={isLoading} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  headerBar: { height: 70, backgroundColor: '#0B1B2B', borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
-  content: { flex: 1, padding: 24, paddingTop: 40 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 30, textAlign: 'center' },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 12, height: 48, backgroundColor: '#FFF', marginBottom: 16 },
-  inputErrorBorder: { borderColor: '#EF4444' },
+  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  headerBar: { height: 70, backgroundColor: "#0B1B2B", borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+  content: { padding: 24, paddingTop: 40, paddingBottom: 60 },
+  title: { fontSize: 24, fontWeight: "700", color: "#111827", marginBottom: 12 },
+  subtitle: { fontSize: 14, color: "#6B7280", lineHeight: 22, marginBottom: 32 },
+  label: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
+  inputContainer: {
+    flexDirection: "row", alignItems: "center", borderWidth: 1,
+    borderColor: "#E5E7EB", borderRadius: 8, paddingHorizontal: 12,
+    height: 48, backgroundColor: "#FFF",
+  },
+  inputError: { borderColor: "#EF4444" },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 14, color: '#111827' },
-  errorText: { color: '#EF4444', fontSize: 12, textAlign: 'right', marginBottom: 16 },
-  validationContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 30 },
-  validationPill: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#FFF' },
-  validationPillValid: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
-  validationText: { fontSize: 11, color: '#6B7280' },
-  validationTextValid: { color: '#065F46' },
-  submitBtn: { backgroundColor: '#A28E62', paddingVertical: 16, borderRadius: 8, alignItems: 'center' },
-  submitBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  input: { flex: 1, fontSize: 14, color: "#111827" },
+  errorText: { color: "#EF4444", fontSize: 12, marginTop: 6 },
+  backBtn: { alignItems: "center", marginTop: 20 },
+  backText: { color: "#6B7280", fontSize: 13, textDecorationLine: "underline" },
+  successContainer: { flex: 1, alignItems: "center", paddingTop: 40 },
+  successIcon: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: "#F0FDF4", alignItems: "center",
+    justifyContent: "center", marginBottom: 24,
+  },
 });

@@ -403,7 +403,7 @@ export const googleAuth = async (req: Request, res: Response) => {
     if (!payload?.email)
       return res.status(400).json({ message: "Invalid Google token" });
 
-    const { email, name, picture } = payload;
+    const { email, name } = payload;
 
     let user = await prisma.user.findUnique({
       where: { email },
@@ -461,7 +461,7 @@ export const googleAuth = async (req: Request, res: Response) => {
           authProvider: "google",
           role,
           isVerified: true,
-          avatarUrl: picture ?? null,
+          avatarUrl: null,
           ...(role === "DRIVER" && {
             driverProfile: { create: { licenseStatus: "PENDING" } },
           }),

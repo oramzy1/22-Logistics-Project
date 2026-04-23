@@ -1,7 +1,7 @@
 // Business-User/app/(tabs)/schedule.tsx
 
 import { Calendar, Clock, MapPinned } from "lucide-react-native";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Alert,
   ScrollView,
@@ -81,6 +81,9 @@ export default function ScheduleTabScreen() {
   const [outOfLGATarget, setOutOfLGATarget] = useState<
     "pickup" | "dropoff" | null
   >(null);
+  useEffect(() => {
+  console.log("pickupTime changed:", pickupTime?.getHours(), pickupTime?.getMinutes());
+}, [pickupTime]);
 
   const { createBooking } = useBookings();
   const { colors: themeColors } = useAppTheme();
@@ -88,6 +91,7 @@ export default function ScheduleTabScreen() {
   const router = useRouter();
 
   const pkg = selectedPackage;
+  
 
   const getInterstatePrice = (value: string) => {
     if (!value) return 0;

@@ -37,6 +37,7 @@ import { Text } from "../../components/AppText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SocialButton } from "@/src/ui/SocialButtons";
 import { PhoneInput } from "@/src/ui/PhoneInput";
+import { PasswordStrengthIndicator } from "@/src/ui/PasswordStrengthIndicator";
 
 const STEPS = [
   "Personal Info",
@@ -52,6 +53,7 @@ export default function RegisterDriverScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [licenseUri, setLicenseUri] = useState<string | null>(null);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Step 1
   const [firstName, setFirstName] = useState("");
@@ -269,6 +271,8 @@ export default function RegisterDriverScreen() {
                     placeholder="Email"
                     placeholderTextColor="#9CA3AF"
                     keyboardType="email-address"
+                    autoCapitalize="none"
+                    
                   />
                 </View>
 
@@ -371,47 +375,64 @@ export default function RegisterDriverScreen() {
             {currentStep === 2 && (
               <View>
                 <Text style={styles.label}>Password</Text>
-                <View style={styles.inputContainer}>
-                  <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    secureTextEntry={!showPassword}
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <Eye size={18} color="#9CA3AF" />
-                    ) : (
-                      <EyeOff size={18} color="#9CA3AF" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.label}>Confirm Password</Text>
-                <View style={styles.inputContainer}>
-                  <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    secureTextEntry={!showConfirmPassword}
-                    placeholderTextColor="#9CA3AF"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <Eye size={18} color="#9CA3AF" />
-                    ) : (
-                      <EyeOff size={18} color="#9CA3AF" />
-                    )}
-                  </TouchableOpacity>
-                </View>
+                 <View>
+              <View style={styles.inputContainer}>
+                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  secureTextEntry={!showPassword}
+                  placeholderTextColor="#9CA3AF"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Eye size={18} color="#9CA3AF" />
+                  ) : (
+                    <EyeOff size={18} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+                <PasswordStrengthIndicator
+                  password={password}
+                  visible={passwordFocused && password.length > 0}
+                  backgroundColor="#FFF"
+                />
+              </View>
+            </View>
+
+            {/* Confirm Password */}
+            <View
+              style={[
+                passwordFocused && password.length > 0 && { marginTop: 65 },
+              ]}
+            >
+              <Text style={styles.label}>Confirm Password</Text>
+              <View style={styles.inputContainer}>
+                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Password"
+                  secureTextEntry={!showConfirmPassword}
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <Eye size={18} color="#9CA3AF" />
+                  ) : (
+                    <EyeOff size={18} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
                 {/* Terms */}
                 <View style={styles.termsContainer}>
                   <TouchableOpacity

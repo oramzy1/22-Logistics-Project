@@ -304,7 +304,8 @@ i18n.use(initReactI18next).init({
   lng: "en", // safe default — overridden by initI18n()
   fallbackLng: "en",
   interpolation: { escapeValue: false },
-  detection: undefined,
+  nsSeparator: false,
+  keySeparator: false,
 });
 
 // Call this in _layout.tsx to apply the persisted/device language

@@ -44,6 +44,11 @@ export const AuthService = {
     return response.data;
   },
 
+    resendVerification: async (email: string) => {
+  const response = await apiClient.post("/auth/resend-verification", { email });
+  return response.data;
+},
+
   googleAuth: async (data: { idToken: string; appType: string }) => {
   const response = await apiClient.post('/auth/google', data);
   return response.data;

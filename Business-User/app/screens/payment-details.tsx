@@ -9,7 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import  * as FileSystem from 'expo-file-system';
+import  * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 
 function Row({
@@ -43,7 +43,7 @@ export default function PaymentHistoryScreen() {
 const handleDownload = async () => {
   try {
     // Load the bundled asset and read it as base64
-    const asset = Asset.fromModule(require('../../../assets/images/22LogisticsLogo.png'));
+    const asset = Asset.fromModule(require('../../assets/images/22LogisticsLogo.png'));
     await asset.downloadAsync();
     const base64Logo = await FileSystem.readAsStringAsync(asset.localUri!, {
       encoding: FileSystem.EncodingType.Base64,

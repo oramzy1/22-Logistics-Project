@@ -166,9 +166,11 @@ useEffect(() => {
           <Text style={styles.primaryBtnText}>{verifyStatus === 'pending' ? 'Loading...' : 'View Bookings'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.outlineBtn}>
+       { verifyStatus !== 'pending' && (
+         <TouchableOpacity style={styles.outlineBtn}>
           <Text style={styles.outlineBtnText}>Download Receipt</Text>
         </TouchableOpacity>
+       )}
       </ScrollView>
     </SafeAreaView>
   );

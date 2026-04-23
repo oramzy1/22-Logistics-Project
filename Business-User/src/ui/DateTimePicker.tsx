@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   Platform,
@@ -37,6 +37,10 @@ export function DateTimePickerInput({
     const { colors: themeColors } = useAppTheme();
     const styles = createStyles(themeColors);
 
+  useEffect(() => {
+  if (value) setTempDate(value);
+}, [value])
+
   const displayValue = value
     ? mode === 'date'
       ? value.toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -54,7 +58,7 @@ export function DateTimePickerInput({
 
   const handleConfirmIOS = () => {
     onChange(tempDate);
-    setShow(false);
+    setShow(false);      
   };
 
   return (

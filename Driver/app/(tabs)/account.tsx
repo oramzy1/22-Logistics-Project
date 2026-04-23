@@ -60,6 +60,7 @@ import { isProfileComplete } from "@/src/ui/ProfileCompletionCard";
 import { SupportSheet } from "@/src/ui/SupportSheet";
 import { useLoading } from "@/context/LoadingContext";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
+import { PasswordStrengthIndicator } from "@/src/ui/PasswordStrengthIndicator";
 
 // Enable LayoutAnimation for Android
 if (
@@ -185,6 +186,7 @@ const OAuthActionModal = ({
   const { showLoading, hideLoading } = useLoading();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Reset on open
   useEffect(() => {
@@ -292,7 +294,7 @@ const OAuthActionModal = ({
               />
               <TouchableOpacity
                 onPress={onClose}
-                style={{ marginTop: 12, alignItems: "center" }}
+                style={{ marginVertical: 12, alignItems: "center" }}
               >
                 <Text style={{ color: "#6B7280" }}>Cancel</Text>
               </TouchableOpacity>
@@ -316,7 +318,7 @@ const OAuthActionModal = ({
               />
               <PrimaryButton
                 title="Continue"
-                style={{ marginTop: 16 }}
+                style={{ marginVertical: 16 }}
                 onPress={handleOtpContinue}
               />
             </>
@@ -339,6 +341,7 @@ const OAuthActionModal = ({
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+              <View>
               <Text style={styles.modalLabel}>New Password</Text>
               <TextInput
                 style={styles.modalInput}
@@ -346,8 +349,17 @@ const OAuthActionModal = ({
                 onChangeText={setNewPassword}
                 placeholder="Create a password"
                 secureTextEntry
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
               />
-              <Text style={styles.modalLabel}>Confirm Password</Text>
+              <PasswordStrengthIndicator
+              password={newPassword}
+              visible={passwordFocused && newPassword.length > 0}
+              backgroundColor='transparent'
+              />
+              </View>
+              <View style={[passwordFocused && newPassword.length > 0 && {marginTop: 65}]}>
+                  <Text style={styles.modalLabel}>Confirm Password</Text>
               <TextInput
                 style={[styles.modalInput, { marginBottom: 4 }]}
                 value={confirmPassword}
@@ -355,9 +367,10 @@ const OAuthActionModal = ({
                 placeholder="Confirm password"
                 secureTextEntry
               />
+              </View>
               <PrimaryButton
                 title="Send Verification to New Email"
-                style={{ marginTop: 20 }}
+                style={{ marginTop: 20, marginBottom: 10 }}
                 onPress={handleSubmitEmailChange}
               />
             </>
@@ -456,6 +469,7 @@ export default function AccountTabScreen() {
     mode: OAuthModalMode;
     pendingAction?: (otp: string) => Promise<void>;
   }>({ visible: false, mode: "action" });
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const withPasswordSetup = (action: () => Promise<void>) => async () => {
     try {
@@ -1074,7 +1088,7 @@ const handleChangeEmail = () => {
               )}
 
               {/* CHANGE PASSWORD */}
-              {activeModal === "changePassword" && (
+                {activeModal === "changePassword" && (
                 <>
                   <Text style={styles.modalTitle}>Change Password</Text>
                   <Text style={styles.modalLabel}>Current Password</Text>
@@ -1087,7 +1101,8 @@ const handleChangeEmail = () => {
                     placeholder="Current password"
                     secureTextEntry
                   />
-                  <Text style={styles.modalLabel}>New Password</Text>
+                  <View>
+                    <Text style={styles.modalLabel}>New Password</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.newPassword}
@@ -1096,8 +1111,17 @@ const handleChangeEmail = () => {
                     }
                     placeholder="New password"
                     secureTextEntry
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
                   />
-                  <Text style={styles.modalLabel}>Confirm New Password</Text>
+                  <PasswordStrengthIndicator
+                  password={modalValues.newPassword}
+                  visible={passwordFocused && modalValues.newPassword.length > 0}  
+                  backgroundColor="transparent"                
+                  />
+                  </View>
+                <View style={[passwordFocused && modalValues.newPassword.length > 0 && {marginTop: 65}]}>
+                    <Text style={styles.modalLabel}>Confirm New Password</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={modalValues.confirmPassword}
@@ -1107,6 +1131,7 @@ const handleChangeEmail = () => {
                     placeholder="Confirm new password"
                     secureTextEntry
                   />
+                </View>
                   <View style={styles.modalButtons}>
                     <TouchableOpacity
                       style={styles.modalCancelBtn}

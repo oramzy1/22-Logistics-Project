@@ -90,9 +90,9 @@ const styles = StyleSheet.create({
   },
   leftSection: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1,
   overflow: 'hidden', },
-  center: { flex: 1, alignItems: 'center' },
+  center: { flex: 1, alignItems: 'center', },
   right: { width: 80, alignItems: 'flex-end' },
-  title: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  title: { color: '#ffffff', fontSize: 16, fontWeight: '800', width: 150, alignItems: 'center', flexShrink: 1 },
   circle: {
     width: 40,
     height: 40,
