@@ -187,6 +187,7 @@ const s = StyleSheet.create({
     padding: 20,
     paddingBottom: Platform.OS === "ios" ? 44 : 28,
     maxHeight: "75%",
+    minHeight: "75%",
   },
   sheetHeader: {
     flexDirection: "row",

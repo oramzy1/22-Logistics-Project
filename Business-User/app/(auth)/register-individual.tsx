@@ -16,6 +16,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { SocialButton } from "@/src/ui/SocialButtons";
 import { PhoneInput } from "@/src/ui/PhoneInput";
+import {
+  PasswordStrengthIndicator,
+} from "@/src/ui/PasswordStrengthIndicator";
 
 export default function RegisterIndividualScreen() {
   const router = useRouter();
@@ -31,6 +34,7 @@ export default function RegisterIndividualScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [countryCode, setCountryCode] = useState("+234");
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleSignUp = async () => {
     setError("");
@@ -145,46 +149,63 @@ export default function RegisterIndividualScreen() {
 
             {/* Password */}
             <Text style={styles.label}>Password</Text>
-            <View style={styles.inputContainer}>
-              <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                secureTextEntry={!showPassword}
-                placeholderTextColor="#9CA3AF"
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <Eye size={18} color="#9CA3AF" />
-                ) : (
-                  <EyeOff size={18} color="#9CA3AF" />
-                )}
-              </TouchableOpacity>
+            <View>
+              <View style={styles.inputContainer}>
+                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  secureTextEntry={!showPassword}
+                  placeholderTextColor="#9CA3AF"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Eye size={18} color="#9CA3AF" />
+                  ) : (
+                    <EyeOff size={18} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+                <PasswordStrengthIndicator
+                  password={password}
+                  visible={passwordFocused && password.length > 0}
+                  backgroundColor="#FFF"
+                />
+              </View>
             </View>
 
             {/* Confirm Password */}
-            <Text style={styles.label}>Confirm Password</Text>
-            <View style={styles.inputContainer}>
-              <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Password"
-                secureTextEntry={!showConfirmPassword}
-                placeholderTextColor="#9CA3AF"
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <Eye size={18} color="#9CA3AF" />
-                ) : (
-                  <EyeOff size={18} color="#9CA3AF" />
-                )}
-              </TouchableOpacity>
+            <View
+              style={[
+                passwordFocused && password.length > 0 && { marginTop: 65 },
+              ]}
+            >
+              <Text style={styles.label}>Confirm Password</Text>
+              <View style={styles.inputContainer}>
+                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Password"
+                  secureTextEntry={!showConfirmPassword}
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <Eye size={18} color="#9CA3AF" />
+                  ) : (
+                    <EyeOff size={18} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Terms */}
@@ -221,7 +242,6 @@ export default function RegisterIndividualScreen() {
                 type="google"
                 appType="user-app"
                 role="INDIVIDUAL"
-                
               />
               {Platform.OS === "ios" && (
                 <SocialButton
@@ -256,9 +276,13 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  scrollContent: { padding: 24, paddingBottom: 40, backgroundColor: "#FFFFFF",
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 40,
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
-    borderTopRightRadius: 20, },
+    borderTopRightRadius: 20,
+  },
   header: { marginBottom: 20 },
   title: {
     fontSize: 20,

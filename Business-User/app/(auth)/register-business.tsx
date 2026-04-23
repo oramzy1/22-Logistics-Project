@@ -36,6 +36,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { SocialButton } from "@/src/ui/SocialButtons";
 import { PhoneInput } from "@/src/ui/PhoneInput";
+import { PasswordStrengthIndicator } from "@/src/ui/PasswordStrengthIndicator";
 
 const STEPS = [
   "Company Info",
@@ -54,6 +55,7 @@ export default function RegisterBusinessScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [logoUri, setLogoUri] = useState<string | null>(null);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Step 1
   const [companyName, setCompanyName] = useState("");
@@ -136,8 +138,8 @@ export default function RegisterBusinessScreen() {
 
     try {
       setIsLoading(true);
-    const fullPhone = `${countryCode}${adminPhone.replace(/^0+/, "")}`;
-    const fullPhone1 = `${countryCode1}${companyPhone.replace(/^0+/, "")}`;
+      const fullPhone = `${countryCode}${adminPhone.replace(/^0+/, "")}`;
+      const fullPhone1 = `${countryCode1}${companyPhone.replace(/^0+/, "")}`;
 
       const formData = new FormData();
       formData.append("role", "BUSINESS");
@@ -310,13 +312,17 @@ export default function RegisterBusinessScreen() {
                     keyboardType="phone-pad"
                   />
                 </View> */}
-                <PhoneInput value={companyPhone} onChangeText={setCompanyPhone} placeholder="Company Phone" />
-                 <Text style={styles.phoneHint}>
-                Full number:{" "}
-                {companyPhone
-                  ? `${countryCode1}${companyPhone.replace(/^0+/, "")}`
-                  : "—"}
-              </Text>
+                <PhoneInput
+                  value={companyPhone}
+                  onChangeText={setCompanyPhone}
+                  placeholder="Company Phone"
+                />
+                <Text style={styles.phoneHint}>
+                  Full number:{" "}
+                  {companyPhone
+                    ? `${countryCode1}${companyPhone.replace(/^0+/, "")}`
+                    : "—"}
+                </Text>
 
                 <Text style={styles.errorText}>{error}</Text>
 
@@ -331,9 +337,12 @@ export default function RegisterBusinessScreen() {
                   <Text style={styles.dividerText}>Or continue with</Text>
                   <View style={styles.line} />
                 </View>
-                <SocialButton type="google" appType="user-app" role="BUSINESS" />
+                <SocialButton
+                  type="google"
+                  appType="user-app"
+                  role="BUSINESS"
+                />
                 <SocialButton type="apple" appType="user-app" role="BUSINESS" />
-      
               </View>
             )}
 
@@ -396,15 +405,19 @@ export default function RegisterBusinessScreen() {
                     keyboardType="phone-pad"
                   />
                 </View> */}
-                <PhoneInput value={adminPhone} onChangeText={setAdminPhone}  onCountryChange={setCountryCode}  placeholder="Admin Phone" />
+                <PhoneInput
+                  value={adminPhone}
+                  onChangeText={setAdminPhone}
+                  onCountryChange={setCountryCode}
+                  placeholder="Admin Phone"
+                />
 
-                 <Text style={styles.phoneHint}>
-                                Full number:{" "}
-                                {adminPhone
-                                  ? `${countryCode}${adminPhone.replace(/^0+/, "")}`
-                                  : "—"}
-                              </Text>
-
+                <Text style={styles.phoneHint}>
+                  Full number:{" "}
+                  {adminPhone
+                    ? `${countryCode}${adminPhone.replace(/^0+/, "")}`
+                    : "—"}
+                </Text>
 
                 {/* Radio Buttons */}
                 <TouchableOpacity
@@ -519,47 +532,64 @@ export default function RegisterBusinessScreen() {
             {/* --- STEP 4: SIGN UP SET UP --- */}
             {currentStep === 3 && (
               <View>
-                <Text style={styles.label}>Password</Text>
-                <View style={styles.inputContainer}>
-                  <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    secureTextEntry={!showPassword}
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
+                <View>
+                  <Text style={styles.label}>Password</Text>
+                  <View style={styles.inputContainer}>
+                    <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      secureTextEntry={!showPassword}
+                      placeholderTextColor="#9CA3AF"
+                      value={password}
+                      onChangeText={setPassword}
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(false)}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <Eye size={18} color="#9CA3AF" />
+                      ) : (
+                        <EyeOff size={18} color="#9CA3AF" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                  <PasswordStrengthIndicator
+                    password={password}
+                    visible={passwordFocused && password.length > 0}
+                    backgroundColor="#FFF"
                   />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <Eye size={18} color="#9CA3AF" />
-                    ) : (
-                      <EyeOff size={18} color="#9CA3AF" />
-                    )}
-                  </TouchableOpacity>
                 </View>
-                <Text style={styles.label}>Confirm Password</Text>
-                <View style={styles.inputContainer}>
-                  <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    secureTextEntry={!showConfirmPassword}
-                    placeholderTextColor="#9CA3AF"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <Eye size={18} color="#9CA3AF" />
-                    ) : (
-                      <EyeOff size={18} color="#9CA3AF" />
-                    )}
-                  </TouchableOpacity>
+                <View
+                  style={[
+                    passwordFocused && password.length > 0 && { marginTop: 65 },
+                  ]}
+                >
+                  <Text style={styles.label}>Confirm Password</Text>
+                  <View style={styles.inputContainer}>
+                    <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      secureTextEntry={!showConfirmPassword}
+                      placeholderTextColor="#9CA3AF"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                    />
+                    <TouchableOpacity
+                      onPress={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <Eye size={18} color="#9CA3AF" />
+                      ) : (
+                        <EyeOff size={18} color="#9CA3AF" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {currentStep === 3 && error ? (
@@ -616,10 +646,14 @@ const styles = StyleSheet.create({
     height: 70,
     backgroundColor: "#0B1B2B",
   },
-  scrollContent: { padding: 24, paddingBottom: 40, 
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 40,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  backgroundColor: '#FFF', height: "auto" },
+    backgroundColor: "#FFF",
+    height: "auto",
+  },
   header: { marginBottom: 20 },
   title: {
     fontSize: 20,
@@ -824,7 +858,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
-  termsContainer: { flexDirection: "row", alignItems: "center", marginTop: 20, marginBottom: 100 },
+  termsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 100,
+  },
   checkbox: {
     width: 18,
     height: 18,
@@ -836,7 +875,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxActive: { backgroundColor: "#E4C77B", borderColor: "#E4C77B" },
-  termsText: { fontSize: 12, color: "#111827", fontWeight: "500",  },
+  termsText: { fontSize: 12, color: "#111827", fontWeight: "500" },
   linkText: { color: "#E4C77B", textDecorationLine: "underline" },
   dividerContainer: {
     flexDirection: "row",
@@ -864,9 +903,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   phoneHint: {
-  fontSize: 11,
-  color: '#9CA3AF',
-  marginTop: 5,
-  marginLeft: 2,
-},
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 5,
+    marginLeft: 2,
+  },
 });

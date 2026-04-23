@@ -345,6 +345,31 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
+export const resendVerification = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+    // Silent success to prevent email enumeration
+    if (!user || user.isVerified) {
+      return res.json({ message: "If that email exists and is unverified, a code was sent." });
+    }
+
+    const { code, hashed, expiry } = generateCode();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { verificationToken: hashed, verificationExpiry: expiry },
+    });
+
+    await sendVerificationEmail(normalizedEmail, code);
+    res.json({ message: "Verification code resent." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
 async function verifyGoogleToken(idToken: string) {
   for (const clientId of ALLOWED_GOOGLE_CLIENT_IDS) {
     try {
