@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native";
+import { View, StyleSheet, TouchableOpacity, TextInput, AppStateStatus, AppState } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
@@ -16,35 +16,82 @@ import { showToast } from "../utils/toast";
 
 export default function VerifyScreen() {
   const router = useRouter();
-  const RESEND_COOLDOWN = 90; // seconds
-  const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN);
-  const [canResend, setCanResend] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { email } = useLocalSearchParams<{ email: string }>();
+  console.log("Verify screen email param:", email);
+  const [isLoading, setIsLoading] = useState(false);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const inputs = useRef<TextInput[]>([]);
+const RESEND_COOLDOWN = 90;
+const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN);
+const [canResend, setCanResend] = useState(false);
+const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+const endTimeRef = useRef<number>(0); // stores the absolute end timestamp
+const appStateRef = useRef(AppState.currentState);
 
-  // Start timer on mount
-  useEffect(() => {
-    startTimer();
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+const startTimer = () => {
+  if (timerRef.current) clearInterval(timerRef.current);
+  
+  // Store when the timer should END as an absolute timestamp
+  endTimeRef.current = Date.now() + RESEND_COOLDOWN * 1000;
+  setSecondsLeft(RESEND_COOLDOWN);
+  setCanResend(false);
 
-  const startTimer = () => {
-    setSecondsLeft(RESEND_COOLDOWN);
-    setCanResend(false);
-    if (timerRef.current) clearInterval(timerRef.current);
+  timerRef.current = setInterval(() => {
+    const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
+    if (remaining <= 0) {
+      clearInterval(timerRef.current!);
+      setSecondsLeft(0);
+      setCanResend(true);
+    } else {
+      setSecondsLeft(remaining);
+    }
+  }, 1000);
+};
 
-    timerRef.current = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
+// Handle app coming back from background — recalculate from wall clock
+useEffect(() => {
+  const subscription = AppState.addEventListener("change", (nextState: AppStateStatus) => {
+    if (
+      appStateRef.current.match(/inactive|background/) &&
+      nextState === "active"
+    ) {
+      // App just came to foreground — resync timer from real clock
+      if (endTimeRef.current > 0) {
+        const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
+        if (remaining <= 0) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setSecondsLeft(0);
           setCanResend(true);
-          return 0;
+        } else {
+          setSecondsLeft(remaining);
+          // Restart the interval cleanly
+          if (timerRef.current) clearInterval(timerRef.current);
+          timerRef.current = setInterval(() => {
+            const rem = Math.round((endTimeRef.current - Date.now()) / 1000);
+            if (rem <= 0) {
+              clearInterval(timerRef.current!);
+              setSecondsLeft(0);
+              setCanResend(true);
+            } else {
+              setSecondsLeft(rem);
+            }
+          }, 1000);
         }
-        return prev - 1;
-      });
-    }, 1000);
+      }
+    }
+    appStateRef.current = nextState;
+  });
+
+  return () => subscription.remove();
+}, []);
+
+// Start timer on mount
+useEffect(() => {
+  startTimer();
+  return () => {
+    if (timerRef.current) clearInterval(timerRef.current);
   };
+}, []);
 
   const formatTime = (s: number) => {
   const m = Math.floor(s / 60).toString().padStart(2, "0");
@@ -52,11 +99,7 @@ export default function VerifyScreen() {
   return `${m}:${sec}`;
 };
 
-  const { email } = useLocalSearchParams<{ email: string }>();
-  console.log("Verify screen email param:", email);
-  const [isLoading, setIsLoading] = useState(false);
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const inputs = useRef<TextInput[]>([]);
+  
   // Animation values
   const shakeOffset = useSharedValue(0);
   const errorColorProgress = useSharedValue(0);
@@ -159,7 +202,7 @@ export default function VerifyScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Verification</Text>
         <Text style={styles.subtitle}>
-          Enter the 6-digit code sent to your email address
+          Enter the 6-digit code sent to {email}
         </Text>
 
        <View style={styles.timerBadge}>

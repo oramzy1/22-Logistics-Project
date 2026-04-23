@@ -156,7 +156,7 @@ export const register = async (
     return res.status(201).json({
       message:
         "Registration successful. Check your email for the verification code.",
-      emailNormalized,
+      email: emailNormalized,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

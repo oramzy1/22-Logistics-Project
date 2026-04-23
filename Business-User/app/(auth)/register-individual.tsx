@@ -16,9 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { SocialButton } from "@/src/ui/SocialButtons";
 import { PhoneInput } from "@/src/ui/PhoneInput";
-import {
-  PasswordStrengthIndicator,
-} from "@/src/ui/PasswordStrengthIndicator";
+import { PasswordStrengthIndicator } from "@/src/ui/PasswordStrengthIndicator";
 
 export default function RegisterIndividualScreen() {
   const router = useRouter();
@@ -146,6 +144,10 @@ export default function RegisterIndividualScreen() {
               onChangeText={setPhone}
               placeholder="Phone Number"
             />
+            <Text style={styles.phoneHint}>
+              Full number:{" "}
+              {phone ? `${countryCode}${phone.replace(/^0+/, "")}` : "—"}
+            </Text>
 
             {/* Password */}
             <Text style={styles.label}>Password</Text>
@@ -419,4 +421,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   checkboxActive: { backgroundColor: "#E4C77B", borderColor: "#E4C77B" },
+  phoneHint: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 5,
+    marginLeft: 2,
+  },
 });
