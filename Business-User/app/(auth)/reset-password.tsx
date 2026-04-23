@@ -237,6 +237,7 @@ export default function ResetPasswordScreen() {
               </Text>
               <PrimaryButton
                 title="Sign In"
+                style={{width: 100}}
                 onPress={() => router.replace("/(auth)/sign-in")}
                 marginTop
               />

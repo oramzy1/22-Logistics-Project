@@ -77,6 +77,21 @@ import axios from 'axios';
 const API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL;
 const SENDER_NAME = '22Logistics';
+const LOGO_URL = process.env.LOGO_URL ?? 'https://res.cloudinary.com/df7l33e7p/image/upload/v1776926722/22LogisticsLogo_ojwyzz.png';
+
+const emailHeader = () => `
+  <div style="text-align:center;background:#0B1B2B;padding:24px;border-radius:12px;margin-bottom:24px">
+    <img 
+      src="${LOGO_URL}" 
+      alt="22Logistics" 
+      style="height:52px;object-fit:contain"
+      onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='block'"
+    />
+    <div id="logo-fallback" style="display:none">
+      <span style="color:#E4C77B;font-size:22px;font-weight:800;letter-spacing:2px">22Logistics</span>
+    </div>
+  </div>
+`;
 
 async function sendEmail(to: string, subject: string, htmlContent: string) {
   // Fire-and-forget — response is never blocked
@@ -111,6 +126,7 @@ export const sendVerificationEmail = async (email: string, code: string) => {
     'Your 22Logistics Verification Code',
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+    ${emailHeader()}
       <h2 style="color:#0B1B2B">Verify your email</h2>
       <p style="color:#374151">Use the code below to verify your account. It expires in <strong>15 minutes</strong>.</p>
       <div style="font-size:36px;font-weight:800;letter-spacing:8px;color:#E4C77B;text-align:center;padding:24px 0">
@@ -129,6 +145,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     'Reset your 22Logistics password',
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+    ${emailHeader()}
       <h2 style="color:#0B1B2B">Password Reset</h2>
       <p style="color:#374151">Use the code below to reset your password. It expires in <strong>15 minutes</strong>.</p>
       <div style="font-size:36px;font-weight:800;letter-spacing:8px;color:#E4C77B;text-align:center;padding:24px 0">
@@ -156,11 +173,7 @@ export const sendWelcomeEmail = async (email: string, name: string, role: string
     `Welcome to 22Logistics, ${name}!`,
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="background:#0B1B2B;display:inline-block;padding:12px 28px;border-radius:12px">
-          <span style="color:#E4C77B;font-size:22px;font-weight:800;letter-spacing:2px">22Logistics</span>
-        </div>
-      </div>
+      ${emailHeader()}
       <h2 style="color:#0B1B2B;margin-bottom:8px">Welcome aboard, ${name}! 🎉</h2>
       <p style="color:#374151;line-height:1.6">
         Your account has been created successfully. ${roleMsg}
@@ -195,11 +208,7 @@ export const sendTripCompletionEmail = async (
     'Your 22Logistics trip is complete!',
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="background:#0B1B2B;display:inline-block;padding:12px 28px;border-radius:12px">
-          <span style="color:#E4C77B;font-size:22px;font-weight:800;letter-spacing:2px">22Logistics</span>
-        </div>
-      </div>
+      ${emailHeader()}
       <h2 style="color:#0B1B2B">Trip Completed ✅</h2>
       <p style="color:#374151">Hi <strong>${name}</strong>, thank you for riding with us!</p>
  
@@ -256,6 +265,7 @@ export const sendSupportRequestEmail = async (
       `[Support] ${subject} — from ${userName}`,
       `
       <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
         <h2 style="color:#0B1B2B">New Support Request</h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
           <tr><td style="color:#6B7280;padding:6px 0;font-size:13px;width:100px">From</td><td style="color:#111;font-weight:600">${userName} &lt;${userEmail}&gt;</td></tr>

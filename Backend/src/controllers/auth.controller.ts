@@ -203,9 +203,13 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    if (!user.password) {
-      return res.status(400).json({
-        message: `This account uses ${user.authProvider} sign-in. PLease use that instead.`,
+    if (
+      !user.password ||
+      user.authProvider === "google" ||
+      user.authProvider === "apple"
+    ) {
+      return res.status(403).json({
+        message: `This account was created with ${user.authProvider === "google" ? "Google" : "Apple"} sign-in. Please use that method instead.`,
       });
     }
 
@@ -350,11 +354,15 @@ export const resendVerification = async (req: Request, res: Response) => {
     const { email } = req.body;
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
 
     // Silent success to prevent email enumeration
     if (!user || user.isVerified) {
-      return res.json({ message: "If that email exists and is unverified, a code was sent." });
+      return res.json({
+        message: "If that email exists and is unverified, a code was sent.",
+      });
     }
 
     const { code, hashed, expiry } = generateCode();
@@ -403,6 +411,12 @@ export const googleAuth = async (req: Request, res: Response) => {
     });
 
     if (user) {
+      if (user.authProvider === "email" || user.authProvider === "hybrid") {
+        return res.status(403).json({
+          message:
+            "This account uses email and password sign-in. Please sign in with your email instead.",
+        });
+      }
       // Existing user — enforce role gate
       if (appType === "driver-app" && user.role !== "DRIVER") {
         return res
@@ -530,6 +544,12 @@ export const appleAuth = async (req: Request, res: Response) => {
     });
 
     if (user) {
+      if (user.authProvider === "email" || user.authProvider === "hybrid") {
+        return res.status(403).json({
+          message:
+            "This account uses email and password sign-in. Please sign in with your email instead.",
+        });
+      }
       if (appType === "driver-app" && user.role !== "DRIVER") {
         return res
           .status(403)
