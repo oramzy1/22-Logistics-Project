@@ -190,6 +190,7 @@ const OAuthActionModal = ({
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const { signOut } = useAuth();
 
   // Reset on open
   useEffect(() => {
@@ -216,17 +217,27 @@ const OAuthActionModal = ({
     }
   };
 
-  const handleOtpContinue = () => {
-    if (otp.length !== 6) return;
-    if (mode === "action") {
-      // Pass OTP back — the caller will use it as the credential
-      onActionVerified(otp);
-      onClose();
-    } else {
-      // Email change — proceed to new credentials step
-      setStep("newCredentials");
+const handleOtpContinue = async () => {
+  if (otp.length !== 6) return;
+
+  if (mode === "action") {
+    onActionVerified(otp);
+    onClose();
+  } else {
+    // Verify OTP with backend BEFORE allowing user to set new credentials
+    showLoading("Verifying code...");
+    try {
+      await UserService.verifyActionOtp(otp);
+      setStep("newCredentials"); // only advances on success
+    } catch (err: any) {
+      showToast.error(err?.response?.data?.message || "Invalid or expired code.");
+      // Clear the OTP field so they must re-enter
+      setOtp("");
+    } finally {
+      hideLoading();
     }
-  };
+  }
+};
 
   const handleSubmitEmailChange = async () => {
     if (newPassword !== confirmPassword) {
@@ -250,6 +261,7 @@ const OAuthActionModal = ({
     showLoading("Confirming...");
     try {
       await UserService.confirmEmailChange(newEmailOtp);
+      await signOut(); // force logout after email change
       showToast.success(
         "Email changed! Please sign in with your new credentials.",
       );

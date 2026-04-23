@@ -737,3 +737,32 @@ export const completeDriverProfile = async (
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+export const verifyResetCode = async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ message: "Email and code are required." });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const hashed = crypto.createHash("sha256").update(code).digest("hex");
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email: normalizedEmail,
+        resetToken: hashed,
+        resetTokenExpiry: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired code." });
+    }
+
+    // Valid — don't consume it yet, resetPassword still needs it
+    res.json({ message: "Code verified." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};

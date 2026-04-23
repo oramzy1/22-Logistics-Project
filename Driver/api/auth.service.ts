@@ -49,6 +49,11 @@ export const AuthService = {
   return response.data;
 },
 
+verifyResetCode: async (email: string, code: string) => {
+  const response = await apiClient.post("/auth/verify-reset-code", { email, code });
+  return response.data;
+},
+
   googleAuth: async (data: { idToken: string; appType: string }) => {
   const response = await apiClient.post('/auth/google', data);
   return response.data;

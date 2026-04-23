@@ -147,4 +147,9 @@ confirmEmailChange: async (otp: string) => {
     });
     return response.data;
   },
+
+  verifyActionOtp: async (otp: string) => {
+  const response = await apiClient.post("/users/verify-action-otp", { otp });
+  return response.data;
+},
 };

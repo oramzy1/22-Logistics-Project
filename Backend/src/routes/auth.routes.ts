@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { appleAuth, completeBusiness, completeDriverProfile, forgotPassword, googleAuth, login, register, resendVerification, resetPassword, verifyEmail } from '../controllers/auth.controller';
+import { appleAuth, completeBusiness, completeDriverProfile, forgotPassword, googleAuth, login, register, resendVerification, resetPassword, verifyEmail, verifyResetCode } from '../controllers/auth.controller';
 import { upload } from '../lib/upload';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -12,6 +12,7 @@ router.post('/complete-business-profile', authenticate, upload.single('logo'), c
 router.post('/complete-driver-profile',   authenticate, upload.single('license'), completeDriverProfile);
 router.post('/login', login);
 router.post('/verify-email', verifyEmail);
+router.post('/verify-reset-code', verifyResetCode);
 router.post('/resend-verification', resendVerification);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
