@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Settings as SettingsIcon, DollarSign, Building2, Bell, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings as SettingsIcon, DollarSign, Building2, Bell, Shield, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useSettings, useUpdateSettings } from "@/hooks/useAdminData";
 
 const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
   <div className="bg-surface rounded-xl border border-border p-5">
@@ -35,51 +36,105 @@ const Toggle = ({ label, desc, defaultOn = false }: { label: string; desc?: stri
   );
 };
 
-const input = "h-9 w-full px-3 rounded-md border border-border bg-background text-sm";
+const inputCls = "h-9 w-full px-3 rounded-md border border-border bg-background text-sm";
+const PRICE_FIELDS = [
+  { key: 'price_3_hours',     label: '3 Hours Rate' },
+  { key: 'price_6_hours',     label: '6 Hours Rate' },
+  { key: 'price_10_hours',    label: '10 Hours Rate' },
+  { key: 'price_airport',     label: 'Airport Schedule' },
+  { key: 'price_multiday',    label: 'Multi-day Rate (per day)' },
+  { key: 'ext_price_1_hour',  label: 'Extension - 1 Hour' },
+  { key: 'ext_price_2_hours', label: 'Extension - 2 Hours' },
+  { key: 'ext_price_3_hours', label: 'Extension - 3 Hours' },
+];
 
-const Settings = () => (
-  <div>
-    <PageHeader
-      title="Settings"
-      subtitle="Manage platform configuration and preferences."
-      actions={<Button onClick={() => toast.success("Changes saved")} size="sm">Save Changes</Button>}
-    />
-    <div className="space-y-4">
-      <Section icon={SettingsIcon} title="General Settings">
-        <Field label="Platform Name"><input className={input} defaultValue="ZZ Logistics" /></Field>
-        <Field label="Default Currency"><input className={input} defaultValue="NGN/N" /></Field>
-        <Field label="Time Zone"><select className={input}><option>West Africa Time (WAT)</option></select></Field>
-      </Section>
+const Settings = () => {
+  const { data: settings, isLoading } = useSettings();
+  const update = useUpdateSettings();
+  const [values, setValues] = useState<Record<string, string>>({});
 
-      <Section icon={DollarSign} title="Trip & Pricing Settings">
-        <Field label="Drivers Rate"><input className={input} defaultValue="₦ 6900" /></Field>
-        <Field label="6 hours Rate"><input className={input} defaultValue="₦ 6900" /></Field>
-        <Field label="12 hours Rate"><input className={input} defaultValue="₦ 6900" /></Field>
-        <Field label="Multi day Rate (per day)"><input className={input} defaultValue="₦ 6900" /></Field>
-        <Field label="Airport pickup"><input className={input} defaultValue="₦ 6900" /></Field>
-        <Field label="Cancellation Policy"><select className={input}><option>2 hours</option></select></Field>
-      </Section>
+  useEffect(() => {
+    if (settings) {
+      const map: Record<string, string> = {};
+      settings.forEach((s: any) => { map[s.key] = s.value; });
+      setValues(map);
+    }
+  }, [settings]);
 
-      <Section icon={Building2} title="Individual & Business Controls">
-        <Toggle label="New Business Registrations" desc="Allow new business accounts to register" defaultOn />
-        <Field label="Default Monthly Budget Cap"><input className={input} defaultValue="₦200000" /></Field>
-        <Toggle label="Require Email Verification" desc="Customers must verify before booking" defaultOn />
-      </Section>
+  const set = (key: string, value: string) => setValues(v => ({ ...v, [key]: value }));
 
-      <Section icon={Bell} title="Notifications">
-        <Toggle label="New Booking Alerts" desc="Email and in-app notifications" defaultOn />
-        <Toggle label="Payment Alerts" desc="Notify on successful or failed payments" defaultOn />
-        <Toggle label="Support Ticket Alerts" desc="Get notified on new support requests" defaultOn />
-        <Toggle label="Driver Verification Alerts" desc="On successful onboarding of new drivers" />
-      </Section>
+  const handleSave = () => {
+    const payload = Object.entries(values).map(([key, value]) => ({ key, value }));
+    update.mutate(payload, {
+      onSuccess: () => toast.success('Settings saved'),
+      onError: () => toast.error('Failed to save settings'),
+    });
+  };
 
-      <Section icon={Shield} title="Security">
-        <Toggle label="Two-Factor Authentication" desc="Require 2FA for admin accounts" defaultOn />
-        <Field label="Session Timeout"><select className={input}><option>30 minutes</option></select></Field>
-        <Field label="Out-of-Date in Permissions"><select className={input}><option>Manager Roles</option></select></Field>
-      </Section>
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     </div>
-  </div>
-);
+  );
+  
+    return (
+    <div>
+      <PageHeader
+        title="Settings"
+        subtitle="Manage platform configuration and preferences."
+        actions={
+          <Button onClick={handleSave} size="sm" disabled={update.isPending}>
+            {update.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        }
+      />
+      <div className="space-y-4">
+        <Section icon={SettingsIcon} title="General Settings">
+          <Field label="Platform Name"><input className={inputCls} defaultValue="ZZ Logistics" /></Field>
+          <Field label="Default Currency"><input className={inputCls} defaultValue="NGN/₦" /></Field>
+          <Field label="Time Zone">
+            <select className={inputCls}><option>West Africa Time (WAT)</option></select>
+          </Field>
+        </Section>
+
+        <Section icon={DollarSign} title="Trip & Pricing Settings">
+          {PRICE_FIELDS.map(({ key, label }) => (
+            <Field key={key} label={label}>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₦</span>
+                <input
+                  className={`${inputCls} pl-7`}
+                  value={values[key] ?? ''}
+                  onChange={(e) => set(key, e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </Field>
+          ))}
+        </Section>
+
+        <Section icon={Building2} title="Individual & Business Controls">
+          <Toggle label="New Business Registrations" desc="Allow new business accounts to register" defaultOn />
+          <Toggle label="Require Email Verification" desc="Customers must verify before booking" defaultOn />
+        </Section>
+
+        <Section icon={Bell} title="Notifications">
+          <Toggle label="New Booking Alerts" desc="Email and in-app notifications" defaultOn />
+          <Toggle label="Payment Alerts" desc="Notify on successful or failed payments" defaultOn />
+          <Toggle label="Support Ticket Alerts" desc="Get notified on new support requests" defaultOn />
+          <Toggle label="Driver Verification Alerts" desc="On successful onboarding of new drivers" />
+        </Section>
+
+        <Section icon={Shield} title="Security">
+          <Toggle label="Two-Factor Authentication" desc="Require 2FA for admin accounts" defaultOn />
+          <Field label="Session Timeout">
+            <select className={inputCls}><option>30 minutes</option><option>1 hour</option><option>8 hours</option></select>
+          </Field>
+        </Section>
+      </div>
+    </div>
+  );
+};
 
 export default Settings;

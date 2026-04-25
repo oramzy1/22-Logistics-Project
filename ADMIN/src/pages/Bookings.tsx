@@ -1,21 +1,32 @@
 import { useState } from "react";
-import { CalendarCheck, CheckCircle2, Clock, XCircle, Download, Search } from "lucide-react";
+import { CalendarCheck, CheckCircle2, Clock, XCircle, Download, Search, Loader2, MoreHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useBookings, useCancelBooking, useBookingStats } from "@/hooks/useAdminData";
+import { toast } from "sonner";
 
-const data = [
-  { id: "BKG-001", name: "Jane D", type: "Individual", duration: "6 hrs", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Completed" },
-  { id: "BKG-002", name: "Ade ayo", type: "Business", duration: "6 hrs", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Completed" },
-  { id: "BKG-003", name: "Bayo", type: "Individual", duration: "Multi-day", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Pending" },
-  { id: "BKG-004", name: "Samuel", type: "Business", duration: "Multi-day", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Cancelled" },
-  { id: "BKG-005", name: "Tope", type: "Business", duration: "10 hrs", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Completed" },
-];
+// const data = [
+//   { id: "BKG-001", name: "Jane D", type: "Individual", duration: "6 hrs", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Completed" },
+//   { id: "BKG-002", name: "Ade ayo", type: "Business", duration: "6 hrs", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Completed" },
+//   { id: "BKG-003", name: "Bayo", type: "Individual", duration: "Multi-day", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Pending" },
+//   { id: "BKG-004", name: "Samuel", type: "Business", duration: "Multi-day", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Cancelled" },
+//   { id: "BKG-005", name: "Tope", type: "Business", duration: "10 hrs", amount: "₦24,000", time: "Mon, Sep, 2nd 2025,2:30:48 PM", status: "Completed" },
+// ];
 
 const Bookings = () => {
-  const [q, setQ] = useState("");
-  const filtered = data.filter((d) => `${d.id} ${d.name}`.toLowerCase().includes(q.toLowerCase()));
+  const [params, setParams] = useState<Record<string, string>>({ page: '1', limit: '20' });
+  const { data, isLoading } = useBookings(params);
+  const { data: stats } = useBookingStats();
+  const cancel = useCancelBooking();
+
+  const bookings = data?.bookings ?? [];
+  const total = data?.total ?? 0;
+  const currentPage = parseInt(params.page);
+  const limit = parseInt(params.limit);
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div>
@@ -31,10 +42,10 @@ const Bookings = () => {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <StatCard label="Total Bookings" value="6" hint="+0% from yesterday" icon={CalendarCheck} iconBg="bg-warning/15 text-warning" />
-        <StatCard label="Confirmed" value="6" hint="+0% from yesterday" icon={CheckCircle2} iconBg="bg-success/15 text-success" />
-        <StatCard label="Pending" value="2" hint="+0% from yesterday" icon={Clock} iconBg="bg-warning/15 text-warning" />
-        <StatCard label="Cancelled" value="1" hint="+0% from yesterday" hintTone="destructive" icon={XCircle} iconBg="bg-destructive/15 text-destructive" />
+        <StatCard label="Total Bookings" value={String(stats?.totalBookings ?? 0)} hint="+0% from yesterday" icon={CalendarCheck} iconBg="bg-warning/15 text-warning" />
+        <StatCard label="Confirmed" value={String(stats?.confirmedBookings ?? 0)} hint="+0% from yesterday" icon={CheckCircle2} iconBg="bg-success/15 text-success" />
+        <StatCard label="Pending" value={String(stats?.pendingBookings ?? 0)} hint="+0% from yesterday" icon={Clock} iconBg="bg-warning/15 text-warning" />
+        <StatCard label="Cancelled" value={String(stats?.cancelledBookings ?? 0)} hint="+0% from yesterday" hintTone="destructive" icon={XCircle} iconBg="bg-destructive/15 text-destructive" />
       </div>
 
       <div className="bg-surface rounded-xl border border-border p-5">
@@ -44,8 +55,8 @@ const Bookings = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
+                value={params.search ?? ''}
+                onChange={(e) => setParams(p => ({ ...p, search: e.target.value, page: '1' }))}
                 placeholder="Search by booking ID, Customer Name or Name"
                 className="h-9 pl-9 pr-3 rounded-md border border-border bg-background text-sm w-full sm:w-72"
               />
@@ -53,11 +64,25 @@ const Bookings = () => {
             <select className="h-9 px-3 rounded-md border border-border bg-background text-sm">
               <option>Date</option>
             </select>
-            <select className="h-9 px-3 rounded-md border border-border bg-background text-sm">
-              <option>All Types</option>
+             <select
+              className="h-9 px-3 rounded-md border border-border bg-background text-sm"
+              onChange={(e) => setParams(p => ({ ...p, rideType: e.target.value, page: '1' }))}
+            >
+              <option value="">All Types</option>
+              <option value="INDIVIDUAL">Individual</option>
+              <option value="BUSINESS">Business</option>
             </select>
-            <select className="h-9 px-3 rounded-md border border-border bg-background text-sm">
-              <option>All Status</option>
+             <select
+              className="h-9 px-3 rounded-md border border-border bg-background text-sm"
+              onChange={(e) => setParams(p => ({ ...p, status: e.target.value, page: '1' }))}
+            >
+              <option value="">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="AWAITING_DRIVER">Awaiting Driver</option>
+              <option value="ACCEPTED">Accepted</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
         </div>
@@ -70,23 +95,49 @@ const Bookings = () => {
                 <th className="py-3 font-medium">Booking ID</th>
                 <th className="py-3 font-medium">Customer Name</th>
                 <th className="py-3 font-medium">Type</th>
-                <th className="py-3 font-medium">Duration</th>
+                <th className="py-3 font-medium">Package</th>
                 <th className="py-3 font-medium">Amount</th>
                 <th className="py-3 font-medium">Booking Time</th>
                 <th className="py-3 font-medium">Status</th>
+                <th className="py-3 font-medium">Action</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b) => (
+              {isLoading ? (
+                <tr><td colSpan={9} className="py-12 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+              ) : bookings.length === 0 ? (
+                <tr><td colSpan={9} className="py-12 text-center text-muted-foreground text-sm">No bookings found</td></tr>
+              ) : bookings.map((b: any) => (
                 <tr key={b.id} className="border-b border-border/60 last:border-0">
                   <td className="py-3 px-3"><input type="checkbox" /></td>
-                  <td className="py-3">{b.id}</td>
-                  <td className="py-3">{b.name}</td>
-                  <td className="py-3 text-muted-foreground">{b.type}</td>
-                  <td className="py-3">{b.duration}</td>
-                  <td className="py-3">{b.amount}</td>
-                  <td className="py-3 text-muted-foreground">{b.time}</td>
+                  <td className="py-3 font-mono text-xs">{b.trackingId ?? b.id.slice(0, 8)}</td>
+                  <td className="py-3">{b.customer?.name ?? '—'}</td>
+                  <td className="py-3 text-muted-foreground">{b.rideType}</td>
+                  <td className="py-3">{b.packageType ?? '—'}</td>
+                  <td className="py-3">₦{b.totalAmount?.toLocaleString()}</td>
+                  <td className="py-3 text-muted-foreground text-xs">{new Date(b.createdAt).toLocaleString()}</td>
                   <td className="py-3"><StatusBadge status={b.status} /></td>
+                  <td className="py-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="p-1 rounded hover:bg-muted">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {!['COMPLETED', 'CANCELLED'].includes(b.status) && (
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => cancel.mutate(
+                              { id: b.id, reason: 'Cancelled by admin' },
+                              { onSuccess: () => toast.success('Booking cancelled') }
+                            )}
+                          >
+                            Cancel Booking
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -96,17 +147,25 @@ const Bookings = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 gap-3 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Rows per page:</span>
-            <select className="h-8 px-2 rounded border border-border bg-background"><option>20</option></select>
+            <select
+              className="h-8 px-2 rounded border border-border bg-background"
+              value={params.limit}
+              onChange={(e) => setParams(p => ({ ...p, limit: e.target.value, page: '1' }))}
+            >
+              <option>10</option>
+              <option>20</option>
+              <option>50</option>
+            </select>
           </div>
-          <span className="text-muted-foreground">Showing results 1-10 of 100</span>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm">←</Button>
-            <Button size="sm">1</Button>
-            <Button variant="outline" size="sm">2</Button>
-            <span className="px-1">...</span>
-            <Button variant="outline" size="sm">9</Button>
-            <Button variant="outline" size="sm">10</Button>
-            <Button variant="outline" size="sm">→</Button>
+           <span className="text-muted-foreground">
+            Showing {Math.min((currentPage - 1) * limit + 1, total)}–{Math.min(currentPage * limit, total)} of {total}
+          </span>
+           <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setParams(p => ({ ...p, page: String(currentPage - 1) }))}>←</Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
+              <Button key={p} size="sm" variant={p === currentPage ? 'default' : 'outline'} onClick={() => setParams(prev => ({ ...prev, page: String(p) }))}>{p}</Button>
+            ))}
+            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setParams(p => ({ ...p, page: String(currentPage + 1) }))}>→</Button>
           </div>
         </div>
       </div>

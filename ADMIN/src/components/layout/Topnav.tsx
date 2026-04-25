@@ -13,6 +13,7 @@ import {
 import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 interface TopnavProps {
   onMenuClick: () => void;
@@ -20,6 +21,8 @@ interface TopnavProps {
 
 export function Topnav({ onMenuClick }: TopnavProps) {
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? 'AD';
 
   return (
     <header className="fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 bg-topnav text-topnav-foreground border-b border-border flex items-center px-4 lg:px-6 gap-3">
@@ -35,9 +38,9 @@ export function Topnav({ onMenuClick }: TopnavProps) {
         <DropdownMenuTrigger className="hidden sm:flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted text-sm">
           <Avatar className="h-7 w-7">
             <AvatarImage src="https://i.pravatar.cc/40?img=12" />
-            <AvatarFallback>AN</AvatarFallback>
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
-          <span className="font-medium">Admin Name</span>
+          <span className="font-medium">{user?.name ?? 'Admin'}</span>
           <ChevronDown className="h-4 w-4 opacity-60" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
@@ -68,7 +71,7 @@ export function Topnav({ onMenuClick }: TopnavProps) {
           </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => toast.success("Logged out successfully")}
+            onClick={logout}
             className="text-destructive focus:text-destructive"
           >
             <LogOut className="mr-2 h-4 w-4" /> Logout
@@ -101,7 +104,7 @@ export function Topnav({ onMenuClick }: TopnavProps) {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Admin Name</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.name ?? 'Admin'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setTheme("light")}>
               <Sun className="mr-2 h-4 w-4" /> Light
@@ -114,7 +117,7 @@ export function Topnav({ onMenuClick }: TopnavProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => toast.success("Logged out successfully")}
+              onClick={logout}
               className="text-destructive focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" /> Logout

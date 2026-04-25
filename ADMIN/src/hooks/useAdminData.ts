@@ -1,0 +1,118 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+
+// ── Dashboard ───────────────────────────────────────────────────
+export const useDashboard = () =>
+  useQuery({ queryKey: ['dashboard'], queryFn: () => api.get<any>('/admin/dashboard'), refetchInterval: 30000 });
+
+// ── Bookings ────────────────────────────────────────────────────
+export const useBookings = (params: Record<string, string> = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return useQuery({ queryKey: ['bookings', params], queryFn: () => api.get<any>(`/admin/bookings?${qs}`) });
+};
+
+export const useCancelBooking = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api.patch(`/admin/bookings/${id}/cancel`, { reason }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookings'] }),
+  });
+};
+
+// ── Drivers ─────────────────────────────────────────────────────
+export const useDrivers = (params: Record<string, string> = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return useQuery({ queryKey: ['drivers', params], queryFn: () => api.get<any>(`/admin/drivers?${qs}`) });
+};
+
+export const useVerifyLicense = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { driverProfileId: string; status: 'APPROVED' | 'REJECTED'; rejectionReason?: string }) =>
+      api.post('/admin/drivers/verify-license', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['drivers'] }),
+  });
+};
+
+export const useAssignDriver = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { bookingId: string; driverProfileId: string }) =>
+      api.post('/admin/drivers/assign', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); qc.invalidateQueries({ queryKey: ['drivers'] }); },
+  });
+};
+
+// ── Users ────────────────────────────────────────────────────────
+export const useUsers = (params: Record<string, string> = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return useQuery({ queryKey: ['users', params], queryFn: () => api.get<any>(`/admin/users?${qs}`) });
+};
+
+export const useSetUserStatus = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      api.patch(`/admin/users/${id}/status`, { isActive }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+};
+
+export const useUpdateUserRole = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) =>
+      api.patch(`/admin/users/${id}/role`, { role }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+};
+
+export const useDeleteUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/users/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+};
+
+// ── Settings ─────────────────────────────────────────────────────
+export const useSettings = () =>
+  useQuery({ queryKey: ['settings'], queryFn: () => api.get<any[]>('/admin/settings') });
+
+export const useUpdateSettings = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: { key: string; value: string }[]) =>
+      api.patch('/admin/settings', { settings }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
+  });
+};
+
+// ── Promos ────────────────────────────────────────────────────────
+export const usePromos = () =>
+  useQuery({ queryKey: ['promos'], queryFn: () => api.get<any[]>('/admin/promos') });
+
+export const useCreatePromo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: any) => api.post('/admin/promos', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['promos'] }),
+  });
+};
+
+export const useTogglePromo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/admin/promos/${id}/toggle`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['promos'] }),
+  });
+};
+
+export const useBookingStats = () =>
+  useQuery({
+    queryKey: ['booking-stats'],
+    queryFn: () => api.get<any>('/admin/dashboard'),
+  });
+
+//   export const useBookingStats = useDashboard;

@@ -7,6 +7,7 @@ import {
   getSettings, updateSettings, getPublicPrices,
   createPromo, getAllPromos, togglePromo, deletePromo, validatePromoCode,
   getAuditLog,
+  getChartData,
 } from '../controllers/admin.controller';
 import {
   verifyDriverLicense, assignDriverToBooking, getAvailableDrivers,
@@ -26,6 +27,7 @@ router.use(authenticate, authorize(['ADMIN']));
 // Dashboard
 router.get('/dashboard', getDashboardStats);
 router.get('/audit-log', getAuditLog);
+router.get('/charts', getChartData);
 
 // Users
 router.get('/users', getAllUsers);

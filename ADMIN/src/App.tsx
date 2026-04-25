@@ -14,6 +14,9 @@ import Users from "./pages/Users";
 import Payment from "./pages/Payment";
 import Support from "./pages/Support";
 import Settings from "./pages/Settings";
+import{ AuthProvider } from "@/lib/auth";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import Login from "./pages/Login.tsx";
 
 const queryClient = new QueryClient();
 
@@ -23,8 +26,11 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Login />} />
+           <Route element={<ProtectedRoute />}>
             <Route element={<AdminLayout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/bookings" element={<Bookings />} />
@@ -35,9 +41,11 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
+           </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
