@@ -5,9 +5,22 @@ import { api } from '@/lib/api';
 export const useDashboard = () =>
   useQuery({ queryKey: ['dashboard'], queryFn: () => api.get<any>('/admin/dashboard'), refetchInterval: 30000 });
 
+export const useChartData = (period: string, rideType: string) =>
+  useQuery({
+    queryKey: ['charts', period, rideType],
+    queryFn: () => api.get<any>(`/admin/charts?period=${period}&rideType=${rideType}`),
+    refetchInterval: 60000,
+  });
+
 // ── Bookings ────────────────────────────────────────────────────
+// export const useBookings = (params: Record<string, string> = {}) => {
+//   const qs = new URLSearchParams(params).toString();
+//   return useQuery({ queryKey: ['bookings', params], queryFn: () => api.get<any>(`/admin/bookings?${qs}`) });
+// };
+
 export const useBookings = (params: Record<string, string> = {}) => {
-  const qs = new URLSearchParams(params).toString();
+  const cleaned = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== ''));
+  const qs = new URLSearchParams(cleaned).toString();
   return useQuery({ queryKey: ['bookings', params], queryFn: () => api.get<any>(`/admin/bookings?${qs}`) });
 };
 
@@ -21,10 +34,17 @@ export const useCancelBooking = () => {
 };
 
 // ── Drivers ─────────────────────────────────────────────────────
+// export const useDrivers = (params: Record<string, string> = {}) => {
+//   const qs = new URLSearchParams(params).toString();
+//   return useQuery({ queryKey: ['drivers', params], queryFn: () => api.get<any>(`/admin/drivers?${qs}`) });
+// };
+
 export const useDrivers = (params: Record<string, string> = {}) => {
-  const qs = new URLSearchParams(params).toString();
+  const cleaned = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== ''));
+  const qs = new URLSearchParams(cleaned).toString();
   return useQuery({ queryKey: ['drivers', params], queryFn: () => api.get<any>(`/admin/drivers?${qs}`) });
 };
+
 
 export const useVerifyLicense = () => {
   const qc = useQueryClient();
@@ -44,9 +64,21 @@ export const useAssignDriver = () => {
   });
 };
 
+export const useAvailableDrivers = () =>
+  useQuery({
+    queryKey: ['available-drivers'],
+    queryFn: () => api.get<any>('/admin/drivers/available'),
+  });
+
 // ── Users ────────────────────────────────────────────────────────
+// export const useUsers = (params: Record<string, string> = {}) => {
+//   const qs = new URLSearchParams(params).toString();
+//   return useQuery({ queryKey: ['users', params], queryFn: () => api.get<any>(`/admin/users?${qs}`) });
+// };
+
 export const useUsers = (params: Record<string, string> = {}) => {
-  const qs = new URLSearchParams(params).toString();
+  const cleaned = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== ''));
+  const qs = new URLSearchParams(cleaned).toString();
   return useQuery({ queryKey: ['users', params], queryFn: () => api.get<any>(`/admin/users?${qs}`) });
 };
 
@@ -75,6 +107,7 @@ export const useDeleteUser = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 };
+
 
 // ── Settings ─────────────────────────────────────────────────────
 export const useSettings = () =>

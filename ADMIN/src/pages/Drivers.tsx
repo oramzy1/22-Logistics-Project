@@ -1,59 +1,61 @@
 import { useState } from "react";
-import { Plus, UserCircle, CheckCircle, Truck, Clock, Calendar, Eye, Download, X, Edit, ShieldX, ShieldCheck, Loader2 } from "lucide-react";
+import { UserCircle, CheckCircle, Truck, Clock, Calendar, Eye, Download, X, ShieldX, ShieldCheck, Loader2, UserX, Trash2, Car } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useDrivers, useVerifyLicense, useAssignDriver, useBookingStats } from '@/hooks/useAdminData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useDrivers, useVerifyLicense, useBookingStats, useAssignDriver, useSetUserStatus, useDeleteUser, useBookings } from '@/hooks/useAdminData';
 import { toast } from 'sonner';
-
-type Driver = {
-  id: string;
-  name: string;
-  contact: string;
-  status: string;
-  rating: string | number;
-  performance: string;
-  bookingStatus: string;
-  email: string;
-  vehicle: string;
-  vehicleType: string;
-  address: string;
-  gender: string;
-  trips: number;
-};
-
-const drivers: Driver[] = [
-  { id: "Logist-001", name: "Matthew B", contact: "+123 806234551", status: "Active", rating: "No rating", performance: "12/15 Trips", bookingStatus: "Assigned", email: "Matthew18@gmail.com", vehicle: "Logist-r233535845", vehicleType: "Toyota", address: "12 olarinwaju street", gender: "Male", trips: 12 },
-  { id: "Logist-002", name: "Timothy O", contact: "+123 806234551", status: "Available", rating: 4.9, performance: "12/15 Trips", bookingStatus: "Pending", email: "timothy@gmail.com", vehicle: "Logist-r233535846", vehicleType: "Honda", address: "5 ikoyi road", gender: "Male", trips: 12 },
-  { id: "Logist-003", name: "David L", contact: "+123 806234551", status: "Suspended", rating: 4.9, performance: "12/15 Trips", bookingStatus: "Cancelled", email: "david@gmail.com", vehicle: "Logist-r233535847", vehicleType: "Toyota", address: "9 ajao estate", gender: "Male", trips: 11 },
-  { id: "Logist-004", name: "Israel K", contact: "+123 806234551", status: "Deactivate", rating: 3.9, performance: "12/15 Trips", bookingStatus: "Cancelled", email: "israel@gmail.com", vehicle: "Logist-r233535848", vehicleType: "Lexus", address: "21 ikeja road", gender: "Male", trips: 10 },
-  { id: "Logist-005", name: "Faith F", contact: "+123 806234551", status: "offline", rating: "No rating", performance: "12/15 Trips", bookingStatus: "Rejected", email: "faith@gmail.com", vehicle: "Logist-r233535849", vehicleType: "Toyota", address: "33 yaba road", gender: "Female", trips: 9 },
-];
 
 const Drivers = () => {
   const [selected, setSelected] = useState<any | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<string>('');
   const [params, setParams] = useState<Record<string, string>>({ page: '1', limit: '20' });
-  const { data, isLoading } = useDrivers(params);
+
+  const { data, isLoading, refetch } = useDrivers(params);
   const { data: stats } = useBookingStats();
+  const { data: awaitingData } = useBookings({ status: 'AWAITING_DRIVER', paymentStatus: 'PAID', limit: '50' });
   const verify = useVerifyLicense();
+  const assign = useAssignDriver();
+  const setStatus = useSetUserStatus();
+  const deleteUser = useDeleteUser();
 
   const drivers = data?.drivers ?? [];
   const total = data?.total ?? 0;
+  const awaitingBookings = awaitingData?.bookings ?? [];
 
   const onlineCount = drivers.filter((d: any) => d.isOnline).length;
   const availableCount = drivers.filter((d: any) => d.isAvailable).length;
   const deactivatedCount = drivers.filter((d: any) => !d.user?.isActive).length;
 
+  const handleAssign = () => {
+    if (!selectedBooking || !selected) return;
+    assign.mutate(
+      { bookingId: selectedBooking, driverProfileId: selected.id },
+      {
+        onSuccess: () => {
+          toast.success('Driver assigned successfully');
+          setAssignOpen(false);
+          setSelectedBooking('');
+          refetch();
+        },
+        onError: (e: any) => toast.error(e.message ?? 'Assignment failed'),
+      }
+    );
+  };
+
+  // Driver can be assigned if online and not AWAY
+  const canBeAssigned = (d: any) => d.isOnline && d.onlineStatus !== 'AWAY' && d.isAvailable;
 
   return (
     <div>
       <PageHeader
         title="Drivers Management"
         subtitle="Keep track of driver details, availability, and performance."
-        // actions={<Button size="sm" className="gap-2"><Plus className="h-4 w-4" /> Add Driver</Button>}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -61,7 +63,7 @@ const Drivers = () => {
         <StatCard label="Trips Completed" value={String(stats?.completedBookings ?? 0)} hint="Total completed trips" icon={CheckCircle} iconBg="bg-success/15 text-success" />
         <StatCard label="Online Drivers" value={String(onlineCount)} hint={`${availableCount} currently available`} hintTone="muted" icon={Truck} iconBg="bg-accent/15 text-accent" />
         <StatCard label="Pending Trips" value={String(stats?.pendingBookings ?? 0)} hint="Trips not yet started" hintTone="warning" icon={Clock} iconBg="bg-warning/15 text-warning" />
-        <StatCard label="Yearly Bookings" value={String(stats?.totalBookings ?? 0)} hint="All time bookings" hintTone="muted" icon={Calendar} iconBg="bg-warning/15 text-warning" />
+        <StatCard label="All Bookings" value={String(stats?.totalBookings ?? 0)} hint="All time paid bookings" hintTone="muted" icon={Calendar} iconBg="bg-warning/15 text-warning" />
         <StatCard label="Pending Licenses" value={String(stats?.pendingLicenses ?? 0)} hint="Awaiting verification" hintTone="warning" icon={Calendar} iconBg="bg-warning/15 text-warning" />
         <StatCard label="Confirmed Bookings" value={String(stats?.confirmedBookings ?? 0)} hint="Accepted or in progress" hintTone="muted" icon={Calendar} iconBg="bg-success/15 text-success" />
         <StatCard label="Deactivated Drivers" value={String(deactivatedCount)} hint="Total deactivated" hintTone="destructive" icon={X} iconBg="bg-destructive/15 text-destructive" />
@@ -69,12 +71,11 @@ const Drivers = () => {
 
       <div className="bg-surface rounded-xl border border-border p-5">
         <div className="flex flex-col lg:flex-row gap-3 mb-4">
-           <input
+          <input
             placeholder="Search by Name, Email, Phone..."
             className="h-9 px-3 rounded-md border border-border bg-background text-sm flex-1"
             onChange={(e) => setParams(p => ({ ...p, search: e.target.value, page: '1' }))}
           />
-          <select className="h-9 px-3 rounded-md border border-border bg-background text-sm"><option>Date</option></select>
           <select
             className="h-9 px-3 rounded-md border border-border bg-background text-sm"
             onChange={(e) => setParams(p => ({ ...p, licenseStatus: e.target.value, page: '1' }))}
@@ -92,11 +93,10 @@ const Drivers = () => {
             <option value="true">Online</option>
             <option value="false">Offline</option>
           </select>
-          <select className="h-9 px-3 rounded-md border border-border bg-background text-sm"><option>All Rating</option></select>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs">
-           <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="font-medium">Drivers ({total})</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-success" /> Online ({onlineCount})</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-accent" /> Available ({availableCount})</span>
@@ -107,19 +107,6 @@ const Drivers = () => {
 
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="w-full text-sm min-w-[900px]">
-            {/* <thead>
-              <tr className="text-left text-xs text-muted-foreground border-b border-border bg-muted/40">
-                <th className="py-3 px-3"><input type="checkbox" /></th>
-                <th className="py-3 font-medium">Driver ID</th>
-                <th className="py-3 font-medium">Driver's Name</th>
-                <th className="py-3 font-medium">Contact</th>
-                <th className="py-3 font-medium">Status</th>
-                <th className="py-3 font-medium">Rating</th>
-                <th className="py-3 font-medium">Performance</th>
-                <th className="py-3 font-medium">Booking Status</th>
-                <th className="py-3 font-medium">Action</th>
-              </tr>
-            </thead> */}
             <thead>
               <tr className="text-left text-xs text-muted-foreground border-b border-border bg-muted/40">
                 <th className="py-3 px-3"><input type="checkbox" /></th>
@@ -137,7 +124,7 @@ const Drivers = () => {
                 <tr><td colSpan={8} className="py-12 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
               ) : drivers.length === 0 ? (
                 <tr><td colSpan={8} className="py-12 text-center text-muted-foreground text-sm">No drivers found</td></tr>
-              ) : drivers.map((d: any, i: number) => (
+              ) : drivers.map((d: any) => (
                 <tr key={d.id} className="border-b border-border/60 last:border-0">
                   <td className="py-3 px-3"><input type="checkbox" /></td>
                   <td className="py-3">
@@ -173,7 +160,8 @@ const Drivers = () => {
         </div>
       </div>
 
-       <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+      {/* Driver detail sheet */}
+      <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Driver Details</SheetTitle>
@@ -188,7 +176,10 @@ const Drivers = () => {
                 <div>
                   <p className="font-semibold text-lg">{selected.user?.name}</p>
                   <p className="text-sm text-muted-foreground">{selected.user?.email}</p>
-                  <StatusBadge status={selected.licenseStatus} />
+                  <div className="flex gap-2 mt-1">
+                    <StatusBadge status={selected.licenseStatus} />
+                    <StatusBadge status={selected.user?.isActive ? 'Active' : 'Inactive'} />
+                  </div>
                 </div>
               </div>
 
@@ -203,8 +194,6 @@ const Drivers = () => {
                 <Detail label="Plate Number" value={selected.plateNumber ?? '—'} />
                 <Detail label="Vehicle Color" value={selected.vehicleColor ?? '—'} />
                 <Detail label="Working Hours" value={selected.workingHours ?? '—'} />
-                <Detail label="Account Active" value={selected.user?.isActive ? 'Yes' : 'No'} />
-                <Detail label="Available" value={selected.isAvailable ? 'Yes' : 'No'} />
               </div>
 
               {selected.licenseImageUrl && (
@@ -216,8 +205,9 @@ const Drivers = () => {
                 </div>
               )}
 
+              {/* License actions */}
               {selected.licenseStatus === 'PENDING' && (
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3">
                   <Button
                     className="flex-1 gap-2"
                     onClick={() => verify.mutate(
@@ -226,7 +216,7 @@ const Drivers = () => {
                     )}
                     disabled={verify.isPending}
                   >
-                    <ShieldCheck className="h-4 w-4" /> Approve License
+                    <ShieldCheck className="h-4 w-4" /> Approve
                   </Button>
                   <Button
                     variant="destructive"
@@ -241,10 +231,106 @@ const Drivers = () => {
                   </Button>
                 </div>
               )}
+
+              {/* Assign to ride — only if online and not AWAY */}
+              {canBeAssigned(selected) && awaitingBookings.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => setAssignOpen(true)}
+                >
+                  <Car className="h-4 w-4" /> Assign to a Ride
+                </Button>
+              )}
+
+              {/* Account actions */}
+              <div className="border-t border-border pt-4 flex gap-3">
+                {selected.user?.isActive ? (
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2 text-warning border-warning/40 hover:bg-warning/10"
+                    onClick={() => setStatus.mutate(
+                      { id: selected.userId, isActive: false },
+                      { onSuccess: () => { toast.success('Driver deactivated'); setSelected(null); } }
+                    )}
+                    disabled={setStatus.isPending}
+                  >
+                    <UserX className="h-4 w-4" /> Deactivate
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setStatus.mutate(
+                      { id: selected.userId, isActive: true },
+                      { onSuccess: () => { toast.success('Driver reactivated'); setSelected(null); } }
+                    )}
+                    disabled={setStatus.isPending}
+                  >
+                    Reactivate
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  className="flex-1 gap-2"
+                  onClick={() => deleteUser.mutate(
+                    selected.userId,
+                    { onSuccess: () => { toast.success('Driver deleted'); setSelected(null); } }
+                  )}
+                  disabled={deleteUser.isPending}
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+              </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Assign ride dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign {selected?.user?.name} to a Ride</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-muted-foreground">Select a booking awaiting a driver:</p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {awaitingBookings.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No rides awaiting assignment</p>
+              ) : awaitingBookings.map((b: any) => (
+                <label
+                  key={b.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedBooking === b.id ? 'border-accent bg-accent/10' : 'border-border hover:bg-muted/50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="booking"
+                    value={b.id}
+                    checked={selectedBooking === b.id}
+                    onChange={() => setSelectedBooking(b.id)}
+                    className="mt-0.5"
+                  />
+                  <div className="text-sm">
+                    <p className="font-medium">{b.trackingId ?? b.id.slice(0, 8)} — {b.customer?.name}</p>
+                    <p className="text-xs text-muted-foreground">{b.packageType} · {b.pickupAddress}</p>
+                    <p className="text-xs text-muted-foreground">₦{b.totalAmount?.toLocaleString()} · {new Date(b.scheduledAt).toLocaleString()}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
+            <Button onClick={handleAssign} disabled={!selectedBooking || assign.isPending}>
+              {assign.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Assign Driver
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

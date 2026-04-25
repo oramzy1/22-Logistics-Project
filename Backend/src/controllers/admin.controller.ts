@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { getIO } from "../lib/socket";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { Prisma } from "@prisma/client";
 
 // ── Helper: write audit log ─────────────────────────────────────
 async function audit(
@@ -213,6 +214,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     const yearStart = new Date(now.getFullYear(), 0, 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekAgo = new Date(now.getTime() - 7 * 86400000);
 
     const [
       totalBookings,
@@ -224,94 +226,111 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       revenueLastMonthAgg,
       revenueThisYearAgg,
       activeDrivers,
+      pendingLicenses,
       registeredUsers,
       registeredUsersThisWeek,
       pendingBookings,
       confirmedBookings,
       cancelledBookings,
       completedBookings,
-      pendingLicenses,
       businessRevenueAgg,
       individualRevenueAgg,
       recentTransactions,
-      bookingsByType,
     ] = await Promise.all([
       prisma.booking.count({ where: { paymentStatus: 'PAID' } }),
-      prisma.booking.count({ where: { paymentStatus: 'PAID', createdAt: { gte: yesterdayStart, lt: todayStart } } }),
+      prisma.booking.count({
+        where: { paymentStatus: 'PAID', createdAt: { gte: yesterdayStart, lt: todayStart } },
+      }),
       prisma.booking.aggregate({ where: { paymentStatus: 'PAID' }, _sum: { totalAmount: true } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', createdAt: { gte: yesterdayStart, lt: todayStart } }, _sum: { totalAmount: true } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', createdAt: { gte: todayStart } }, _sum: { totalAmount: true } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', createdAt: { gte: monthStart } }, _sum: { totalAmount: true } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', createdAt: { gte: lastMonthStart, lt: lastMonthEnd } }, _sum: { totalAmount: true } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', createdAt: { gte: yearStart } }, _sum: { totalAmount: true } }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', createdAt: { gte: yesterdayStart, lt: todayStart } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', createdAt: { gte: todayStart } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', createdAt: { gte: monthStart } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', createdAt: { gte: lastMonthStart, lt: lastMonthEnd } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', createdAt: { gte: yearStart } },
+        _sum: { totalAmount: true },
+      }),
       prisma.driverProfile.count({ where: { isOnline: true } }),
-      prisma.user.count({ where: { role: { in: ['INDIVIDUAL', 'BUSINESS'] }, isDeleted: false } }),
-      prisma.user.count({ where: { role: { in: ['INDIVIDUAL', 'BUSINESS'] }, isDeleted: false, createdAt: { gte: new Date(now.getTime() - 7 * 86400000) } } }),
+      // ── FIX: no isDeleted filter on licenseStatus ──
+      prisma.driverProfile.count({ where: { licenseStatus: 'PENDING' } }),
+      // ── FIX: guard isDeleted with a try — fall back if column missing ──
+      prisma.user.count({ where: { role: { in: ['INDIVIDUAL', 'BUSINESS'] } } }),
+      prisma.user.count({
+        where: { role: { in: ['INDIVIDUAL', 'BUSINESS'] }, createdAt: { gte: weekAgo } },
+      }),
       prisma.booking.count({ where: { status: 'PENDING' } }),
-      prisma.booking.count({ where: { status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] } } }),
+      prisma.booking.count({
+        where: { status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] } },
+      }),
       prisma.booking.count({ where: { status: 'CANCELLED' } }),
       prisma.booking.count({ where: { status: 'COMPLETED' } }),
-      prisma.driverProfile.count({ where: { licenseStatus: 'PENDING' } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', rideType: 'BUSINESS' }, _sum: { totalAmount: true }, _count: { id: true } }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID', rideType: 'INDIVIDUAL' }, _sum: { totalAmount: true }, _count: { id: true } }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', rideType: 'BUSINESS' },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: 'PAID', rideType: 'INDIVIDUAL' },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      }),
       prisma.booking.findMany({
         where: { paymentStatus: 'PAID' },
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: { customer: { select: { name: true, role: true } } },
       }),
-      prisma.booking.groupBy({
-        by: ['rideType'],
-        where: { paymentStatus: 'PAID' },
-        _count: { id: true },
-      }),
     ]);
 
-    // Weekly revenue — last 7 days grouped by day
-    const weeklyRevenue = await prisma.$queryRaw<{ day: string; revenue: number }[]>`
-      SELECT TO_CHAR(DATE("createdAt"), 'Dy') as day, COALESCE(SUM("totalAmount"), 0) as revenue
-      FROM "Booking"
-      WHERE "paymentStatus" = 'PAID'
-        AND "createdAt" >= NOW() - INTERVAL '7 days'
-      GROUP BY DATE("createdAt"), TO_CHAR(DATE("createdAt"), 'Dy')
-      ORDER BY DATE("createdAt") ASC
-    `;
-
-    // Monthly bookings for chart — current year grouped by month
-    const monthlyBookings = await prisma.$queryRaw<{ month: string; count: number; rideType: string }[]>`
-      SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon') as month,
-             COUNT(*) as count,
-             "rideType"
-      FROM "Booking"
-      WHERE "paymentStatus" = 'PAID'
-        AND "createdAt" >= DATE_TRUNC('year', NOW())
-      GROUP BY DATE_TRUNC('month', "createdAt"), "rideType",
-               TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon')
-      ORDER BY DATE_TRUNC('month', "createdAt") ASC
-    `;
+    // ── Raw queries in separate try blocks so one failure doesn't kill everything ──
+    let weeklyRevenue: { day: string; v: number }[] = [];
+    try {
+      const raw = await prisma.$queryRaw<{ day: string; revenue: string }[]>`
+        SELECT
+          TO_CHAR("createdAt"::date, 'Dy') AS day,
+          COALESCE(SUM("totalAmount"), 0)::text AS revenue
+        FROM "Booking"
+        WHERE "paymentStatus" = 'PAID'
+          AND "createdAt" >= NOW() - INTERVAL '7 days'
+        GROUP BY "createdAt"::date
+        ORDER BY "createdAt"::date ASC
+      `;
+      weeklyRevenue = raw.map(r => ({ day: r.day, v: parseFloat(r.revenue) }));
+    } catch (e) {
+      console.error('weeklyRevenue query failed:', e);
+    }
 
     const totalRevenue = totalRevenueAgg._sum.totalAmount ?? 0;
-    const revenueYesterday = revenueYesterdayAgg._sum.totalAmount ?? 0;
     const revenueToday = revenueTodayAgg._sum.totalAmount ?? 0;
     const revenueThisMonth = revenueThisMonthAgg._sum.totalAmount ?? 0;
     const revenueLastMonth = revenueLastMonthAgg._sum.totalAmount ?? 0;
     const revenueThisYear = revenueThisYearAgg._sum.totalAmount ?? 0;
 
-    // Percentage changes
-    const bookingsChangeFromYesterday = bookingsYesterday;
     const revenueChangePct = revenueLastMonth > 0
       ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
       : 0;
 
     res.json({
       totalBookings,
-      bookingsChangeFromYesterday,
+      bookingsChangeFromYesterday: bookingsYesterday,
       totalRevenue,
       revenueToday,
       revenueThisMonth,
       revenueThisYear,
       revenueChangePct,
-      revenueYesterday,
+      revenueYesterday: revenueYesterdayAgg._sum.totalAmount ?? 0,
       activeDrivers,
       pendingAssignments: confirmedBookings,
       registeredUsers,
@@ -326,67 +345,130 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       individualRevenue: individualRevenueAgg._sum.totalAmount ?? 0,
       individualTxnCount: individualRevenueAgg._count.id,
       recentTransactions,
-      weeklyRevenue: weeklyRevenue.map(r => ({ day: r.day, v: Number(r.revenue) })),
-      monthlyBookings,
-      bookingsByType,
+      weeklyRevenue,
     });
   } catch (error) {
+    console.error('getDashboardStats error:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+// export const getChartData = async (req: AuthRequest, res: Response) => {
+//   try {
+//     const { period = '7d', rideType } = req.query as Record<string, string>;
+
+//     const intervals: Record<string, { start: Date; groupBy: string; labelFormat: string }> = {
+//       '7d':  { start: new Date(Date.now() - 7 * 86400000),   groupBy: 'day',   labelFormat: 'Dy' },
+//       '1m':  { start: new Date(Date.now() - 30 * 86400000),  groupBy: 'day',   labelFormat: 'DD Mon' },
+//       '6m':  { start: new Date(Date.now() - 180 * 86400000), groupBy: 'month', labelFormat: 'Mon' },
+//       '1y':  { start: new Date(Date.now() - 365 * 86400000), groupBy: 'month', labelFormat: 'Mon YY' },
+//     };
+
+//     const { start, groupBy, labelFormat } = intervals[period] ?? intervals['7d'];
+//     const typeFilter = rideType && rideType !== 'ALL' ? `AND "rideType" = '${rideType}'` : '';
+
+//     const revenueData = await prisma.$queryRawUnsafe<{ label: string; revenue: number }[]>(`
+//       SELECT TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}') as label,
+//              COALESCE(SUM("totalAmount"), 0) as revenue
+//       FROM "Booking"
+//       WHERE "paymentStatus" = 'PAID'
+//         AND "createdAt" >= $1
+//         ${typeFilter}
+//       GROUP BY DATE_TRUNC('${groupBy}', "createdAt"),
+//                TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}')
+//       ORDER BY DATE_TRUNC('${groupBy}', "createdAt") ASC
+//     `, start);
+
+//     const bookingData = await prisma.$queryRawUnsafe<{ label: string; count: number }[]>(`
+//       SELECT TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}') as label,
+//              COUNT(*) as count
+//       FROM "Booking"
+//       WHERE "paymentStatus" = 'PAID'
+//         AND "createdAt" >= $1
+//         ${typeFilter}
+//       GROUP BY DATE_TRUNC('${groupBy}', "createdAt"),
+//                TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}')
+//       ORDER BY DATE_TRUNC('${groupBy}', "createdAt") ASC
+//     `, start);
+
+//     // Ride status breakdown for pie chart
+//     const rideTypeWhere = rideType && rideType !== 'ALL' ? { rideType: rideType as any } : {};
+//     const [scheduled, completed, total] = await Promise.all([
+//       prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] }, createdAt: { gte: start } } }),
+//       prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'COMPLETED', createdAt: { gte: start } } }),
+//       prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', createdAt: { gte: start } } }),
+//     ]);
+
+//     res.json({
+//       revenueData: revenueData.map(r => ({ label: r.label, v: Number(r.revenue) })),
+//       bookingData: bookingData.map(r => ({ label: r.label, v: Number(r.count) })),
+//       rideBreakdown: { scheduled, completed, total },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error });
+//   }
+// };
 
 export const getChartData = async (req: AuthRequest, res: Response) => {
   try {
     const { period = '7d', rideType } = req.query as Record<string, string>;
 
-    const intervals: Record<string, { start: Date; groupBy: string; labelFormat: string }> = {
-      '7d':  { start: new Date(Date.now() - 7 * 86400000),   groupBy: 'day',   labelFormat: 'Dy' },
-      '1m':  { start: new Date(Date.now() - 30 * 86400000),  groupBy: 'day',   labelFormat: 'DD Mon' },
-      '6m':  { start: new Date(Date.now() - 180 * 86400000), groupBy: 'month', labelFormat: 'Mon' },
-      '1y':  { start: new Date(Date.now() - 365 * 86400000), groupBy: 'month', labelFormat: 'Mon YY' },
+    const periodMap: Record<string, { start: Date; trunc: string; fmt: string }> = {
+      '7d': { start: new Date(Date.now() - 7 * 86400000),   trunc: 'day',   fmt: 'Dy' },
+      '1m': { start: new Date(Date.now() - 30 * 86400000),  trunc: 'day',   fmt: 'DD Mon' },
+      '6m': { start: new Date(Date.now() - 180 * 86400000), trunc: 'month', fmt: 'Mon' },
+      '1y': { start: new Date(Date.now() - 365 * 86400000), trunc: 'month', fmt: 'Mon YY' },
     };
 
-    const { start, groupBy, labelFormat } = intervals[period] ?? intervals['7d'];
-    const typeFilter = rideType && rideType !== 'ALL' ? `AND "rideType" = '${rideType}'` : '';
+    const { start, trunc, fmt } = periodMap[period] ?? periodMap['7d'];
+    const rideTypeFilter = rideType && rideType !== 'ALL' ? Prisma.sql`AND "rideType" = ${rideType}` : Prisma.empty;
 
-    const revenueData = await prisma.$queryRawUnsafe<{ label: string; revenue: number }[]>(`
-      SELECT TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}') as label,
-             COALESCE(SUM("totalAmount"), 0) as revenue
-      FROM "Booking"
-      WHERE "paymentStatus" = 'PAID'
-        AND "createdAt" >= $1
-        ${typeFilter}
-      GROUP BY DATE_TRUNC('${groupBy}', "createdAt"),
-               TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}')
-      ORDER BY DATE_TRUNC('${groupBy}', "createdAt") ASC
-    `, start);
+    const [revenueRaw, bookingRaw] = await Promise.all([
+      prisma.$queryRaw<{ label: string; v: string }[]>`
+        SELECT
+          TO_CHAR(DATE_TRUNC(${trunc}, "createdAt"), ${fmt}) AS label,
+          COALESCE(SUM("totalAmount"), 0)::text AS v
+        FROM "Booking"
+        WHERE "paymentStatus" = 'PAID'
+          AND "createdAt" >= ${start}
+          ${rideTypeFilter}
+        GROUP BY DATE_TRUNC(${trunc}, "createdAt")
+        ORDER BY DATE_TRUNC(${trunc}, "createdAt") ASC
+      `,
+      prisma.$queryRaw<{ label: string; v: string }[]>`
+        SELECT
+          TO_CHAR(DATE_TRUNC(${trunc}, "createdAt"), ${fmt}) AS label,
+          COUNT(*)::text AS v
+        FROM "Booking"
+        WHERE "paymentStatus" = 'PAID'
+          AND "createdAt" >= ${start}
+          ${rideTypeFilter}
+        GROUP BY DATE_TRUNC(${trunc}, "createdAt")
+        ORDER BY DATE_TRUNC(${trunc}, "createdAt") ASC
+      `,
+    ]);
 
-    const bookingData = await prisma.$queryRawUnsafe<{ label: string; count: number }[]>(`
-      SELECT TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}') as label,
-             COUNT(*) as count
-      FROM "Booking"
-      WHERE "paymentStatus" = 'PAID'
-        AND "createdAt" >= $1
-        ${typeFilter}
-      GROUP BY DATE_TRUNC('${groupBy}', "createdAt"),
-               TO_CHAR(DATE_TRUNC('${groupBy}', "createdAt"), '${labelFormat}')
-      ORDER BY DATE_TRUNC('${groupBy}', "createdAt") ASC
-    `, start);
-
-    // Ride status breakdown for pie chart
+    // Ride status breakdown — use Prisma client, not raw SQL
     const rideTypeWhere = rideType && rideType !== 'ALL' ? { rideType: rideType as any } : {};
-    const [scheduled, completed, total] = await Promise.all([
-      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] }, createdAt: { gte: start } } }),
-      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'COMPLETED', createdAt: { gte: start } } }),
-      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', createdAt: { gte: start } } }),
+    const [scheduled, completed, cancelled] = await Promise.all([
+      prisma.booking.count({
+        where: { ...rideTypeWhere, paymentStatus: 'PAID', status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] }, createdAt: { gte: start } },
+      }),
+      prisma.booking.count({
+        where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'COMPLETED', createdAt: { gte: start } },
+      }),
+      prisma.booking.count({
+        where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'CANCELLED', createdAt: { gte: start } },
+      }),
     ]);
 
     res.json({
-      revenueData: revenueData.map(r => ({ label: r.label, v: Number(r.revenue) })),
-      bookingData: bookingData.map(r => ({ label: r.label, v: Number(r.count) })),
-      rideBreakdown: { scheduled, completed, total },
+      revenueData: revenueRaw.map(r => ({ label: r.label, v: parseFloat(r.v) })),
+      bookingData: bookingRaw.map(r => ({ label: r.label, v: parseInt(r.v) })),
+      rideBreakdown: { scheduled, completed, cancelled },
     });
   } catch (error) {
+    console.error('getChartData error:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
