@@ -49,6 +49,7 @@
 // backend/src/lib/socket.ts
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
 
 let io: SocketServer;
 
@@ -77,6 +78,23 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
       console.log(`📡 Socket ${socket.id} joined available pool`);
     });
 
+     socket.on('join_admin', (token: string) => {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { id: string; role: string };
+        if (decoded.role !== 'ADMIN') {
+          socket.emit('admin:error', { message: 'Unauthorized' });
+          return;
+        }
+        socket.join('admin:dashboard');
+        // Tag the socket so we can reference the adminId in emitToAdmin if needed
+        socket.data.adminId = decoded.id;
+        console.log(`📡 Admin ${decoded.id} joined admin:dashboard [socket: ${socket.id}]`);
+        socket.emit('admin:joined', { message: 'Connected to admin channel' });
+      } catch {
+        socket.emit('admin:error', { message: 'Invalid or expired token' });
+      }
+    });
+
     socket.on('disconnect', (reason) => {
       console.log(`🔌 Socket disconnected: ${socket.id} | Reason: ${reason}`);
     });
@@ -95,3 +113,18 @@ export const emitTo = (room: string, event: string, data: any) => {
   console.log(`📤 EMIT → room: "${room}" | event: "${event}" | data:`, JSON.stringify(data).slice(0, 200));
   io.to(room).emit(event, data);
 };
+
+export const emitToAdmin = (event: AdminDashboardEvent, data: object) => {
+  console.log(`📤 ADMIN EMIT → event: "${event}" | data:`, JSON.stringify(data).slice(0, 200));
+  io.to('admin:dashboard').emit(event, data);
+};
+
+export type AdminDashboardEvent =
+  | 'admin:new_booking'        // booking created and paid
+  | 'admin:booking_cancelled'  // any cancellation
+  | 'admin:booking_completed'  // trip ended
+  | 'admin:driver_online'      // driver status changed to ONLINE
+  | 'admin:driver_offline'     // driver status changed to OFFLINE
+  | 'admin:license_submitted'  // driver uploaded a license (pending review)
+  | 'admin:payment_received'   // payment verified
+  | 'admin:user_registered';   // new user signed up

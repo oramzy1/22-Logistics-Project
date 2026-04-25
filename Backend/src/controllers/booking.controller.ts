@@ -6,16 +6,17 @@ import { createNotification } from "../lib/notifications";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { getIO } from "../lib/socket";
+import { getIO, emitToAdmin } from "../lib/socket";
+import { getPackagePrices } from "../lib/getPrices";
 
 // Package pricing in Naira
-const PACKAGE_PRICES: Record<string, number> = {
-  "3 Hours": 24000,
-  "6 Hours": 34000,
-  "10 Hours": 54000,
-  "Airport Schedule": 80000,
-  "Multi-day": 80000,
-};
+// const PACKAGE_PRICES: Record<string, number> = {
+//   "3 Hours": 24000,
+//   "6 Hours": 34000,
+//   "10 Hours": 54000,
+//   "Airport Schedule": 80000,
+//   "Multi-day": 80000,
+// };
 
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
@@ -58,6 +59,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       finalAmount = clientTotal;
     } else {
       // Local PH pricing evaluation
+      const PACKAGE_PRICES = await getPackagePrices();
       const basePrice = PACKAGE_PRICES[packageType] ?? 0;
       if (!basePrice)
         return res
@@ -355,6 +357,8 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
       } catch (err) {
         console.log("Socket emit failed:", err);
       }
+
+      emitToAdmin('admin:new_booking', { bookingId: updated.id, amount: updated.totalAmount, rideType: updated.rideType });
 
       await createNotification(
         booking.customerId,

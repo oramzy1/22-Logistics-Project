@@ -13,6 +13,7 @@ import { createServer } from 'http';
 import { initSocket } from './lib/socket';
 import driverRoutes from './routes/driver.routes';
 import supportRouter from './routes/support.route';
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/notifications', notificationRoutes)
 app.use('/api/extensions', extensionRoutes)
 app.use('/api/driver', driverRoutes);
 app.use('/api/support', supportRouter)
+app.use('/api/admin', adminRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Logistics API is running' });

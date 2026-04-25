@@ -8,7 +8,7 @@ import {
   sendWelcomeEmail,
   sendTripCompletionEmail,
 } from "../lib/email.service";
-import { getIO } from "../lib/socket";
+import { getIO, emitToAdmin } from "../lib/socket";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { createNotification } from "../lib/notifications";
@@ -52,6 +52,7 @@ export const registerDriver = async (req: Request, res: Response) => {
       },
     });
 
+    
     try {
       await sendVerificationEmail(email, code);
     } catch (e) {
@@ -93,6 +94,7 @@ export const uploadLicense = async (
       message: "License uploaded. Pending admin verification.",
       licenseImageUrl,
     });
+    emitToAdmin('admin:license_submitted', { driverId: req.user!.id, licenseImageUrl });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -157,6 +159,11 @@ export const setOnlineStatus = async (req: AuthRequest, res: Response) => {
       isOnline: profile.isOnline,
       isAvailable: profile.isAvailable,
     });
+
+     emitToAdmin(
+      profile.isOnline ? 'admin:driver_online' : 'admin:driver_offline',
+      { driverProfileId: profile.id, isAvailable: profile.isAvailable },
+    );
 
     res.json({ message: `Status updated to ${status}`, profile });
   } catch (error) {

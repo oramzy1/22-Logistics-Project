@@ -30,6 +30,8 @@ model User {
   resetTokenExpiry    DateTime?
   businessProfile BusinessProfile?
   driverProfile   DriverProfile?
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -75,7 +77,7 @@ model Booking {
   customerId    String
   customer      User          @relation("CustomerBookings", fields: [customerId], references: [id])
   driverId      String?
-  driver        User?         @relation("DriverBookings", fields: [driverId], references: [id])
+  driver        User?         @relation("DriverBookings", fields: [driverId], references: [id], onDelete: SetNull)
 
   pickupAddress  String
   dropoffAddress String
@@ -191,6 +193,68 @@ model RideRequest {
   expiresAt       DateTime          // request expires after 30s if no response
   respondedAt     DateTime?
   createdAt       DateTime          @default(now())
+}
+
+model AppSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique   // e.g. "price_3_hours", "extension_1_hour"
+  value     String             // stored as string, parsed by consumers
+  label     String?            // human-readable label for admin UI
+  updatedAt DateTime @updatedAt
+  updatedBy String?            // adminId
+}
+
+model PromoCode {
+  id              String        @id @default(uuid())
+  code            String        @unique
+  description     String?
+  discountType    DiscountType  @default(PERCENTAGE)
+  discountValue   Float         // e.g. 10 = 10% or 10 = ₦10,000
+  minBookingAmount Float?       // minimum booking amount to apply
+  maxDiscount     Float?        // cap for percentage discounts
+  usageLimit      Int?          // null = unlimited
+  usedCount       Int           @default(0)
+  isActive        Boolean       @default(true)
+  expiresAt       DateTime?
+  targetType      PromoTarget   @default(ALL)
+  targetUserIds   String[]      // for USER_SPECIFIC promos
+  targetRole      Role?         // for role-specific promos (INDIVIDUAL/BUSINESS)
+  createdBy       String        // adminId
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  usages          PromoUsage[]
+}
+
+model PromoUsage {
+  id          String    @id @default(uuid())
+  promoId     String
+  promo       PromoCode @relation(fields: [promoId], references: [id])
+  userId      String
+  bookingId   String?
+  discountAmount Float
+  createdAt   DateTime  @default(now())
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String   // e.g. "DEACTIVATE_USER", "UPDATE_PRICE", "VERIFY_LICENSE"
+  targetType String   // "USER" | "BOOKING" | "DRIVER" | "SETTINGS"
+  targetId   String?
+  metadata   Json?    // any extra context
+  createdAt  DateTime @default(now())
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum PromoTarget {
+  ALL
+  INDIVIDUAL
+  BUSINESS
+  USER_SPECIFIC
 }
 
 enum LicenseStatus {

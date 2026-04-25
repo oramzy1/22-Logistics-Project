@@ -3,12 +3,13 @@ import crypto from 'crypto';
 import prisma from '../lib/prisma';
 import { initializeTransaction, verifyTransaction } from '../lib/paystack';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { getExtensionPrices } from '../lib/getPrices';
 
-const EXTENSION_PRICES: Record<string, number> = {
-  '1-Hours': 10000,
-  '2-Hours': 15000,
-  '3-Hours': 24000,
-};
+// const EXTENSION_PRICES: Record<string, number> = {
+//   '1-Hours': 10000,
+//   '2-Hours': 15000,
+//   '3-Hours': 24000,
+// };
 
 export const createExtension = async (req: AuthRequest, res: Response) => {
    console.log('👤 User making extension request:', req.user);
@@ -25,6 +26,7 @@ export const createExtension = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Can only extend trips in progress' });
     }
 
+    const EXTENSION_PRICES = await getExtensionPrices();
     const amount = EXTENSION_PRICES[hours];
     if (!amount) return res.status(400).json({ message: 'Invalid extension option' });
 

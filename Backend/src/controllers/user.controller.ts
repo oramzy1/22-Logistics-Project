@@ -262,33 +262,70 @@ export const deactivateAccount = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// export const deleteAccount = async (req: AuthRequest, res: Response) => {
+//   try {
+//     const { credential } = req.body;
+//     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     const check = await verifyUserCredential(user, credential);
+// if (!check.ok) return res.status(check.status).json({ 
+//   message: check.message,
+//   useOtp: (check as any).useOtp
+// });
+//     // Delete related records first due to FK constraints
+//     // await prisma.order.deleteMany({ where: { customerId: req.user!.id } });
+//     await prisma.businessProfile.deleteMany({
+//       where: { userId: req.user!.id },
+//     });
+//     await prisma.notification.deleteMany({
+//       where: { userId: req.user!.id },
+//     });
+//     await prisma.driverProfile.deleteMany({
+//       where: { userId: req.user!.id },
+//     });
+//     await prisma.user.delete({ where: { id: req.user!.id } });
+
+//     res.json({ message: "Account permanently deleted" });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
+
 export const deleteAccount = async (req: AuthRequest, res: Response) => {
   try {
     const { credential } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const check = await verifyUserCredential(user, credential);
-if (!check.ok) return res.status(check.status).json({ 
-  message: check.message,
-  useOtp: (check as any).useOtp
-});
-    // Delete related records first due to FK constraints
-    // await prisma.order.deleteMany({ where: { customerId: req.user!.id } });
-    await prisma.businessProfile.deleteMany({
-      where: { userId: req.user!.id },
-    });
-    await prisma.notification.deleteMany({
-      where: { userId: req.user!.id },
-    });
-    await prisma.driverProfile.deleteMany({
-      where: { userId: req.user!.id },
-    });
-    await prisma.user.delete({ where: { id: req.user!.id } });
+    if (!check.ok) return res.status(check.status).json({ message: check.message, useOtp: (check as any).useOtp });
 
-    res.json({ message: "Account permanently deleted" });
+    const bookingCount = await prisma.booking.count({
+      where: { OR: [{ customerId: req.user!.id }, { driverId: req.user!.id }] },
+    });
+
+    if (bookingCount > 0) {
+      // Soft delete — anonymize, keep booking records
+      await prisma.user.update({
+        where: { id: req.user!.id },
+        data: {
+          isDeleted: true, deletedAt: new Date(), isActive: false,
+          name: '[Deleted User]', email: `deleted_${req.user!.id}@removed.invalid`,
+          phone: null, avatarUrl: null, password: null, pushToken: null,
+          verificationToken: null, resetToken: null, actionOtp: null,
+        },
+      });
+    } else {
+      await prisma.notification.deleteMany({ where: { userId: req.user!.id } });
+      await prisma.businessProfile.deleteMany({ where: { userId: req.user!.id } });
+      await prisma.driverProfile.deleteMany({ where: { userId: req.user!.id } });
+      await prisma.user.delete({ where: { id: req.user!.id } });
+    }
+
+    res.json({ message: 'Account deleted' });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 
