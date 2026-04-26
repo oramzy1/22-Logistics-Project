@@ -12,7 +12,7 @@ router.get('/:id', getBookingById);
 router.get('/verify/:reference', verifyPayment);
 router.post('/:id/reinitialize', authorize(['INDIVIDUAL', 'BUSINESS']), reinitializePayment);
 router.patch('/:id/end', authenticate, endTrip);
-router.post('/:id/rate', authenticate, rateDriver);
+router.post('/:id/rate-driver', authenticate, rateDriver);
 router.post('/:id/cancel', authenticate, cancelBookingWithReason);
 
 export default router;
