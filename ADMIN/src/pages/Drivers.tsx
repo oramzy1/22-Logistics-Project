@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useDrivers, useVerifyLicense, useBookingStats, useAssignDriver, useSetUserStatus, useDeleteUser, useBookings } from '@/hooks/useAdminData';
 import { toast } from 'sonner';
+import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
 
 const Drivers = () => {
   const [selected, setSelected] = useState<any | null>(null);
@@ -76,6 +77,9 @@ const Drivers = () => {
             className="h-9 px-3 rounded-md border border-border bg-background text-sm flex-1"
             onChange={(e) => setParams(p => ({ ...p, search: e.target.value, page: '1' }))}
           />
+          <DateRangeFilter
+  onChange={(from, to) => setParams(p => ({ ...p, dateFrom: from, dateTo: to, page: '1' }))}
+/>
           <select
             className="h-9 px-3 rounded-md border border-border bg-background text-sm"
             onChange={(e) => setParams(p => ({ ...p, licenseStatus: e.target.value, page: '1' }))}

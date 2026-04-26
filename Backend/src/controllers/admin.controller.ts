@@ -62,7 +62,6 @@ export const adminLogin = async (req: any, res: Response) => {
 //     const now = new Date();
 //     const todayStart = new Date(now.setHours(0, 0, 0, 0));
 //     const yesterdayStart = new Date(todayStart.getTime() - 86400000);
-    
 
 //     const [
 //       totalBookings,
@@ -208,7 +207,11 @@ export const adminLogin = async (req: any, res: Response) => {
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const yesterdayStart = new Date(todayStart.getTime() - 86400000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const yearStart = new Date(now.getFullYear(), 0, 1);
@@ -237,58 +240,77 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       individualRevenueAgg,
       recentTransactions,
     ] = await Promise.all([
-      prisma.booking.count({ where: { paymentStatus: 'PAID' } }),
+      prisma.booking.count({ where: { paymentStatus: "PAID" } }),
       prisma.booking.count({
-        where: { paymentStatus: 'PAID', createdAt: { gte: yesterdayStart, lt: todayStart } },
+        where: {
+          paymentStatus: "PAID",
+          createdAt: { gte: yesterdayStart, lt: todayStart },
+        },
       }),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID' }, _sum: { totalAmount: true } }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', createdAt: { gte: yesterdayStart, lt: todayStart } },
+        where: { paymentStatus: "PAID" },
         _sum: { totalAmount: true },
       }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', createdAt: { gte: todayStart } },
+        where: {
+          paymentStatus: "PAID",
+          createdAt: { gte: yesterdayStart, lt: todayStart },
+        },
         _sum: { totalAmount: true },
       }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', createdAt: { gte: monthStart } },
+        where: { paymentStatus: "PAID", createdAt: { gte: todayStart } },
         _sum: { totalAmount: true },
       }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', createdAt: { gte: lastMonthStart, lt: lastMonthEnd } },
+        where: { paymentStatus: "PAID", createdAt: { gte: monthStart } },
         _sum: { totalAmount: true },
       }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', createdAt: { gte: yearStart } },
+        where: {
+          paymentStatus: "PAID",
+          createdAt: { gte: lastMonthStart, lt: lastMonthEnd },
+        },
+        _sum: { totalAmount: true },
+      }),
+      prisma.booking.aggregate({
+        where: { paymentStatus: "PAID", createdAt: { gte: yearStart } },
         _sum: { totalAmount: true },
       }),
       prisma.driverProfile.count({ where: { isOnline: true } }),
       // ── FIX: no isDeleted filter on licenseStatus ──
-      prisma.driverProfile.count({ where: { licenseStatus: 'PENDING' } }),
+      prisma.driverProfile.count({ where: { licenseStatus: "PENDING" } }),
       // ── FIX: guard isDeleted with a try — fall back if column missing ──
-      prisma.user.count({ where: { role: { in: ['INDIVIDUAL', 'BUSINESS'] } } }),
       prisma.user.count({
-        where: { role: { in: ['INDIVIDUAL', 'BUSINESS'] }, createdAt: { gte: weekAgo } },
+        where: { role: { in: ["INDIVIDUAL", "BUSINESS"] } },
       }),
-      prisma.booking.count({ where: { status: 'PENDING' } }),
+      prisma.user.count({
+        where: {
+          role: { in: ["INDIVIDUAL", "BUSINESS"] },
+          createdAt: { gte: weekAgo },
+        },
+      }),
+      prisma.booking.count({ where: { status: "PENDING" } }),
       prisma.booking.count({
-        where: { status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] } },
+        where: {
+          status: { in: ["AWAITING_DRIVER", "ACCEPTED", "IN_PROGRESS"] },
+        },
       }),
-      prisma.booking.count({ where: { status: 'CANCELLED' } }),
-      prisma.booking.count({ where: { status: 'COMPLETED' } }),
+      prisma.booking.count({ where: { status: "CANCELLED" } }),
+      prisma.booking.count({ where: { status: "COMPLETED" } }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', rideType: 'BUSINESS' },
+        where: { paymentStatus: "PAID", rideType: "BUSINESS" },
         _sum: { totalAmount: true },
         _count: { id: true },
       }),
       prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID', rideType: 'INDIVIDUAL' },
+        where: { paymentStatus: "PAID", rideType: "INDIVIDUAL" },
         _sum: { totalAmount: true },
         _count: { id: true },
       }),
       prisma.booking.findMany({
-        where: { paymentStatus: 'PAID' },
-        orderBy: { createdAt: 'desc' },
+        where: { paymentStatus: "PAID" },
+        orderBy: { createdAt: "desc" },
         take: 10,
         include: { customer: { select: { name: true, role: true } } },
       }),
@@ -307,9 +329,12 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
         GROUP BY "createdAt"::date
         ORDER BY "createdAt"::date ASC
       `;
-      weeklyRevenue = raw.map(r => ({ day: r.day, v: parseFloat(r.revenue) }));
+      weeklyRevenue = raw.map((r) => ({
+        day: r.day,
+        v: parseFloat(r.revenue),
+      }));
     } catch (e) {
-      console.error('weeklyRevenue query failed:', e);
+      console.error("weeklyRevenue query failed:", e);
     }
 
     const totalRevenue = totalRevenueAgg._sum.totalAmount ?? 0;
@@ -318,9 +343,12 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     const revenueLastMonth = revenueLastMonthAgg._sum.totalAmount ?? 0;
     const revenueThisYear = revenueThisYearAgg._sum.totalAmount ?? 0;
 
-    const revenueChangePct = revenueLastMonth > 0
-      ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
-      : 0;
+    const revenueChangePct =
+      revenueLastMonth > 0
+        ? Math.round(
+            ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100,
+          )
+        : 0;
 
     res.json({
       totalBookings,
@@ -348,8 +376,8 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       weeklyRevenue,
     });
   } catch (error) {
-    console.error('getDashboardStats error:', error);
-    res.status(500).json({ message: 'Server error', error });
+    console.error("getDashboardStats error:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -411,24 +439,45 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
 
 export const getChartData = async (req: AuthRequest, res: Response) => {
   try {
-    const { period = '7d', rideType } = req.query as Record<string, string>;
+    const { period = "7d", rideType } = req.query as Record<string, string>;
 
-    const periodMap: Record<string, { start: Date; trunc: string; fmt: string }> = {
-      '7d': { start: new Date(Date.now() - 7 * 86400000),   trunc: 'day',   fmt: 'Dy' },
-      '1m': { start: new Date(Date.now() - 30 * 86400000),  trunc: 'day',   fmt: 'DD Mon' },
-      '6m': { start: new Date(Date.now() - 180 * 86400000), trunc: 'month', fmt: 'Mon' },
-      '1y': { start: new Date(Date.now() - 365 * 86400000), trunc: 'month', fmt: 'Mon YY' },
+    const periodMap: Record<
+      string,
+      { start: Date; trunc: string; fmt: string }
+    > = {
+      "7d": {
+        start: new Date(Date.now() - 7 * 86400000),
+        trunc: "day",
+        fmt: "Dy",
+      },
+      "1m": {
+        start: new Date(Date.now() - 30 * 86400000),
+        trunc: "day",
+        fmt: "DD Mon",
+      },
+      "6m": {
+        start: new Date(Date.now() - 180 * 86400000),
+        trunc: "month",
+        fmt: "Mon",
+      },
+      "1y": {
+        start: new Date(Date.now() - 365 * 86400000),
+        trunc: "month",
+        fmt: "Mon YY",
+      },
     };
 
-    const { start, trunc, fmt } = periodMap[period] ?? periodMap['7d'];
+    const { start, trunc, fmt } = periodMap[period] ?? periodMap["7d"];
 
     // Whitelist-safe: trunc and fmt come only from our own map above, never user input
-    const rideTypeClause = rideType && rideType !== 'ALL'
-      ? `AND "rideType" = '${rideType === 'BUSINESS' ? 'BUSINESS' : 'INDIVIDUAL'}'`
-      : '';
+    const rideTypeClause =
+      rideType && rideType !== "ALL"
+        ? `AND "rideType" = '${rideType === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL"}'`
+        : "";
 
     const [revenueRaw, bookingRaw] = await Promise.all([
-      prisma.$queryRawUnsafe<{ label: string; v: string }[]>(`
+      prisma.$queryRawUnsafe<{ label: string; v: string }[]>(
+        `
         SELECT
           TO_CHAR(DATE_TRUNC('${trunc}', "createdAt"), '${fmt}') AS label,
           COALESCE(SUM("totalAmount"), 0)::text AS v
@@ -438,8 +487,11 @@ export const getChartData = async (req: AuthRequest, res: Response) => {
           ${rideTypeClause}
         GROUP BY DATE_TRUNC('${trunc}', "createdAt")
         ORDER BY DATE_TRUNC('${trunc}', "createdAt") ASC
-      `, start),
-      prisma.$queryRawUnsafe<{ label: string; v: string }[]>(`
+      `,
+        start,
+      ),
+      prisma.$queryRawUnsafe<{ label: string; v: string }[]>(
+        `
         SELECT
           TO_CHAR(DATE_TRUNC('${trunc}', "createdAt"), '${fmt}') AS label,
           COUNT(*)::text AS v
@@ -449,24 +501,54 @@ export const getChartData = async (req: AuthRequest, res: Response) => {
           ${rideTypeClause}
         GROUP BY DATE_TRUNC('${trunc}', "createdAt")
         ORDER BY DATE_TRUNC('${trunc}', "createdAt") ASC
-      `, start),
+      `,
+        start,
+      ),
     ]);
 
-    const rideTypeWhere: any = rideType && rideType !== 'ALL' ? { rideType } : {};
+    const rideTypeWhere: any =
+      rideType && rideType !== "ALL" ? { rideType } : {};
     const [scheduled, completed, cancelled] = await Promise.all([
-      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] }, createdAt: { gte: start } } }),
-      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'COMPLETED', createdAt: { gte: start } } }),
-      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'CANCELLED', createdAt: { gte: start } } }),
+      prisma.booking.count({
+        where: {
+          ...rideTypeWhere,
+          paymentStatus: "PAID",
+          status: { in: ["AWAITING_DRIVER", "ACCEPTED", "IN_PROGRESS"] },
+          createdAt: { gte: start },
+        },
+      }),
+      prisma.booking.count({
+        where: {
+          ...rideTypeWhere,
+          paymentStatus: "PAID",
+          status: "COMPLETED",
+          createdAt: { gte: start },
+        },
+      }),
+      prisma.booking.count({
+        where: {
+          ...rideTypeWhere,
+          paymentStatus: "PAID",
+          status: "CANCELLED",
+          createdAt: { gte: start },
+        },
+      }),
     ]);
 
     res.json({
-      revenueData: revenueRaw.map(r => ({ label: r.label, v: parseFloat(r.v) })),
-      bookingData: bookingRaw.map(r => ({ label: r.label, v: parseInt(r.v) })),
+      revenueData: revenueRaw.map((r) => ({
+        label: r.label,
+        v: parseFloat(r.v),
+      })),
+      bookingData: bookingRaw.map((r) => ({
+        label: r.label,
+        v: parseInt(r.v),
+      })),
       rideBreakdown: { scheduled, completed, cancelled },
     });
   } catch (error) {
-    console.error('getChartData error:', error);
-    res.status(500).json({ message: 'Server error', error });
+    console.error("getChartData error:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -670,6 +752,7 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
       if (dateTo) where.createdAt.lte = new Date(dateTo);
     }
+    if (req.query.customerId) where.customerId = req.query.customerId as string;
     if (search) {
       where.OR = [
         { trackingId: { contains: search, mode: "insensitive" } },
@@ -684,8 +767,23 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
         take: parseInt(limit),
         orderBy: { createdAt: "desc" },
         include: {
-          customer: { select: { name: true, email: true, role: true } },
-          driver: { select: { name: true, phone: true } },
+          customer: {
+            select: { name: true, email: true, role: true, avatarUrl: true },
+          },
+          driver: {
+            select: {
+              name: true,
+              phone: true,
+              avatarUrl: true,
+              driverProfile: {
+                select: {
+                  brandModel: true,
+                  plateNumber: true,
+                  vehicleColor: true,
+                },
+              },
+            },
+          },
           extensions: true,
         },
       }),
@@ -756,7 +854,13 @@ export const getAllDrivers = async (req: AuthRequest, res: Response) => {
         orderBy: { createdAt: "desc" },
         include: {
           user: {
-            select: { name: true, email: true, phone: true, isActive: true, avatarUrl: true},
+            select: {
+              name: true,
+              email: true,
+              phone: true,
+              isActive: true,
+              avatarUrl: true,
+            },
           },
         },
       }),
@@ -944,11 +1048,9 @@ export const validatePromoCode = async (req: AuthRequest, res: Response) => {
         .status(400)
         .json({ message: "Promo code usage limit reached" });
     if (promo.minBookingAmount && bookingAmount < promo.minBookingAmount) {
-      return res
-        .status(400)
-        .json({
-          message: `Minimum booking amount is ₦${promo.minBookingAmount.toLocaleString()}`,
-        });
+      return res.status(400).json({
+        message: `Minimum booking amount is ₦${promo.minBookingAmount.toLocaleString()}`,
+      });
     }
 
     // Check targeting

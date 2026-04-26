@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useBookings, useBookingStats } from "@/hooks/useAdminData";
 import { useState } from "react";
+import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
 
 const fmt = (n: number) => n >= 1_000_000
   ? `₦${(n / 1_000_000).toFixed(1)}M`
@@ -97,7 +98,9 @@ const Payment = () => {
             className="h-9 px-3 rounded-md border border-border bg-background text-sm flex-1"
             onChange={(e) => setParams(p => ({ ...p, search: e.target.value, page: '1' }))}
           />
-        <select className="h-9 px-3 rounded-md border border-border bg-background text-sm"><option>Date</option></select>
+       <DateRangeFilter
+  onChange={(from, to) => setParams(p => ({ ...p, dateFrom: from, dateTo: to, page: '1' }))}
+/>
             <select
             className="h-9 px-3 rounded-md border border-border bg-background text-sm"
             onChange={(e) => setParams(p => ({ ...p, status: e.target.value, page: '1' }))}

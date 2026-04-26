@@ -17,9 +17,11 @@ import { useAuth } from "@/lib/auth";
 
 interface TopnavProps {
   onMenuClick: () => void;
+  unreadCount?: number;
+  onNotifClick: () => void;
 }
 
-export function Topnav({ onMenuClick }: TopnavProps) {
+export function Topnav({ onMenuClick, unreadCount = 0, onNotifClick }: TopnavProps) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? 'AD';
@@ -91,10 +93,18 @@ export function Topnav({ onMenuClick }: TopnavProps) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        <button className="relative p-2 rounded-full hover:bg-muted" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-destructive rounded-full" />
-        </button>
+       <button
+    onClick={onNotifClick}
+    className="relative p-2 rounded-full hover:bg-muted"
+    aria-label="Notifications"
+  >
+    <Bell className="h-5 w-5" />
+    {unreadCount > 0 && (
+      <span className="absolute top-1 right-1 h-4 w-4 bg-destructive rounded-full text-[10px] text-white flex items-center justify-center font-medium">
+        {unreadCount > 9 ? "9+" : unreadCount}
+      </span>
+    )}
+  </button>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex sm:hidden items-center gap-1 p-1 rounded-md hover:bg-muted">
