@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { getIO } from "../lib/socket";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { Prisma } from "@prisma/client";
+// import { Prisma } from "@prisma/client";
 
 // ── Helper: write audit log ─────────────────────────────────────
 async function audit(
@@ -421,45 +421,42 @@ export const getChartData = async (req: AuthRequest, res: Response) => {
     };
 
     const { start, trunc, fmt } = periodMap[period] ?? periodMap['7d'];
-    const rideTypeFilter = rideType && rideType !== 'ALL' ? Prisma.sql`AND "rideType" = ${rideType}` : Prisma.empty;
+
+    // Whitelist-safe: trunc and fmt come only from our own map above, never user input
+    const rideTypeClause = rideType && rideType !== 'ALL'
+      ? `AND "rideType" = '${rideType === 'BUSINESS' ? 'BUSINESS' : 'INDIVIDUAL'}'`
+      : '';
 
     const [revenueRaw, bookingRaw] = await Promise.all([
-      prisma.$queryRaw<{ label: string; v: string }[]>`
+      prisma.$queryRawUnsafe<{ label: string; v: string }[]>(`
         SELECT
-          TO_CHAR(DATE_TRUNC(${trunc}, "createdAt"), ${fmt}) AS label,
+          TO_CHAR(DATE_TRUNC('${trunc}', "createdAt"), '${fmt}') AS label,
           COALESCE(SUM("totalAmount"), 0)::text AS v
         FROM "Booking"
         WHERE "paymentStatus" = 'PAID'
-          AND "createdAt" >= ${start}
-          ${rideTypeFilter}
-        GROUP BY DATE_TRUNC(${trunc}, "createdAt")
-        ORDER BY DATE_TRUNC(${trunc}, "createdAt") ASC
-      `,
-      prisma.$queryRaw<{ label: string; v: string }[]>`
+          AND "createdAt" >= $1
+          ${rideTypeClause}
+        GROUP BY DATE_TRUNC('${trunc}', "createdAt")
+        ORDER BY DATE_TRUNC('${trunc}', "createdAt") ASC
+      `, start),
+      prisma.$queryRawUnsafe<{ label: string; v: string }[]>(`
         SELECT
-          TO_CHAR(DATE_TRUNC(${trunc}, "createdAt"), ${fmt}) AS label,
+          TO_CHAR(DATE_TRUNC('${trunc}', "createdAt"), '${fmt}') AS label,
           COUNT(*)::text AS v
         FROM "Booking"
         WHERE "paymentStatus" = 'PAID'
-          AND "createdAt" >= ${start}
-          ${rideTypeFilter}
-        GROUP BY DATE_TRUNC(${trunc}, "createdAt")
-        ORDER BY DATE_TRUNC(${trunc}, "createdAt") ASC
-      `,
+          AND "createdAt" >= $1
+          ${rideTypeClause}
+        GROUP BY DATE_TRUNC('${trunc}', "createdAt")
+        ORDER BY DATE_TRUNC('${trunc}', "createdAt") ASC
+      `, start),
     ]);
 
-    // Ride status breakdown — use Prisma client, not raw SQL
-    const rideTypeWhere = rideType && rideType !== 'ALL' ? { rideType: rideType as any } : {};
+    const rideTypeWhere: any = rideType && rideType !== 'ALL' ? { rideType } : {};
     const [scheduled, completed, cancelled] = await Promise.all([
-      prisma.booking.count({
-        where: { ...rideTypeWhere, paymentStatus: 'PAID', status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] }, createdAt: { gte: start } },
-      }),
-      prisma.booking.count({
-        where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'COMPLETED', createdAt: { gte: start } },
-      }),
-      prisma.booking.count({
-        where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'CANCELLED', createdAt: { gte: start } },
-      }),
+      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: { in: ['AWAITING_DRIVER', 'ACCEPTED', 'IN_PROGRESS'] }, createdAt: { gte: start } } }),
+      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'COMPLETED', createdAt: { gte: start } } }),
+      prisma.booking.count({ where: { ...rideTypeWhere, paymentStatus: 'PAID', status: 'CANCELLED', createdAt: { gte: start } } }),
     ]);
 
     res.json({
@@ -759,7 +756,7 @@ export const getAllDrivers = async (req: AuthRequest, res: Response) => {
         orderBy: { createdAt: "desc" },
         include: {
           user: {
-            select: { name: true, email: true, phone: true, isActive: true },
+            select: { name: true, email: true, phone: true, isActive: true, avatarUrl: true},
           },
         },
       }),

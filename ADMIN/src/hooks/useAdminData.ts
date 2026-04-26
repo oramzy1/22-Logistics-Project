@@ -29,7 +29,10 @@ export const useCancelBooking = () => {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       api.patch(`/admin/bookings/${id}/cancel`, { reason }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookings'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 };
 
@@ -51,7 +54,10 @@ export const useVerifyLicense = () => {
   return useMutation({
     mutationFn: (body: { driverProfileId: string; status: 'APPROVED' | 'REJECTED'; rejectionReason?: string }) =>
       api.post('/admin/drivers/verify-license', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['drivers'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] }); // pendingLicenses count changes
+    },
   });
 };
 
@@ -60,7 +66,11 @@ export const useAssignDriver = () => {
   return useMutation({
     mutationFn: (body: { bookingId: string; driverProfileId: string }) =>
       api.post('/admin/drivers/assign', body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); qc.invalidateQueries({ queryKey: ['drivers'] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 };
 
@@ -87,7 +97,10 @@ export const useSetUserStatus = () => {
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       api.patch(`/admin/users/${id}/status`, { isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['drivers'] }); // driver deactivation affects drivers page too
+    },
   });
 };
 
@@ -104,7 +117,11 @@ export const useDeleteUser = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/admin/users/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 };
 

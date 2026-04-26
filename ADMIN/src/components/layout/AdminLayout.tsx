@@ -1,10 +1,102 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topnav } from "./Topnav";
+import { useQueryClient } from "@tanstack/react-query";
+import { getToken } from "@/lib/api";
+import { toast } from "sonner";
+import { io, Socket } from "socket.io-client";
+import { Button } from "@/components/ui/button";
 
 export function AdminLayout() {
   const [open, setOpen] = useState(false);
+   const qc = useQueryClient();
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    const BASE = import.meta.env.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:5000';
+    const socket = io(BASE, { transports: ['websocket', 'polling'] });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      // Join admin channel with JWT verification
+      socket.emit('join_admin', token);
+    });
+
+    socket.on('admin:joined', () => {
+      console.log('✅ Admin socket channel joined');
+    });
+
+    // ── New booking notification ──────────────────────────────
+    socket.on('admin:new_booking', (payload: any) => {
+      // Invalidate relevant queries so tables refresh automatically
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+
+      toast(
+        `New booking — ₦${payload.amount?.toLocaleString()} · ${payload.rideType}`,
+        {
+          description: payload.customerName
+            ? `From ${payload.customerName}`
+            : 'A customer just placed a booking',
+          duration: 8000,
+          action: {
+            label: 'View',
+            onClick: () => window.location.href = '/bookings',
+          },
+        }
+      );
+    });
+
+    // ── Driver status changes ────────────────────────────────
+    socket.on('admin:driver_online', () => {
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    });
+
+    socket.on('admin:driver_offline', () => {
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    });
+
+    // ── License submitted ────────────────────────────────────
+    socket.on('admin:license_submitted', (payload: any) => {
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      toast('License review needed', {
+        description: 'A driver submitted a license for verification',
+        duration: 6000,
+        action: {
+          label: 'Review',
+          onClick: () => window.location.href = '/drivers',
+        },
+      });
+    });
+
+    // ── New user registered ──────────────────────────────────
+    socket.on('admin:user_registered', () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    });
+
+    // ── Payment received ─────────────────────────────────────
+    socket.on('admin:payment_received', () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['charts'] });
+    });
+
+    socket.on('admin:error', (err: any) => {
+      console.warn('Admin socket error:', err.message);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [qc]);
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar open={open} onClose={() => setOpen(false)} />

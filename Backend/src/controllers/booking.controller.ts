@@ -96,8 +96,8 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     }
 
     const safeAddOns: string[] = Array.isArray(addOns)
-  ? addOns.filter((item) => typeof item === "string")
-  : [];
+      ? addOns.filter((item) => typeof item === "string")
+      : [];
 
     // Create booking
     const booking = await prisma.booking.create({
@@ -310,6 +310,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
       where: {
         OR: [{ paymentRef: reference }, { id: reference }],
       },
+      include: { customer: { select: { name: true } } },
     });
     console.log("📦 Booking found:", booking?.id ?? "NOT FOUND");
     console.log("📋 All payment refs in DB:");
@@ -358,7 +359,12 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
         console.log("Socket emit failed:", err);
       }
 
-      emitToAdmin('admin:new_booking', { bookingId: updated.id, amount: updated.totalAmount, rideType: updated.rideType });
+      emitToAdmin("admin:new_booking", {
+        bookingId: updated.id,
+        amount: updated.totalAmount,
+        rideType: updated.rideType,
+        customerName: booking.customer?.name, // need to include customer in findFirst
+      });
 
       await createNotification(
         booking.customerId,

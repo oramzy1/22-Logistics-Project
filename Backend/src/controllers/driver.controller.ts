@@ -597,62 +597,68 @@ export const verifyDriverLicense = async (req: AuthRequest, res: Response) => {
 };
 
 // ── ADMIN: ASSIGN DRIVER TO BOOKING ────────────────────────────
-export const assignDriverToBooking = async (
-  req: AuthRequest,
-  res: Response,
-) => {
+export const assignDriverToBooking = async (req: AuthRequest, res: Response) => {
   try {
     const { bookingId, driverProfileId } = req.body;
 
     const driverProfile = await prisma.driverProfile.findUnique({
       where: { id: driverProfileId },
-      include: { user: true },
+      include: { user: { select: { id: true, name: true, phone: true, avatarUrl: true } } },
     });
 
-    if (!driverProfile)
-      return res.status(404).json({ message: "Driver not found" });
-    if (!driverProfile.isOnline) {
-      return res.status(400).json({ message: "Driver is offline" });
-    }
-    if (driverProfile.licenseStatus !== "APPROVED") {
-      return res.status(400).json({ message: "Driver license not verified" });
-    }
+    if (!driverProfile) return res.status(404).json({ message: 'Driver not found' });
+    if (!driverProfile.isOnline) return res.status(400).json({ message: 'Driver is offline' });
+    if (driverProfile.licenseStatus !== 'APPROVED') return res.status(400).json({ message: 'Driver license not verified' });
 
-    const booking = await prisma.booking.findUnique({
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.status !== 'AWAITING_DRIVER') return res.status(400).json({ message: 'Booking is not awaiting a driver' });
+
+    // Directly assign — no ride request needed when admin assigns
+    const updated = await prisma.booking.update({
       where: { id: bookingId },
-    });
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-
-    // Create ride request that expires in 30 seconds
-    const expiresAt = new Date(Date.now() + 30 * 1000);
-
-    const rideRequest = await prisma.rideRequest.create({
       data: {
-        bookingId,
-        driverProfileId,
-        expiresAt,
-        status: "PENDING",
+        driverId: driverProfile.userId,
+        status: 'ACCEPTED',
+        acceptedByDriverAt: new Date(),
       },
       include: {
-        booking: {
-          include: {
-            customer: { select: { name: true, phone: true } },
+        customer: { select: { name: true, phone: true } },
+        driver: {
+          select: {
+            name: true, phone: true, avatarUrl: true,
+            driverProfile: {
+              select: { brandModel: true, vehicleColor: true, plateNumber: true },
+            },
           },
         },
       },
     });
 
-    // Push ride request to driver in real-time
-    getIO().to(`driver:${driverProfileId}`).emit("ride:new_request", {
-      requestId: rideRequest.id,
-      booking: rideRequest.booking,
-      expiresAt,
+    await prisma.driverProfile.update({
+      where: { id: driverProfileId },
+      data: { isAvailable: false, onlineStatus: 'AWAY', totalTrips: { increment: 1 } },
     });
 
-    res.json({ message: "Ride request sent to driver", rideRequest });
+    // Notify customer
+    getIO().to(`user:${booking.customerId}`).emit('booking:updated', updated);
+    // Notify driver
+    getIO().to(`user:${driverProfile.userId}`).emit('booking:updated', updated);
+    // Remove from pool for all drivers
+    getIO().emit('ride:removed', bookingId);
+
+    await createNotification(
+      booking.customerId,
+      'Driver Assigned!',
+      `A driver has been assigned to your booking by the admin.`,
+      'DRIVER_ASSIGNED',
+      bookingId,
+    );
+
+    res.json({ message: 'Driver assigned successfully', booking: updated });
   } catch (error) {
-    console.error("Assign driver error:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error('Assign driver error:', error);
+    res.status(500).json({ message: 'Server error', error });
   }
 };
 

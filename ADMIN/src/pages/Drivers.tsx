@@ -127,7 +127,7 @@ const Drivers = () => {
               ) : drivers.map((d: any) => (
                 <tr key={d.id} className="border-b border-border/60 last:border-0">
                   <td className="py-3 px-3"><input type="checkbox" /></td>
-                  <td className="py-3">
+                  <td className={`py-3 ${!d.user?.isActive ? 'line-through text-muted-foreground' : ''}`}>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7">
                         <AvatarImage src={d.user?.avatarUrl} />
@@ -139,8 +139,8 @@ const Drivers = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 text-muted-foreground">{d.user?.phone ?? '—'}</td>
-                  <td className="py-3"><StatusBadge status={d.onlineStatus} /></td>
+                  <td className={`py-3 ${!d.user?.isActive ? 'line-through text-muted-foreground' : ''}`}>{d.user?.phone ?? '—'}</td>
+                  <td className="py-3"><StatusBadge status={!d.user?.isActive ? 'DEACTIVATED' : d.onlineStatus} /></td>
                   <td className="py-3">
                     {d.rating > 0
                       ? <span className="text-warning">★ {d.rating.toFixed(1)}</span>
