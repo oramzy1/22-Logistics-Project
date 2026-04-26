@@ -8,43 +8,49 @@ import { toast } from "sonner";
 import { io, Socket } from "socket.io-client";
 import { NotificationsSheet } from "@/components/dashboard/NotificationsSheet";
 import { useAdminNotifications } from "@/lib/useAdminNotifications";
+import { socket } from "@/lib/socket";
 
 export function AdminLayout() {
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-   const qc = useQueryClient();
+  const qc = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
-   const { notifications, push, markRead, markAllRead, unreadCount } = useAdminNotifications();
+  const { notifications, push, markRead, markAllRead, unreadCount } =
+    useAdminNotifications();
 
   useEffect(() => {
     const token = getToken();
     if (!token) return;
 
-    const BASE = import.meta.env.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:5000';
-    const socket = io(BASE, { transports: ['websocket', 'polling'] });
+    const BASE =
+      import.meta.env.VITE_API_URL?.replace("/api", "") ??
+      "http://localhost:5000";
+    // const socket = io(BASE, { transports: ['websocket', 'polling'] });
+    // socketRef.current = socket;
     socketRef.current = socket;
+    socket.connect();
 
-    socket.on('connect', () => {
+    socket.on("connect", () => {
       // Join admin channel with JWT verification
-      socket.emit('join_admin', token);
+      socket.emit("join_admin", token);
     });
 
-    socket.on('admin:joined', () => {
-      console.log('✅ Admin socket channel joined');
+    socket.on("admin:joined", () => {
+      console.log("✅ Admin socket channel joined");
     });
 
     // ── New booking notification ──────────────────────────────
-    socket.on('admin:new_booking', (payload: any) => {
+    socket.on("admin:new_booking", (payload: any) => {
       // Invalidate relevant queries so tables refresh automatically
-      qc.invalidateQueries({ queryKey: ['bookings'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
-      qc.invalidateQueries({ queryKey: ['charts'] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["charts"] });
 
-       push({
-        type: 'new_booking',
-        title: 'New booking received',
-        body: `₦${payload.amount?.toLocaleString()} · ${payload.rideType}${payload.customerName ? ` from ${payload.customerName}` : ''}`,
-        link: '/bookings',
+      push({
+        type: "new_booking",
+        title: "New booking received",
+        body: `₦${payload.amount?.toLocaleString()} · ${payload.rideType}${payload.customerName ? ` from ${payload.customerName}` : ""}`,
+        link: "/bookings",
         linkId: payload.bookingId,
       });
 
@@ -53,95 +59,112 @@ export function AdminLayout() {
         {
           description: payload.customerName
             ? `From ${payload.customerName}`
-            : 'A customer just placed a booking',
+            : "A customer just placed a booking",
           duration: 8000,
           action: {
-            label: 'View',
+            label: "View",
             // onClick: () => window.location.href = '/bookings',
-            onClick: () => setNotifOpen(true)
+            onClick: () => setNotifOpen(true),
           },
-        }
+        },
       );
     });
 
     // ── Driver status changes ────────────────────────────────
-    socket.on('admin:driver_online', (payload: any) => {
-      qc.invalidateQueries({ queryKey: ['drivers'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    socket.on("admin:driver_online", (payload: any) => {
+      qc.invalidateQueries({ queryKey: ["drivers"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
       push({
-        type: 'driver_online',
-        title: 'Driver came online',
-        body: 'A driver is now available for assignments',
-        link: '/drivers',
+        type: "driver_online",
+        title: "Driver came online",
+        body: "A driver is now available for assignments",
+        link: "/drivers",
         linkId: payload.driverProfileId,
       });
     });
 
-    socket.on('admin:driver_offline', () => {
-      qc.invalidateQueries({ queryKey: ['drivers'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    socket.on("admin:driver_offline", () => {
+      qc.invalidateQueries({ queryKey: ["drivers"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     });
 
     // ── License submitted ────────────────────────────────────
-    socket.on('admin:license_submitted', (payload: any) => {
-      qc.invalidateQueries({ queryKey: ['drivers'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
-       push({
-        type: 'license_submitted',
-        title: 'License review needed',
-        body: 'A driver submitted a license for verification',
-        link: '/drivers',
+    socket.on("admin:license_submitted", (payload: any) => {
+      qc.invalidateQueries({ queryKey: ["drivers"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      push({
+        type: "license_submitted",
+        title: "License review needed",
+        body: "A driver submitted a license for verification",
+        link: "/drivers",
         linkId: payload.driverId,
       });
-      toast('License review needed', {
-        description: 'A driver submitted a license for verification',
+      toast("License review needed", {
+        description: "A driver submitted a license for verification",
         duration: 6000,
         action: {
-          label: 'Review',
+          label: "Review",
           // onClick: () => window.location.href = '/drivers',
-          onClick: () => setNotifOpen(true)
+          onClick: () => setNotifOpen(true),
         },
       });
     });
 
     // ── New user registered ──────────────────────────────────
-    socket.on('admin:user_registered', (payload: any) => {
-      qc.invalidateQueries({ queryKey: ['users'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    socket.on("admin:user_registered", (payload: any) => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
       push({
-        type: 'new_user',
-        title: 'New user registered',
-        body: `A new ${payload.role?.toLowerCase() ?? 'user'} account was created`,
-        link: '/users',
+        type: "new_user",
+        title: "New user registered",
+        body: `A new ${payload.role?.toLowerCase() ?? "user"} account was created`,
+        link: "/users",
         linkId: payload.userId,
       });
     });
 
-    // ── Payment received ─────────────────────────────────────
-    socket.on('admin:payment_received', (payload: any) => {
-      qc.invalidateQueries({ queryKey: ['bookings'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
-      qc.invalidateQueries({ queryKey: ['charts'] });
+    // --------------Support ticket updates ----------------------
+    socket.on("admin:support_new_ticket", (payload: any) => {
+      qc.invalidateQueries({ queryKey: ["support-tickets"] });
       push({
-        type: 'payment',
-        title: 'Payment received',
+        type: "new_booking", // reuse existing type or add 'support' if you extend the type
+        title: "New support ticket",
+        body: `${payload.user?.name ?? "A user"} opened: ${payload.subject}`,
+        link: "/support",
+        linkId: payload.id,
+      });
+      toast("New support ticket", {
+        description: payload.subject,
+        duration: 6000,
+        action: { label: "View", onClick: () => setNotifOpen(true) },
+      });
+    });
+
+    // ── Payment received ─────────────────────────────────────
+    socket.on("admin:payment_received", (payload: any) => {
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["charts"] });
+      push({
+        type: "payment",
+        title: "Payment received",
         body: `₦${payload.amount?.toLocaleString()} payment confirmed`,
-        link: '/payment',
+        link: "/payment",
         linkId: payload.bookingId,
       });
-    }); 
-    socket.on('admin:error', (err: any) => {
-      console.warn('Admin socket error:', err.message);
+    });
+    socket.on("admin:error", (err: any) => {
+      console.warn("Admin socket error:", err.message);
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [qc, push]);
+  });
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar open={open} onClose={() => setOpen(false)} />
-        <Topnav
+      <Topnav
         onMenuClick={() => setOpen(true)}
         unreadCount={unreadCount}
         onNotifClick={() => setNotifOpen(true)}
@@ -151,7 +174,7 @@ export function AdminLayout() {
           <Outlet />
         </div>
       </main>
-       <NotificationsSheet
+      <NotificationsSheet
         notifications={notifications}
         open={notifOpen}
         onClose={() => setNotifOpen(false)}

@@ -32,3 +32,10 @@ export const authorize = (roles: string[]) => {
     next();
   };
 };
+
+export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user || req.user.role !== 'ADMIN') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+};

@@ -95,6 +95,15 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
       }
     });
 
+    socket.on('support:join_ticket', (ticketId: string) => {
+  socket.join(`ticket:${ticketId}`);
+  console.log(`📡 Socket ${socket.id} joined ticket:${ticketId}`);
+});
+
+socket.on('support:leave_ticket', (ticketId: string) => {
+  socket.leave(`ticket:${ticketId}`);
+});
+
     socket.on('disconnect', (reason) => {
       console.log(`🔌 Socket disconnected: ${socket.id} | Reason: ${reason}`);
     });
@@ -127,4 +136,5 @@ export type AdminDashboardEvent =
   | 'admin:driver_offline'     // driver status changed to OFFLINE
   | 'admin:license_submitted'  // driver uploaded a license (pending review)
   | 'admin:payment_received'   // payment verified
-  | 'admin:user_registered';   // new user signed up
+  | 'admin:user_registered'   // new user signed up
+  | 'admin:support_new_ticket'
