@@ -29,7 +29,7 @@ router.use(authenticate);
 router.post('/tickets', upload.single('screenshot'), createTicket);
 router.get('/tickets', getTickets);
 router.get('/tickets/:ticketId', getTicketById);
-router.post('/tickets/:ticketId/messages', sendMessage);
+router.post('/tickets/:ticketId/messages', authenticate, sendMessage);
 
 // Admin only
 router.get('/stats', requireAdmin, getTicketStats);

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Ticket, MessageSquare, CheckCircle, Clock, Search, Send, X, Filter } from "lucide-react";
+import { Ticket, MessageSquare, CheckCircle, Clock, Search, Send, X, Hourglass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api"; // your axios instance
 import { socket } from "@/lib/socket"; // your socket instance
@@ -79,44 +79,43 @@ export default function Support() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  
+const fetchStats = async () => {
+  const data = await api.get<typeof stats>("/support/stats");
+  setStats(data);
+};
 
-  const fetchStats = async () => {
-    const { data } = await api.get("/support/stats");
-    setStats(data);
-  };
-
-  const fetchTickets = async () => {
-    const params: any = {};
-    if (statusFilter !== "ALL") params.status = statusFilter;
-    if (categoryFilter !== "ALL") params.category = categoryFilter;
-    if (search) params.search = search;
-    const { data } = await api.get("/support/tickets", { params });
-    setTickets(data);
-  };
+const fetchTickets = async () => {
+  const params: Record<string, string> = {};
+  if (statusFilter !== "ALL") params.status = statusFilter;
+  if (categoryFilter !== "ALL") params.category = categoryFilter;
+  if (search) params.search = search;
+  const data = await api.get<any[]>("/support/tickets", params);
+  setTickets(data ?? []);
+};
 
   useEffect(() => { fetchTickets(); }, [statusFilter, categoryFilter, search]);
 
-  const openTicket = async (ticket: any) => {
-    // Leave previous ticket room
-    if (selectedTicket) socket.emit("support:leave_ticket", selectedTicket.id);
 
-    const { data } = await api.get(`/support/tickets/${ticket.id}`);
-    setSelectedTicket(data);
-    setMessages(data.messages);
-    socket.emit("support:join_ticket", data.id);
-  };
+const openTicket = async (ticket: any) => {
+  if (selectedTicket) socket.emit("support:leave_ticket", selectedTicket.id);
+  const data = await api.get<any>(`/support/tickets/${ticket.id}`);
+  setSelectedTicket(data);
+  setMessages(data.messages ?? []);
+  socket.emit("support:join_ticket", data.id);
+};
 
-  const handleSend = async () => {
-    if (!reply.trim() || !selectedTicket) return;
-    setSending(true);
-    try {
-      const { data } = await api.post(`/support/tickets/${selectedTicket.id}/messages`, { body: reply });
-      setMessages((prev) => [...prev, data.message]);
-      setReply("");
-    } finally {
-      setSending(false);
-    }
-  };
+const handleSend = async () => {
+  if (!reply.trim() || !selectedTicket) return;
+  setSending(true);
+  try {
+    const data = await api.post<any>(`/support/tickets/${selectedTicket.id}/messages`, { body: reply });
+    setMessages((prev) => [...prev, data.message]);
+    setReply("");
+  } finally {
+    setSending(false);
+  }
+};
 
   const handleStatusChange = async (status: string) => {
     await api.patch(`/support/tickets/${selectedTicket.id}`, { status });
@@ -137,7 +136,7 @@ export default function Support() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[
             { label: "Open Tickets", value: stats.open, icon: Ticket, color: "text-blue-500" },
-            { label: "In Progress", value: stats.inProgress, icon: MessageSquare, color: "text-orange-500" },
+            { label: "In Progress", value: stats.inProgress, icon: Hourglass, color: "text-orange-500" },
             { label: "Resolved Today", value: stats.resolvedToday, icon: CheckCircle, color: "text-green-500" },
             { label: "Avg Response Time", value: stats.avgResponseTime, icon: Clock, color: "text-yellow-500" },
           ].map((s) => (

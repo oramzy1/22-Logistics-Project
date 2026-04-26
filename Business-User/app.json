@@ -2,14 +2,18 @@
   "expo": {
     "name": "22-Logistics",
     "slug": "22-Logistics",
-    "version": "1.0.0",
+    "version": "1.0.0", 
     "orientation": "portrait",
     "scheme": "com.vendoramarketplace.logistics",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vendoramarketplace.logistics",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

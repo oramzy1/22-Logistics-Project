@@ -14,9 +14,31 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+// async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+//   const token = getToken();
+//   const res = await fetch(`${BASE}${path}`, {
+//     ...init,
+//     headers: {
+//       'Content-Type': 'application/json',
+//       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+//       ...init.headers,
+//     },
+//   });
+//   if (res.status === 401) {
+//     clearToken();
+//     window.location.href = '/login';
+//   }
+//   const data = await res.json();
+//   if (!res.ok) throw new Error(data.message ?? 'Request failed');
+//   return data;
+// }
+
+async function request<T>(path: string, init: RequestInit = {}, params?: Record<string, string>): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${BASE}${path}`, {
+  const url = params
+    ? `${BASE}${path}?${new URLSearchParams(params).toString()}`
+    : `${BASE}${path}`;
+  const res = await fetch(url, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -33,9 +55,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return data;
 }
 
+
 export const api = {
-  get:    <T>(path: string)              => request<T>(path),
-  post:   <T>(path: string, body: any)   => request<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
-  patch:  <T>(path: string, body: any)   => request<T>(path, { method: 'PATCH',  body: JSON.stringify(body) }),
-  delete: <T>(path: string)              => request<T>(path, { method: 'DELETE' }),
+  get:    <T>(path: string, params?: Record<string, string>) => request<T>(path, {}, params),
+  post:   <T>(path: string, body: any)  => request<T>(path, { method: 'POST',  body: JSON.stringify(body) }),
+  patch:  <T>(path: string, body: any)  => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: <T>(path: string)             => request<T>(path, { method: 'DELETE' }),
 };

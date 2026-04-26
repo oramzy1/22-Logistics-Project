@@ -148,6 +148,49 @@ confirmEmailChange: async (otp: string) => {
     return response.data;
   },
 
+  createSupportTicket: async (data: {
+  subject: string;
+  description: string;
+  category: string;
+  screenshotUri?: string;
+}) => {
+  const token = await AsyncStorage.getItem("token");
+
+  const formData = new FormData();
+  formData.append("subject", data.subject);
+  formData.append("description", data.description);
+  formData.append("category", data.category);
+
+  if (data.screenshotUri) {
+    const filename = data.screenshotUri.split("/").pop() ?? "screenshot.jpg";
+    const ext = filename.split(".").pop()?.toLowerCase();
+    const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+    formData.append("screenshot", {
+      uri: data.screenshotUri,
+      type: mimeType,
+      name: filename,
+    } as any);
+  }
+
+  const response = await fetch(`${API_URL}/support/tickets`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      // No Content-Type — let fetch set multipart boundary automatically
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    let message = "Failed to create support ticket";
+    try { message = JSON.parse(text)?.message ?? message; } catch {}
+    throw new Error(message);
+  }
+
+  return response.json();
+},
+
   verifyActionOtp: async (otp: string) => {
   const response = await apiClient.post("/users/verify-action-otp", { otp });
   return response.data;

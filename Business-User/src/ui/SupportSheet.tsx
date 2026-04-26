@@ -64,6 +64,15 @@ const FAQS = [
   },
 ];
 
+const SUBJECT_TO_CATEGORY: Record<string, string> = {
+  "Payment Problem": "PAYMENT",
+  "Driver Complaint": "DRIVER",
+  "Booking Issue": "TRIP",
+  "Account Issue": "ACCOUNT",
+  "App Bug / Error": "OTHER",
+  "Other": "OTHER",
+};
+
 // ── Contact Info Card (Image 1 style) ──────────────────────────
 function ContactCard() {
   const { colors: themeColors } = useAppTheme();
@@ -130,37 +139,63 @@ function SupportForm({
     if (!result.canceled) setScreenshot(result.assets[0].uri);
   };
 
+  // const handleSend = async () => {
+  //   if (!subject) {
+  //     setSubjectError(true);
+  //     return;
+  //   }
+  //   if (!description.trim()) {
+  //     Alert.alert("Missing info", "Please describe the issue.");
+  //     return;
+  //   }
+  //   setLoading(true);
+  //   try {
+  //     await UserService.sendSupportRequest({
+  //       subject,
+  //       description,
+  //       screenshotUri: screenshot ?? undefined,
+  //     });
+  //     showToast.success("Request sent! We'll get back to you soon.");
+  //     setSubject("");
+  //     setDescription("");
+  //     setScreenshot(null);
+  //   } catch (err: any) {
+  //     console.error("Support request failed:", {
+  //       message: err?.message,
+  //       status: err?.response?.status,
+  //       data: err?.response?.data,
+  //     });
+  //     showToast.error("Failed to send. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const handleSend = async () => {
-    if (!subject) {
-      setSubjectError(true);
-      return;
-    }
-    if (!description.trim()) {
-      Alert.alert("Missing info", "Please describe the issue.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await UserService.sendSupportRequest({
-        subject,
-        description,
-        screenshotUri: screenshot ?? undefined,
-      });
-      showToast.success("Request sent! We'll get back to you soon.");
-      setSubject("");
-      setDescription("");
-      setScreenshot(null);
-    } catch (err: any) {
-      console.error("Support request failed:", {
-        message: err?.message,
-        status: err?.response?.status,
-        data: err?.response?.data,
-      });
-      showToast.error("Failed to send. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!subject) { setSubjectError(true); return; }
+  if (!description.trim()) {
+    Alert.alert("Missing info", "Please describe the issue.");
+    return;
+  }
+  setLoading(true);
+  try {
+    await UserService.createSupportTicket({
+      subject,
+      description,
+      category: SUBJECT_TO_CATEGORY[subject] ?? "OTHER",
+      screenshotUri: screenshot ?? undefined,
+    });
+    showToast.success("Ticket created! We'll reply in the app shortly.");
+    setSubject("");
+    setDescription("");
+    setScreenshot(null);
+  } catch (err: any) {
+    showToast.error(err?.message ?? "Failed to send. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <ScrollView
