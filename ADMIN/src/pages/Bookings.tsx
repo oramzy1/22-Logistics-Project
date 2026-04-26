@@ -8,6 +8,7 @@ import {
   Search,
   Loader2,
   MoreHorizontal,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -266,7 +267,7 @@ const Bookings = () => {
                 setParams((p) => ({ ...p, page: String(currentPage - 1) }))
               }
             >
-              ←
+              <ArrowRight className="h-3 w-3 rotate-180" />
             </Button>
             {Array.from(
               { length: Math.min(totalPages, 5) },
@@ -291,7 +292,7 @@ const Bookings = () => {
                 setParams((p) => ({ ...p, page: String(currentPage + 1) }))
               }
             >
-              →
+              <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
         </div>

@@ -561,12 +561,22 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
       page = "1",
       limit = "20",
       isActive,
+      dateFrom,
+      dateTo,
     } = req.query as Record<string, string>;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where: any = { isDeleted: false };
     if (role) where.role = role;
     if (isActive !== undefined) where.isActive = isActive === "true";
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo)
+        where.createdAt.lte = new Date(
+          new Date(dateTo).setHours(23, 59, 59, 999),
+        );
+    }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -750,7 +760,7 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-      if (dateTo) where.createdAt.lte = new Date(dateTo);
+      if (dateTo) where.createdAt.lte = new Date(new Date(dateTo).setHours(23, 59, 59, 999));
     }
     if (req.query.customerId) where.customerId = req.query.customerId as string;
     if (search) {
@@ -839,12 +849,23 @@ export const getAllDrivers = async (req: AuthRequest, res: Response) => {
       isOnline,
       page = "1",
       limit = "20",
+      dateFrom,
+      dateTo,
     } = req.query as Record<string, string>;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where: any = {};
     if (licenseStatus) where.licenseStatus = licenseStatus;
     if (isOnline !== undefined) where.isOnline = isOnline === "true";
+
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo)
+        where.createdAt.lte = new Date(
+          new Date(dateTo).setHours(23, 59, 59, 999),
+        );
+    }
 
     const [drivers, total] = await Promise.all([
       prisma.driverProfile.findMany({

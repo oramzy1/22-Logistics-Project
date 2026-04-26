@@ -5,6 +5,7 @@ import {
   Building2,
   User,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -164,7 +165,7 @@ const Users = () => {
           >
             <option value="">All Status</option>
             <option value="true">Active</option>
-            <option value="false">Inactive</option>
+            <option value="false">Deactivated</option>
           </select>
         </div>
 
@@ -178,8 +179,8 @@ const Users = () => {
               {activeCount})
             </span>
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-muted-foreground" />{" "}
-              Inactive ({inactiveCount})
+              <span className="h-2 w-2 rounded-full bg-destructive" />{" "}
+              Deactivated ({inactiveCount})
             </span>
             {/* <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-warning" /> Suspended (0)</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-destructive" /> Deactivated (1)</span> */}
@@ -240,7 +241,7 @@ const Users = () => {
                           />
                           <AvatarFallback>{u.name?.[0] ?? "?"}</AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className={`${u.isActive ? "" : "line-through text-muted-foreground"}`}>
                           <p className="font-medium">{u.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {u.phone ?? "—"}
@@ -261,7 +262,7 @@ const Users = () => {
                     </td>
                     <td className="py-3">
                       <StatusBadge
-                        status={u.isActive ? "Active" : "Inactive"}
+                        status={u.isActive ? "Active" : "Deactivated"}
                       />
                     </td>
                     <td className="py-3 text-muted-foreground text-xs">
@@ -273,6 +274,26 @@ const Users = () => {
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setSelectedUserId(u.id)}
+                          >
+                            View Details
+                          </DropdownMenuItem>
+                          {u.role !== "ADMIN" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateRole.mutate(
+                                  { id: u.id, role: "ADMIN" },
+                                  {
+                                    onSuccess: () =>
+                                      toast.success("Upgraded to admin"),
+                                  },
+                                )
+                              }
+                            >
+                              Upgrade to Admin
+                            </DropdownMenuItem>
+                          )}
                           {u.isActive ? (
                             <DropdownMenuItem
                               className="text-destructive"
@@ -303,26 +324,7 @@ const Users = () => {
                               Reactivate
                             </DropdownMenuItem>
                           )}
-                          {u.role !== "ADMIN" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateRole.mutate(
-                                  { id: u.id, role: "ADMIN" },
-                                  {
-                                    onSuccess: () =>
-                                      toast.success("Upgraded to admin"),
-                                  },
-                                )
-                              }
-                            >
-                              Upgrade to Admin
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => setSelectedUserId(u.id)}
-                          >
-                            View Details
-                          </DropdownMenuItem>
+                          
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() =>
@@ -371,7 +373,7 @@ const Users = () => {
                 setParams((p) => ({ ...p, page: String(currentPage - 1) }))
               }
             >
-              ←
+              <ArrowRight className="h-3 w-3 rotate-180" />
             </Button>
             {Array.from(
               { length: Math.min(totalPages, 5) },
@@ -396,7 +398,7 @@ const Users = () => {
                 setParams((p) => ({ ...p, page: String(currentPage + 1) }))
               }
             >
-              →
+              <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
         </div>
