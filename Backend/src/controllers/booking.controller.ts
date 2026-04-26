@@ -2,7 +2,7 @@
 
 import crypto from "crypto";
 import { Response } from "express";
-import { createNotification } from "../lib/notifications";
+import { createNotification, notifyAdmins } from "../lib/notifications";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
@@ -365,6 +365,13 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
         rideType: updated.rideType,
         customerName: booking.customer?.name, // need to include customer in findFirst
       });
+
+      await notifyAdmins(
+        "New Booking Payment",
+        `₦${updated.totalAmount?.toLocaleString()} · ${updated.rideType}${booking.customer?.name ? ` from ${booking.customer.name}` : ""}`,
+        "NEW_BOOKING",
+        updated.id,
+      );
 
       await createNotification(
         booking.customerId,

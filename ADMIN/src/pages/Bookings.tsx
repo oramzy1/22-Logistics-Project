@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CalendarCheck,
   CheckCircle2,
@@ -28,12 +28,15 @@ import {
 import { toast } from "sonner";
 import { BookingDetailSheet } from "@/components/dashboard/BookingDetailSheet";
 import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
+import { useLocation } from "react-router-dom";
+import { exportCSV, exportPDF } from "@/lib/export";
 
 const Bookings = () => {
   const [params, setParams] = useState<Record<string, string>>({
     page: "1",
     limit: "20",
   });
+  const location = useLocation();
   const { data, isLoading } = useBookings(params);
   const { data: stats } = useBookingStats();
   const cancel = useCancelBooking();
@@ -45,6 +48,47 @@ const Bookings = () => {
   const limit = parseInt(params.limit);
   const totalPages = Math.ceil(total / limit);
 
+  useEffect(() => {
+    const id = location.state?.highlightId;
+    if (!id || !bookings.length) return;
+    const found = bookings.find((b: any) => b.id === id);
+    if (found) {
+      setSelectedBooking(found);
+      window.history.replaceState({}, "");
+    }
+  }, [location.state?.highlightId, bookings]);
+
+  const handleExportCSV = () =>
+    exportCSV(
+      "bookings",
+      ["Booking ID", "Customer", "Type", "Package", "Amount", "Date", "Status"],
+      bookings.map((b: any) => [
+        b.trackingId ?? b.id,
+        b.customer?.name,
+        b.rideType,
+        b.packageType,
+        b.totalAmount,
+        new Date(b.createdAt).toLocaleString(),
+        b.status,
+      ]),
+    );
+
+  const handleExportPDF = () =>
+    exportPDF(
+      "bookings",
+      "Bookings Report",
+      ["Booking ID", "Customer", "Type", "Package", "Amount", "Date", "Status"],
+      bookings.map((b: any) => [
+        b.trackingId ?? b.id,
+        b.customer?.name,
+        b.rideType,
+        b.packageType,
+        `₦${b.totalAmount?.toLocaleString()}`,
+        new Date(b.createdAt).toLocaleString(),
+        b.status,
+      ]),
+    );
+
   return (
     <div>
       <PageHeader
@@ -52,10 +96,20 @@ const Bookings = () => {
         subtitle="Welcome back! Here's your overview."
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleExportCSV}
+            >
               <Download className="h-4 w-4" /> Export CSV
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleExportPDF}
+            >
               <Download className="h-4 w-4" /> Export PDF
             </Button>
           </>
@@ -114,8 +168,15 @@ const Bookings = () => {
               />
             </div>
             <DateRangeFilter
-  onChange={(from, to) => setParams(p => ({ ...p, dateFrom: from, dateTo: to, page: '1' }))}
-/>
+              onChange={(from, to) =>
+                setParams((p) => ({
+                  ...p,
+                  dateFrom: from,
+                  dateTo: to,
+                  page: "1",
+                }))
+              }
+            />
             <select
               className="h-9 px-3 rounded-md border border-border bg-background text-sm"
               onChange={(e) =>

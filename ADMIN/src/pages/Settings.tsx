@@ -91,10 +91,10 @@ const Settings = () => {
       />
       <div className="space-y-4">
         <Section icon={SettingsIcon} title="General Settings">
-          <Field label="Platform Name"><input className={inputCls} defaultValue="ZZ Logistics" /></Field>
-          <Field label="Default Currency"><input className={inputCls} defaultValue="NGN/₦" /></Field>
+          <Field label="Platform Name"><input disabled className={inputCls} defaultValue="22-Logistics" /></Field>
+          <Field label="Default Currency"><input disabled className={inputCls} defaultValue="NGN/₦" /></Field>
           <Field label="Time Zone">
-            <select className={inputCls}><option>West Africa Time (WAT)</option></select>
+            <select disabled className={inputCls}><option>West Africa Time (WAT)</option></select>
           </Field>
         </Section>
 

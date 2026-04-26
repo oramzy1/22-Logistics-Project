@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserCircle, CheckCircle, Truck, Clock, Calendar, Eye, Download, X, ShieldX, ShieldCheck, Loader2, UserX, Trash2, Car } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -10,13 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useDrivers, useVerifyLicense, useBookingStats, useAssignDriver, useSetUserStatus, useDeleteUser, useBookings } from '@/hooks/useAdminData';
 import { toast } from 'sonner';
 import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
+import { useLocation } from "react-router-dom";
+import { exportCSV } from "@/lib/export";
 
 const Drivers = () => {
   const [selected, setSelected] = useState<any | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<string>('');
   const [params, setParams] = useState<Record<string, string>>({ page: '1', limit: '20' });
-
+  const location = useLocation();
   const { data, isLoading, refetch } = useDrivers(params);
   const { data: stats } = useBookingStats();
   const { data: awaitingData } = useBookings({ status: 'AWAITING_DRIVER', paymentStatus: 'PAID', limit: '50' });
@@ -32,6 +34,17 @@ const Drivers = () => {
   const onlineCount = drivers.filter((d: any) => d.isOnline).length;
   const availableCount = drivers.filter((d: any) => d.isAvailable).length;
   const deactivatedCount = drivers.filter((d: any) => !d.user?.isActive).length;
+
+  useEffect(() => {
+  const id = location.state?.highlightId;
+  if (!id || !drivers.length) return;
+  const found = drivers.find((d: any) => d.id === id || d.userId === id);
+  if (found) { setSelected(found); window.history.replaceState({}, ""); }
+}, [location.state?.highlightId, drivers]);
+
+const handleExport = () =>
+  exportCSV("drivers", ["Name","Email","Phone","Status","Rating","Trips","License"],
+    drivers.map((d: any) => [d.user?.name, d.user?.email, d.user?.phone, d.onlineStatus, d.rating?.toFixed(1), d.totalTrips, d.licenseStatus]));
 
   const handleAssign = () => {
     if (!selectedBooking || !selected) return;
@@ -106,7 +119,7 @@ const Drivers = () => {
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-accent" /> Available ({availableCount})</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-destructive" /> Deactivated ({deactivatedCount})</span>
           </div>
-          <Button variant="outline" size="sm" className="gap-2"><Download className="h-4 w-4" /> Export</Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}><Download className="h-4 w-4" /> Export</Button>
         </div>
 
         <div className="overflow-x-auto -mx-5 px-5">

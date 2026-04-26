@@ -49,7 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     clearToken();
     setUser(null);
-    window.location.href = '/login';
+    setTimeout(() =>{
+       window.location.href = '/login';
+    }, 2000)
   };
 
   return <Ctx.Provider value={{ user, login, logout, isLoading }}>{children}</Ctx.Provider>;

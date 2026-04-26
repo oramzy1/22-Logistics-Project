@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDashboard, useChartData } from "@/hooks/useAdminData";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const revenue = [
   { day: "Mon", v: 1800 },
@@ -205,7 +206,7 @@ const Dashboard = () => {
               <PieChart>
                 <Pie data={pieData} dataKey="value" innerRadius={50} outerRadius={68} startAngle={180} endAngle={0} paddingAngle={2}>
                   <Cell fill="hsl(var(--accent))" />
-                  <Cell fill="hsl(var(--primary))" />
+                  <Cell fill="hsl(var(--chart))" />
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
@@ -216,7 +217,7 @@ const Dashboard = () => {
           </div>
           <div className="flex justify-center gap-4 text-xs">
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-accent" /> Scheduled ({scheduledPct}%)</span>
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Completed ({completedPct}%)</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-chart" /> Completed ({completedPct}%)</span>
           </div>
         </div>
       </div>
@@ -278,8 +279,8 @@ const Dashboard = () => {
       <div className="bg-surface rounded-xl p-5 border border-border mt-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">Recent Transaction</h3>
-          <Button variant="link" size="sm">
-            View More
+          <Button variant="link"  size="sm">
+           <Link to="/bookings">View all</Link>
           </Button>
         </div>
         <div className="overflow-x-auto -mx-5 px-5">

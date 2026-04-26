@@ -14,6 +14,8 @@ import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useState, useEffect } from "react";
+import { CommandSearch } from "@/components/dashboard/CommandSearch";
 
 interface TopnavProps {
   onMenuClick: () => void;
@@ -24,7 +26,17 @@ interface TopnavProps {
 export function Topnav({ onMenuClick, unreadCount = 0, onNotifClick }: TopnavProps) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? 'AD';
+
+useEffect(() => {
+  const h = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
+  };
+  window.addEventListener("keydown", h);
+  return () => window.removeEventListener("keydown", h);
+}, []);
+
 
   return (
     <header className="fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 bg-topnav text-topnav-foreground border-b border-border flex items-center px-4 lg:px-6 gap-3">
@@ -82,15 +94,15 @@ export function Topnav({ onMenuClick, unreadCount = 0, onNotifClick }: TopnavPro
       </DropdownMenu>
 
       <div className="flex-1 max-w-md mx-auto hidden md:block">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Search"
-            className="w-full h-9 pl-9 pr-3 rounded-full bg-surface border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-          />
-        </div>
-      </div>
+  <button
+    onClick={() => setSearchOpen(true)}
+    className="w-full h-9 px-3 rounded-full bg-surface border border-border text-sm text-muted-foreground flex items-center gap-2 hover:border-accent/50 transition-colors"
+  >
+    <Search className="h-4 w-4 shrink-0" />
+    <span className="flex-1 text-left">Search…</span>
+    <kbd className="hidden lg:inline-flex items-center border border-border/70 rounded px-1.5 py-0.5 text-[10px] font-mono gap-0.5">⌘K</kbd>
+  </button>
+</div>
 
       <div className="flex items-center gap-2 ml-auto">
        <button
@@ -135,6 +147,7 @@ export function Topnav({ onMenuClick, unreadCount = 0, onNotifClick }: TopnavPro
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+        <CommandSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

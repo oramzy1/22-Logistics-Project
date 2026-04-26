@@ -43,4 +43,19 @@ export const createNotification = async (
   if (user?.pushToken) {
     await sendPushNotification(user.pushToken, title, body, { bookingId, type });
   }
-};
+};export async function notifyAdmins(
+  title: string,
+  message: string,
+  type: string,
+  entityId?: string,
+) {
+  const admins = await prisma.user.findMany({
+    where: { role: "ADMIN", isActive: true },
+    select: { id: true },
+  });
+  await Promise.all(
+    admins.map((a) =>
+      createNotification(a.id, title, message, type as any, entityId),
+    ),
+  );
+}

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useBookings, useBookingStats } from "@/hooks/useAdminData";
 import { useState } from "react";
 import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
+import { exportCSV } from "@/lib/export";
 
 const fmt = (n: number) => n >= 1_000_000
   ? `₦${(n / 1_000_000).toFixed(1)}M`
@@ -38,6 +39,11 @@ const Payment = () => {
   const { data, isLoading } = useBookings(params);
   const bookings = data?.bookings ?? [];
   const total = data?.total ?? 0;
+
+  const handleExport = () =>
+  exportCSV("payments", ["Booking ID","Customer","Type","Package","Amount","Payment Status","Date"],
+    bookings.map((b: any) => [b.trackingId ?? b.id, b.customer?.name, b.rideType, b.packageType, `₦${b.totalAmount?.toLocaleString()}`, b.paymentStatus, new Date(b.createdAt).toLocaleString()]));
+
   return(
   <div>
       <PageHeader
@@ -120,7 +126,7 @@ const Payment = () => {
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-destructive" /> Failed (1)</span> */}
            <span className="font-medium">Transactions ({total})</span>
         </div>
-        <Button variant="outline" size="sm" className="gap-2"><Download className="h-4 w-4" /> Export</Button>
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}><Download className="h-4 w-4" /> Export</Button>
       </div>
 
       <div className="overflow-x-auto -mx-5 px-5">

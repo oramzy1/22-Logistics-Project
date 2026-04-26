@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MoreHorizontal,
   Download,
@@ -27,68 +27,13 @@ import {
 import { toast } from "sonner";
 import { UserDetailSheet } from "@/components/dashboard/UserDetailSheet";
 import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
+import { useLocation } from "react-router-dom";
+import { exportCSV } from "@/lib/export";
 
-const users = [
-  {
-    id: "Logist-001",
-    contact: "Matthew B",
-    business: "Sawga Ltd",
-    status: "Active",
-    amount: "₦1,250,000",
-  },
-  {
-    id: "Logist-002",
-    contact: "Timothy O",
-    business: "Proma Ltd",
-    status: "Inactive",
-    amount: "₦890,000",
-  },
-  {
-    id: "Logist-003",
-    contact: "David L",
-    business: "Loma Ltd",
-    status: "Suspended",
-    amount: "₦80,000",
-  },
-  {
-    id: "Logist-004",
-    contact: "Israel K",
-    business: "2Face Ltd",
-    status: "Deactivated",
-    amount: "₦0,000",
-  },
-  {
-    id: "Logist-005",
-    contact: "Tina B",
-    business: "Juris Ltd",
-    status: "Inactive",
-    amount: "₦790,000",
-  },
-  {
-    id: "Logist-006",
-    contact: "Faith A",
-    business: "Proffes Ltd",
-    status: "Active",
-    amount: "₦18,000",
-  },
-  {
-    id: "Logist-006",
-    contact: "Bimbo F",
-    business: "Comf Ltd",
-    status: "Active",
-    amount: "₦90,000",
-  },
-  {
-    id: "Logist-005",
-    contact: "Ade A",
-    business: "Icon Ltd",
-    status: "Deactivated",
-    amount: "₦60,000",
-  },
-];
 
 const Users = () => {
   const [tab, setTab] = useState<"BUSINESS" | "INDIVIDUAL">("BUSINESS");
+  const location = useLocation();
   const [params, setParams] = useState<Record<string, string>>({
     page: "1",
     limit: "20",
@@ -107,6 +52,15 @@ const Users = () => {
 
   const activeCount = users.filter((u: any) => u.isActive).length;
   const inactiveCount = users.filter((u: any) => !u.isActive).length;
+  useEffect(() => {
+  const id = location.state?.highlightId;
+  if (id) { setSelectedUserId(id); window.history.replaceState({}, ""); }
+}, [location.state?.highlightId]);
+
+const handleExport = () =>
+  exportCSV(`users_${tab.toLowerCase()}`, ["Name","Email","Phone","Role","Bookings","Status","Joined"],
+    users.map((u: any) => [u.name, u.email, u.phone, u.role, u._count?.bookingsAsCustomer ?? 0, u.isActive ? "Active" : "Deactivated", new Date(u.createdAt).toLocaleDateString()]));
+
 
   return (
     <div>
@@ -185,7 +139,7 @@ const Users = () => {
             {/* <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-warning" /> Suspended (0)</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-destructive" /> Deactivated (1)</span> */}
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" /> Export
           </Button>
         </div>

@@ -55,6 +55,10 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        chart: {
+          DEFAULT: "hsl(var(--chart))",
+          foreground: "hsl(car(--chart-foreground))"
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

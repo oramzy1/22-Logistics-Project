@@ -33,7 +33,7 @@ const Login = () => {
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 justify-center mb-8">
           <div className="h-9 w-9 rounded-md bg-warning flex items-center justify-center text-warning-foreground font-bold">ZZ</div>
-          <span className="text-xl font-semibold">ZZ Logistics</span>
+          <span className="text-xl font-semibold">22-Logistics</span>
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-6 space-y-5">
