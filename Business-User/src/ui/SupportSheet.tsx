@@ -28,6 +28,7 @@ import { Text } from "../../components/AppText";
 import { UserService } from "@/api/user.service";
 import { showToast } from "@/app/utils/toast";
 import { useAppTheme } from "./useAppTheme";
+import { router } from "expo-router";
 
 // ── Types ──────────────────────────────────────────────────────
 export type SupportType = "contact" | "report" | "help" | "faq" | null;
@@ -70,7 +71,7 @@ const SUBJECT_TO_CATEGORY: Record<string, string> = {
   "Booking Issue": "TRIP",
   "Account Issue": "ACCOUNT",
   "App Bug / Error": "OTHER",
-  "Other": "OTHER",
+  Other: "OTHER",
 };
 
 // ── Contact Info Card (Image 1 style) ──────────────────────────
@@ -171,31 +172,33 @@ function SupportForm({
   //   }
   // };
 
-
   const handleSend = async () => {
-  if (!subject) { setSubjectError(true); return; }
-  if (!description.trim()) {
-    Alert.alert("Missing info", "Please describe the issue.");
-    return;
-  }
-  setLoading(true);
-  try {
-    await UserService.createSupportTicket({
-      subject,
-      description,
-      category: SUBJECT_TO_CATEGORY[subject] ?? "OTHER",
-      screenshotUri: screenshot ?? undefined,
-    });
-    showToast.success("Ticket created! We'll reply in the app shortly.");
-    setSubject("");
-    setDescription("");
-    setScreenshot(null);
-  } catch (err: any) {
-    showToast.error(err?.message ?? "Failed to send. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!subject) {
+      setSubjectError(true);
+      return;
+    }
+    if (!description.trim()) {
+      Alert.alert("Missing info", "Please describe the issue.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await UserService.createSupportTicket({
+        subject,
+        description,
+        category: SUBJECT_TO_CATEGORY[subject] ?? "OTHER",
+        screenshotUri: screenshot ?? undefined,
+      });
+      showToast.success("Ticket created! We'll reply in the app shortly.");
+      setSubject("");
+      setDescription("");
+      setScreenshot(null);
+    } catch (err: any) {
+      showToast.error(err?.message ?? "Failed to send. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -348,9 +351,8 @@ export function SupportSheet({
   userEmail = "",
   userName = "",
 }: Props) {
-
-    const { colors: themeColors } = useAppTheme();
-    const s = createStyles(themeColors);
+  const { colors: themeColors } = useAppTheme();
+  const s = createStyles(themeColors);
   if (!type) return null;
 
   return (
@@ -361,7 +363,7 @@ export function SupportSheet({
       >
         <View style={s.sheet}>
           <TouchableOpacity style={s.closeBtn} onPress={onClose}>
-            <X size={20} color="#6B7280" />
+            <X size={25} color="#6B7280" />
           </TouchableOpacity>
 
           {type === "contact" && <ContactCard />}
@@ -369,6 +371,15 @@ export function SupportSheet({
             <SupportForm userEmail={userEmail} userName={userName} />
           )}
           {type === "faq" && <FAQList />}
+          <TouchableOpacity
+            style={s.myTicketsBtn}
+            onPress={() => {
+              onClose();
+              router.push("/screens/support-tickets");
+            }}
+          >
+            <Text style={s.myTicketsBtnText}>View My Support Tickets</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -540,5 +551,18 @@ const createStyles = (themeColors: any) =>
       color: themeColors.textSecondary,
       lineHeight: 20,
       marginTop: 10,
+    },
+    myTicketsBtn: {
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+    },
+    myTicketsBtnText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: themeColors.textSecondary,
     },
   });

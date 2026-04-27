@@ -14,6 +14,8 @@ export default function ScreensLayout() {
       <Stack.Screen name="payment-success" />
       <Stack.Screen name="payment-failed" />
       <Stack.Screen name="payment-details" />
+      <Stack.Screen name="support-tickets" />
+      <Stack.Screen name="support-chat" />
     </Stack>
   );
 }

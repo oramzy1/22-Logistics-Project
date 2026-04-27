@@ -196,6 +196,18 @@ class SocketService {
     }
   }
 
+  onSupportMessage(callback: (data: { ticketId: string; message: any }) => void) {
+  return this._register("support:new_message", callback);
+}
+
+joinTicket(ticketId: string) {
+  this.socket?.emit("support:join_ticket", ticketId);
+}
+
+leaveTicket(ticketId: string) {
+  this.socket?.emit("support:leave_ticket", ticketId);
+}
+
   private _reapplyRegistry() {
     // Re-register all persistent listeners onto the current socket
     this.registry.forEach(({ event, callback }) => {

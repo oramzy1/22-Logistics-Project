@@ -191,6 +191,21 @@ confirmEmailChange: async (otp: string) => {
   return response.json();
 },
 
+getMyTickets: async () => {
+  const response = await apiClient.get("/support/tickets");
+  return response.data;
+},
+
+getTicketById: async (ticketId: string) => {
+  const response = await apiClient.get(`/support/tickets/${ticketId}`);
+  return response.data;
+},
+
+sendTicketMessage: async (ticketId: string, body: string) => {
+  const response = await apiClient.post(`/support/tickets/${ticketId}/messages`, { body });
+  return response.data;
+},
+
   verifyActionOtp: async (otp: string) => {
   const response = await apiClient.post("/users/verify-action-otp", { otp });
   return response.data;

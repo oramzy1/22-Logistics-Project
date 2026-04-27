@@ -42,47 +42,60 @@ export default function Support() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchStats();
-    fetchTickets();
+  socket.on("support:new_message", (message: any) => {
+    // message comes directly (not wrapped in { ticketId, message })
+    // guard against both shapes from backend
+    const msg = message?.message ?? message;
+    const ticketId = message?.ticketId ?? msg?.ticketId;
 
-    socket.on("support:new_ticket", (ticket) => {
-      setTickets((prev) => [ticket, ...prev]);
+    setMessages((prev) => {
+      // Avoid duplicates if both REST and socket deliver it
+      if (prev.find((m) => m.id === msg.id)) return prev;
+      return [...prev, msg];
     });
 
-    socket.on("support:new_message", ({ ticketId, message }) => {
-      if (selectedTicket?.id === ticketId) {
-        setMessages((prev) => [...prev, message]);
-      }
-      // Update last message preview in list
-      setTickets((prev) =>
-        prev.map((t) => t.id === ticketId
-          ? { ...t, messages: [message], updatedAt: new Date().toISOString() }
+    // Update ticket list preview
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.id === ticketId
+          ? { ...t, messages: [msg], updatedAt: new Date().toISOString() }
           : t
-        )
-      );
-    });
+      )
+    );
+  });
 
-    socket.on("support:ticket_updated", (updated) => {
-      setTickets((prev) => prev.map((t) => t.id === updated.id ? { ...t, ...updated } : t));
-      if (selectedTicket?.id === updated.id) {
-        setSelectedTicket((prev: any) => ({ ...prev, ...updated }));
-      }
-    });
+  socket.on("support:ticket_updated", (updated: any) => {
+    setTickets((prev) => prev.map((t) => t.id === updated.id ? { ...t, ...updated } : t));
+    setSelectedTicket((prev: any) => prev?.id === updated.id ? { ...prev, ...updated } : prev);
+  });
 
-    return () => {
-      socket.off("support:new_ticket");
-      socket.off("support:new_message");
-      socket.off("support:ticket_updated");
-    };
-  }, [selectedTicket?.id]);
+  socket.on("support:new_ticket", (ticket: any) => {
+    setTickets((prev) => [ticket, ...prev]);
+  });
+
+  return () => {
+    socket.off("support:new_message");
+    socket.off("support:ticket_updated");
+    socket.off("support:new_ticket");
+  };
+}, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+  fetchStats();
+  fetchTickets();
+}, []);
   
 const fetchStats = async () => {
-  const data = await api.get<typeof stats>("/support/stats");
-  setStats(data);
+  try {
+    const data = await api.get<typeof stats>("/support/stats");
+    setStats(data ?? { open: 0, inProgress: 0, resolvedToday: 0, avgResponseTime: "—" });
+  } catch (err) {
+    console.error("fetchStats failed:", err);
+  }
 };
 
 const fetchTickets = async () => {
@@ -108,10 +121,18 @@ const openTicket = async (ticket: any) => {
 const handleSend = async () => {
   if (!reply.trim() || !selectedTicket) return;
   setSending(true);
+  const body = reply;
   try {
-    const data = await api.post<any>(`/support/tickets/${selectedTicket.id}/messages`, { body: reply });
-    setMessages((prev) => [...prev, data.message]);
-    setReply("");
+    const data = await api.post<any>(`/support/tickets/${selectedTicket.id}/messages`, { body });
+     if (!socket.connected) {
+      const msg = data.message ?? data;
+      setMessages((prev) =>
+        prev.find((m) => m.id === msg.id) ? prev : [...prev, msg]
+      );
+      setReply("");
+    }
+  } catch{
+    // setReply(body);
   } finally {
     setSending(false);
   }
@@ -319,6 +340,7 @@ const handleSend = async () => {
               <div className="px-4 py-3 border-t border-border shrink-0">
                 <div className="flex gap-2 items-end">
                   <textarea
+                  key={sending ? "sending" : "idle"}
                     className="flex-1 resize-none text-sm border border-border rounded-xl px-3 py-2 min-h-[40px] max-h-[120px] bg-background focus:outline-none focus:ring-1 focus:ring-accent"
                     placeholder="Type a reply..."
                     rows={1}

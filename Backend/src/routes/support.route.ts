@@ -32,7 +32,7 @@ router.get('/tickets/:ticketId', getTicketById);
 router.post('/tickets/:ticketId/messages', authenticate, sendMessage);
 
 // Admin only
-router.get('/stats', requireAdmin, getTicketStats);
-router.patch('/tickets/:ticketId', requireAdmin, updateTicket);
+router.get('/stats', authenticate, requireAdmin, getTicketStats);
+router.patch('/tickets/:ticketId', authenticate, requireAdmin, updateTicket);
 
 export default router;

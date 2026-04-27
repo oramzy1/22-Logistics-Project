@@ -67,7 +67,7 @@ import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { emitToAdmin, getIO } from "../lib/socket";
 import { sendSupportRequestEmail } from "../lib/email.service";
-import { createNotification } from "../lib/notifications";
+import { createNotification, notifyAdmins } from "../lib/notifications";
 
 const generateTicketId = async () => {
   const count = await prisma.supportTicket.count();
@@ -118,6 +118,13 @@ export const createTicket = async (req: AuthRequest, res: Response) => {
     // Notify admins via socket
     // getIO().to('admins').emit('support:new_ticket', ticket);
     emitToAdmin("admin:support_new_ticket", ticket);
+    
+    await notifyAdmins(
+      "New Support Ticket",
+      `User ${user.name} submitted a new ticket: ${subject}`,
+      "SUPPORT_TICKET",
+      ticket.id,
+    )
 
     // Still send the email as a backup notification to admins
     try {
