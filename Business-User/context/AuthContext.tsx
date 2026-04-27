@@ -8,6 +8,9 @@ import React, {
   useState,
 } from "react";
 import { socketService } from "@/api/socket.service";
+import {
+  GoogleSignin,
+} from "@react-native-google-signin/google-signin";
 
 type Role = "INDIVIDUAL" | "BUSINESS" | "DRIVER" | "ADMIN" | null;
 
@@ -95,6 +98,7 @@ useEffect(() => {
   const clearAuthData = useCallback(async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
+    await GoogleSignin.signOut();
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);

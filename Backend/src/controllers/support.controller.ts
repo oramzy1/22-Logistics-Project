@@ -124,7 +124,7 @@ export const createTicket = async (req: AuthRequest, res: Response) => {
     "New Support Ticket",
     `${user.name} submitted: ${subject}`,
     "SUPPORT_TICKET",
-    ticket.id,
+    undefined,
   );
 } catch (notifErr) {
   console.error("Admin notification failed:", notifErr);

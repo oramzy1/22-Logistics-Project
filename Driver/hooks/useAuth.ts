@@ -142,14 +142,24 @@ export function useOAuth({ appType, role }: OAuthOptions) {
   };
 
   const signInWithGoogle = async () => {
-    showLoading('Please Wait...');
-    try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      await GoogleSignin.signOut(); 
-      const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.data?.idToken;
-      if (!idToken) { showToast.error('No token received from Google'); return; }
-
+     showLoading("Please Wait...");
+     try {
+      if (Platform.OS === "android") {
+         await GoogleSignin.hasPlayServices({
+           showPlayServicesUpdateDialog: true,
+         });
+         
+         // Force the account picker ONLY on Android to avoid breaking the iOS sheet!
+         await GoogleSignin.signOut();
+       }
+       const userInfo = await GoogleSignin.signIn();
+       console.log("Full userInfo:", JSON.stringify(userInfo, null, 2));
+       if (userInfo.type !== "success") return; 
+       const idToken = userInfo.data?.idToken;
+       if (!idToken) {
+         showToast.error("No token received from Google");
+         return;
+       }
       const data = await AuthService.googleAuth({ idToken, appType, role, mode });
       showToast.success(
         mode === "register" ? "Account created!" : "Login Successful",

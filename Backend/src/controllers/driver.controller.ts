@@ -177,7 +177,7 @@ export const setOnlineStatus = async (req: AuthRequest, res: Response) => {
         "Driver Online",
         "A driver is now available for assignments",
         "DRIVER_ONLINE",
-        profile.id,
+        undefined,
       );
     }
 

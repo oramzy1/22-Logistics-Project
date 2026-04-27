@@ -302,6 +302,16 @@ export default function RegisterDriverScreen() {
                 </View>
                 <SocialButton type="google" appType="driver-app" role="DRIVER" />
                 <SocialButton type="apple" appType="driver-app" role="DRIVER" /> 
+
+                 <TouchableOpacity
+            style={styles.footerLink}
+            onPress={() => router.push("/(auth)/sign-in")}
+          >
+            <Text style={styles.footerText}>
+              Already Have An Account?{" "}
+              <Text style={styles.signUpText}>Sign In</Text>
+            </Text>
+          </TouchableOpacity>
               </View>
             )}
 
@@ -741,4 +751,11 @@ const styles = StyleSheet.create({
   marginTop: 5,
   marginLeft: 2,
 },
+  footerLink: { alignItems: "center", marginBottom: 20 },
+  footerText: { color: "#4B5563", fontSize: 14, fontWeight: "500" },
+  signUpText: {
+    color: "#5C3A21",
+    fontWeight: "bold",
+    textDecorationLine: "underline",
+  },
 });

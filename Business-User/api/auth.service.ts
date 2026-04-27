@@ -50,12 +50,12 @@ verifyResetCode: async (email: string, code: string) => {
   return response.data;
 },
 
-  googleAuth: async (data: { idToken: string; appType: string, role: string, mode: string }) => {
+googleAuth: async (data: { idToken: string; appType: string, role: any, mode: string }) => {
   const response = await apiClient.post('/auth/google', data);
   return response.data;
 },
 
-appleAuth: async (data: { identityToken: string; fullName: any; appType: string, role: string, mode: string }) => {
+appleAuth: async (data: { identityToken: string; fullName: any; appType: string, role: any, mode: string }) => {
   const response = await apiClient.post('/auth/apple', data);
   return response.data;
 },

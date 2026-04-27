@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vendoramarketplace.logisticsdriver",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,7 +49,12 @@
       "expo-web-browser",
       "expo-localization",
       "expo-notifications",
-      "@react-native-google-signin/google-signin"
+       [
+        "@react-native-google-signin/google-signin",
+        {
+           "iosUrlScheme": "com.googleusercontent.apps.552515162391-hgv9rdod9j1eavmnhrfk9vtpibk2o84u"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

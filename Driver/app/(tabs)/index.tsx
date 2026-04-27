@@ -127,7 +127,7 @@ export default function HomeTabScreen() {
     }, []),
   );
 
-  const toggleStatus = async (value: boolean) => {
+  const toggleStatus = async (value: boolean) => { 
     if (value && !profileComplete) {
       Alert.alert(
         "Profile Incomplete",
@@ -142,7 +142,13 @@ export default function HomeTabScreen() {
       await updateUser({
         driverProfile: { ...user?.driverProfile, onlineStatus: newStatus },
       });
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Status full error:", JSON.stringify({
+    code: err.code,
+    message: err.message,
+    response: err?.response?.data,
+    status: err?.response?.status,
+  }, null, 2));
       Alert.alert("Error", "Could not update status");
     }
   };

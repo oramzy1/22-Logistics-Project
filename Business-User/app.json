@@ -2,7 +2,7 @@
   "expo": {
     "name": "22-Logistics",
     "slug": "22-Logistics",
-    "version": "1.0.0", 
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "com.vendoramarketplace.logistics",
     "icon": "./assets/images/icon.png",
@@ -49,7 +49,12 @@
       "expo-web-browser",
       "expo-localization",
       "expo-notifications",
-      "@react-native-google-signin/google-signin"
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.986510137107-e03ple0kg638v51e737108sitc9bg97k"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -15,7 +15,7 @@ import { validatePassword } from "../lib/password.validator";
 
 const ALLOWED_GOOGLE_CLIENT_IDS = [
   process.env.GOOGLE_CLIENT_ID_USER_APP, // user/business app client ID
-  process.env.GOOGLE_CLIENT_ID_DRIVER_APP, // driver app client ID
+  process.env.GOOGLE_CLIENT_ID_DRIVER_APP, // driver app client ID 
 ].filter(Boolean) as string[];
 
 const generateCode = () => {
