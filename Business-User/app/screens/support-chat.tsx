@@ -42,24 +42,31 @@ export default function SupportChatScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   }, [messages]);
 
-  useEffect(() => {
+useEffect(() => {
   if (!ticketId) return;
 
   socketService.joinTicket(ticketId);
 
-  const unsub = socketService.onSupportMessage(({ ticketId: incomingId, message }) => {
+  const unsubMessage = socketService.onSupportMessage(({ ticketId: incomingId, message }) => {
     if (incomingId !== ticketId) return;
     setMessages((prev) =>
       prev.find((m) => m.id === message.id) ? prev : [...prev, message]
     );
-    // Update ticket status if it changed
-    if (message.ticketStatus) {
-      setTicket((prev: any) => ({ ...prev, status: message.ticketStatus }));
-    }
+  });
+
+  // ← Add this: reflect status changes from admin immediately
+  const unsubUpdated = socketService.onSupportTicketUpdated((updated) => {
+    if (updated.ticketId !== ticketId && updated.id !== ticketId) return;
+    setTicket((prev: any) => ({
+      ...prev,
+      status: updated.status ?? prev?.status,
+      priority: updated.priority ?? prev?.priority,
+    }));
   });
 
   return () => {
-    unsub();
+    unsubMessage();
+    unsubUpdated();
     socketService.leaveTicket(ticketId);
   };
 }, [ticketId]);

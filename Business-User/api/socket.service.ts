@@ -207,6 +207,11 @@ joinTicket(ticketId: string) {
 leaveTicket(ticketId: string) {
   this.socket?.emit("support:leave_ticket", ticketId);
 }
+onSupportTicketUpdated(callback: (data: {
+    id: string; ticketId: string; status: string; priority: string 
+}) => void) {
+  return this._register("support:ticket_updated", callback);
+}
 
   private _reapplyRegistry() {
     // Re-register all persistent listeners onto the current socket

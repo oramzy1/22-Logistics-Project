@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Ticket, MessageSquare, CheckCircle, Clock, Search, Send, X, Hourglass } from "lucide-react";
+import { Ticket, MessageSquare, CheckCircle, Clock, Search, Send, X, Hourglass, IdCard, Car, MapPin, User2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api"; // your axios instance
 import { socket } from "@/lib/socket"; // your socket instance
@@ -25,8 +25,8 @@ const STATUS_COLORS = {
   CLOSED: "bg-gray-100 text-gray-600",
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  PAYMENT: "💳", DRIVER: "🚗", TRIP: "📍", ACCOUNT: "👤", OTHER: "📋",
+const CATEGORY_ICONS: Record<any, React.ReactNode> = {
+  PAYMENT: <IdCard size={15} />, DRIVER: <Car size={15} />, TRIP: <MapPin size={15} />, ACCOUNT: <User2 size={15} />, OTHER: "📋",
 };
 
 export default function Support() {
@@ -43,13 +43,10 @@ export default function Support() {
 
   useEffect(() => {
   socket.on("support:new_message", (message: any) => {
-    // message comes directly (not wrapped in { ticketId, message })
-    // guard against both shapes from backend
     const msg = message?.message ?? message;
     const ticketId = message?.ticketId ?? msg?.ticketId;
 
     setMessages((prev) => {
-      // Avoid duplicates if both REST and socket deliver it
       if (prev.find((m) => m.id === msg.id)) return prev;
       return [...prev, msg];
     });
@@ -122,6 +119,7 @@ const handleSend = async () => {
   if (!reply.trim() || !selectedTicket) return;
   setSending(true);
   const body = reply;
+  setReply("");
   try {
     const data = await api.post<any>(`/support/tickets/${selectedTicket.id}/messages`, { body });
      if (!socket.connected) {
@@ -129,7 +127,6 @@ const handleSend = async () => {
       setMessages((prev) =>
         prev.find((m) => m.id === msg.id) ? prev : [...prev, msg]
       );
-      setReply("");
     }
   } catch{
     // setReply(body);
@@ -138,15 +135,39 @@ const handleSend = async () => {
   }
 };
 
-  const handleStatusChange = async (status: string) => {
+const handleStatusChange = async (status: string) => {
+  // Optimistic update — reflect immediately
+  setSelectedTicket((prev: any) => ({ ...prev, status }));
+  setTickets((prev) =>
+    prev.map((t) => t.id === selectedTicket.id ? { ...t, status } : t)
+  );
+  try {
     await api.patch(`/support/tickets/${selectedTicket.id}`, { status });
-    setSelectedTicket((prev: any) => ({ ...prev, status }));
-  };
+    // Refresh stats since status change affects counts
+    fetchStats();
+  } catch {
+    // Revert on failure
+    setSelectedTicket((prev: any) => ({ ...prev, status: selectedTicket.status }));
+    setTickets((prev) =>
+      prev.map((t) => t.id === selectedTicket.id ? { ...t, status: selectedTicket.status } : t)
+    );
+  }
+};
 
-  const handlePriorityChange = async (priority: string) => {
+const handlePriorityChange = async (priority: string) => {
+  setSelectedTicket((prev: any) => ({ ...prev, priority }));
+  setTickets((prev) =>
+    prev.map((t) => t.id === selectedTicket.id ? { ...t, priority } : t)
+  );
+  try {
     await api.patch(`/support/tickets/${selectedTicket.id}`, { priority });
-    setSelectedTicket((prev: any) => ({ ...prev, priority }));
-  };
+  } catch {
+    setSelectedTicket((prev: any) => ({ ...prev, priority: selectedTicket.priority }));
+    setTickets((prev) =>
+      prev.map((t) => t.id === selectedTicket.id ? { ...t, priority: selectedTicket.priority } : t)
+    );
+  }
+};
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
@@ -246,7 +267,7 @@ const handleSend = async () => {
                   <span className="text-xs text-muted-foreground truncate">
                     {ticket.messages?.[0]?.body?.slice(0, 50)}...
                   </span>
-                  <span className={cn("text-xs px-1.5 py-0.5 rounded font-medium ml-2 shrink-0", PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS])}>
+                  <span className={cn("text-xs px-1.5 py-0.5 rounded font-medium ml-2 shrink-0 flex gap-1", PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS])}>
                     {CATEGORY_ICONS[ticket.category]} {ticket.priority}
                   </span>
                 </div>
@@ -277,9 +298,9 @@ const handleSend = async () => {
               </div>
               <div className="flex items-center gap-2">
                 <div className="text-right text-xs text-muted-foreground mr-2">
-                  <p>User: <span className="font-medium text-foreground">{selectedTicket.user?.name}</span></p>
-                  <p>Category: <span className="font-medium">{CATEGORY_ICONS[selectedTicket.category]} {selectedTicket.category}</span></p>
-                  <p>Priority: <span className={cn("font-medium", selectedTicket.priority === "HIGH" ? "text-red-600" : "")}>{selectedTicket.priority}</span></p>
+                  <p className="flex items-center gap-1">User: <span className="font-medium text-foreground">{selectedTicket.user?.name}</span></p>
+                  <p className="flex items-center gap-1">Category: <span className="font-medium flex gap-1">{CATEGORY_ICONS[selectedTicket.category]} {selectedTicket.category}</span></p>
+                  <p className="flex items-center gap-1">Priority: <span className={cn("font-medium", selectedTicket.priority === "HIGH" ? "text-red-600" : "")}>{selectedTicket.priority}</span></p>
                 </div>
                 {/* Status & Priority Controls */}
                 <Select value={selectedTicket.status} onValueChange={handleStatusChange}>

@@ -118,13 +118,13 @@ export const createTicket = async (req: AuthRequest, res: Response) => {
     // Notify admins via socket
     // getIO().to('admins').emit('support:new_ticket', ticket);
     emitToAdmin("admin:support_new_ticket", ticket);
-    
+
     await notifyAdmins(
       "New Support Ticket",
       `User ${user.name} submitted a new ticket: ${subject}`,
       "SUPPORT_TICKET",
       ticket.id,
-    )
+    );
 
     // Still send the email as a backup notification to admins
     try {
@@ -182,11 +182,11 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
     });
 
     if (isAdmin) {
-  getIO().to(`user:${ticket.userId}`).emit('support:new_message', {
-    ticketId,
-    message,
-  });
-}
+      getIO().to(`user:${ticket.userId}`).emit("support:new_message", {
+        ticketId,
+        message,
+      });
+    }
 
     // Notify the user (if admin replied)
     if (isAdmin) {
@@ -291,8 +291,18 @@ export const updateTicket = async (req: AuthRequest, res: Response) => {
       data: { ...(status && { status }), ...(priority && { priority }) },
     });
 
-    getIO().to(`ticket:${ticketId}`).emit("support:ticket_updated", ticket);
-    getIO().to("admins").emit("support:ticket_updated", ticket);
+    getIO()
+      .to(`ticket:${ticketId}`)
+      .emit("support:ticket_updated", {
+        ...ticket,
+        ticketId, // ← ensure this field is always present
+      });
+    getIO()
+      .to("admin:dashboard")
+      .emit("support:ticket_updated", {
+        ...ticket,
+        ticketId,
+      });
 
     res.json(ticket);
   } catch (error) {
