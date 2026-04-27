@@ -119,12 +119,16 @@ export const createTicket = async (req: AuthRequest, res: Response) => {
     // getIO().to('admins').emit('support:new_ticket', ticket);
     emitToAdmin("admin:support_new_ticket", ticket);
 
-    // await notifyAdmins(
-    //   "New Support Ticket",
-    //   `User ${user.name} submitted a new ticket: ${subject}`,
-    //   "SUPPORT_TICKET",
-    //   ticket.id,
-    // );
+    try {
+  await notifyAdmins(
+    "New Support Ticket",
+    `${user.name} submitted: ${subject}`,
+    "SUPPORT_TICKET",
+    ticket.id,
+  );
+} catch (notifErr) {
+  console.error("Admin notification failed:", notifErr);
+}
 
     // Still send the email as a backup notification to admins
     try {

@@ -14,6 +14,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Keyboard,
   View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -292,7 +293,10 @@ function SupportForm({
 
       <TouchableOpacity
         style={[s.sendBtn, loading && { opacity: 0.7 }]}
-        onPress={handleSend}
+        onPress={() => {
+          Keyboard.dismiss();
+          handleSend();
+        }}
         disabled={loading}
         activeOpacity={0.85}
       >
@@ -361,7 +365,7 @@ export function SupportSheet({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={s.overlay}
       >
-        <View style={s.sheet}>
+        <ScrollView style={s.sheet}>
           <TouchableOpacity style={s.closeBtn} onPress={onClose}>
             <X size={25} color="#6B7280" />
           </TouchableOpacity>
@@ -380,7 +384,7 @@ export function SupportSheet({
           >
             <Text style={s.myTicketsBtnText}>View My Support Tickets</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -405,7 +409,7 @@ const createStyles = (themeColors: any) =>
     closeBtn: {
       alignSelf: "flex-end",
       marginBottom: 8,
-      padding: 4,
+      padding: 8,
     },
 
     // Contact card
