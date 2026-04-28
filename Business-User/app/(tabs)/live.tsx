@@ -17,6 +17,8 @@ import {
   Phone,
   Star,
   ArrowBigRight,
+  ClockCheck,
+  ClockFading,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -484,15 +486,28 @@ export default function LiveTabScreen() {
 
                     <View style={styles.qdTimes}>
                       <View style={styles.qdTimeBox}>
-                        <Text style={styles.qdTimeLabel}>⏱ Time used</Text>
+                        <Text style={styles.qdTimeLabel}>
+                          <ClockCheck
+                            color={themeColors.textSecondary}
+                            size={10}
+                          />{" "}
+                          Time used
+                        </Text>
                         <Text style={styles.qdTimeVal}>
-  {activeBooking.status === 'IN_PROGRESS' || activeBooking.status === 'COMPLETED'
-    ? timeUsedLabel
-    : '—'}
-</Text>
+                          {activeBooking.status === "IN_PROGRESS" ||
+                          activeBooking.status === "COMPLETED"
+                            ? timeUsedLabel
+                            : "—"}
+                        </Text>
                       </View>
                       <View style={styles.qdTimeBox}>
-                        <Text style={styles.qdTimeLabel}>⏱ Time left</Text>
+                        <Text style={styles.qdTimeLabel}>
+                          <ClockFading
+                            color={themeColors.textSecondary}
+                            size={10}
+                          />{" "}
+                          Time left
+                        </Text>
                         <Text style={styles.qdTimeVal}>
                           {timeResult.type === "not_started"
                             ? "Not yet started"
@@ -522,90 +537,90 @@ export default function LiveTabScreen() {
                   </View>
 
                   {/* Extend Trip Section */}
-                 { bookingStatus !== 'ACCEPTED' && (
-                   <View style={styles.extendSection}>
-                    <View style={styles.extendHeaderRow}>
-                      <Text style={styles.extendTitle}>Extend Trip</Text>
-                      <Switch
-                        value={extendTrip}
-                        onValueChange={setExtendTrip}
-                        trackColor={{ true: "#FDE047" }}
-                        thumbColor="#FFF"
-                      />
-                    </View>
+                  {bookingStatus !== "ACCEPTED" && (
+                    <View style={styles.extendSection}>
+                      <View style={styles.extendHeaderRow}>
+                        <Text style={styles.extendTitle}>Extend Trip</Text>
+                        <Switch
+                          value={extendTrip}
+                          onValueChange={setExtendTrip}
+                          trackColor={{ true: "#FDE047" }}
+                          thumbColor="#FFF"
+                        />
+                      </View>
 
-                    {extendTrip && (
-                      <>
-                        <View style={styles.extendPills}>
-                          {extensions.map((ext, idx) => {
-                            const isSelected = selectedExtension === ext.h;
-                            return (
-                              <TouchableOpacity
-                                key={idx}
-                                style={[
-                                  styles.extPill,
-                                  isSelected && styles.extPillSelected,
-                                ]}
-                                onPress={() => setSelectedExtension(ext.h)}
-                              >
-                                <View
-                                  style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    marginBottom: 6,
-                                  }}
+                      {extendTrip && (
+                        <>
+                          <View style={styles.extendPills}>
+                            {extensions.map((ext, idx) => {
+                              const isSelected = selectedExtension === ext.h;
+                              return (
+                                <TouchableOpacity
+                                  key={idx}
+                                  style={[
+                                    styles.extPill,
+                                    isSelected && styles.extPillSelected,
+                                  ]}
+                                  onPress={() => setSelectedExtension(ext.h)}
                                 >
-                                  <Clock
-                                    size={12}
-                                    color={isSelected ? "#FFF" : "#6B7280"}
-                                    style={{ marginRight: 4 }}
-                                  />
+                                  <View
+                                    style={{
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                      marginBottom: 6,
+                                    }}
+                                  >
+                                    <Clock
+                                      size={12}
+                                      color={isSelected ? "#FFF" : "#6B7280"}
+                                      style={{ marginRight: 4 }}
+                                    />
+                                    <Text
+                                      style={[
+                                        styles.extHours,
+                                        isSelected && { color: "#FFF" },
+                                      ]}
+                                    >
+                                      {ext.h}
+                                    </Text>
+                                  </View>
                                   <Text
                                     style={[
-                                      styles.extHours,
+                                      styles.extPrice,
                                       isSelected && { color: "#FFF" },
                                     ]}
                                   >
-                                    {ext.h}
+                                    {ext.p}
                                   </Text>
-                                </View>
-                                <Text
-                                  style={[
-                                    styles.extPrice,
-                                    isSelected && { color: "#FFF" },
-                                  ]}
-                                >
-                                  {ext.p}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
 
-                        <TouchableOpacity
-                          style={[
-                            styles.proceedBtn,
-                            (!selectedExtension || isExtending) &&
-                              styles.proceedBtnDisabled,
-                          ]}
-                          onPress={handleExtendTrip}
-                          disabled={!selectedExtension || isExtending}
-                        >
-                          <Text
+                          <TouchableOpacity
                             style={[
-                              styles.proceedText,
-                              !selectedExtension && { color: "#9CA3AF" },
+                              styles.proceedBtn,
+                              (!selectedExtension || isExtending) &&
+                                styles.proceedBtnDisabled,
                             ]}
+                            onPress={handleExtendTrip}
+                            disabled={!selectedExtension || isExtending}
                           >
-                            {isExtending
-                              ? "Initializing..."
-                              : `Proceed to Payment`}
-                          </Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                 )}
+                            <Text
+                              style={[
+                                styles.proceedText,
+                                !selectedExtension && { color: "#9CA3AF" },
+                              ]}
+                            >
+                              {isExtending
+                                ? "Initializing..."
+                                : `Proceed to Payment`}
+                            </Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
+                    </View>
+                  )}
 
                   <TouchableOpacity
                     onPress={() => setShowEndFlow(true)}
@@ -876,7 +891,12 @@ const createStyles = (themeColors: any) =>
       paddingTop: 16,
     },
     qdTimeBox: { flex: 1 },
-    qdTimeLabel: { fontSize: 11, color: "#D1D5DB", marginBottom: 4 },
+    qdTimeLabel: {
+      fontSize: 11,
+      color: themeColors.textSecondary,
+      marginBottom: 4,
+      alignItems: "center",
+    },
     qdTimeVal: { fontSize: 13, fontWeight: "bold", color: "#FFF" },
 
     statusRow: {
