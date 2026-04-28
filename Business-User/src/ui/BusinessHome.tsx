@@ -25,16 +25,12 @@ import {
 import { getRideTimeLabel } from "../utils/rideTimer";
 import { PackageId } from "../utils/timeSlots";
 import { useAppTheme } from "./useAppTheme";
+import { usePrices, formatPrice } from '@/hooks/usePrices';
 
-const packages = [
-  { title: "3 Hours", price: "₦24,000" },
-  { title: "6 Hours", price: "₦34,000" },
-  { title: "10 Hours", price: "₦54,000" },
-  { title: "Multi-day", price: "" },
-  { title: "Airport", price: "Schedule" },
-];
+
 
 export function BusinessHome() {
+  const { prices } = usePrices();
   const [showDrawer, setShowDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
   const { setSelectedPackage } = useSchedule();
@@ -45,6 +41,13 @@ export function BusinessHome() {
     "Multi-day": "multi",
     Airport: "3h",
   };
+  const packages = [
+  { title: "3 Hours",  price: formatPrice(prices.price_3_hours) },
+  { title: "6 Hours",  price: formatPrice(prices.price_6_hours) },
+  { title: "10 Hours", price: formatPrice(prices.price_10_hours) },
+  { title: "Multi-day", price: "Schedule" },
+  { title: "Airport",  price: "Schedule" },
+];
   const { bookings, activeBookings, isLoading } = useBookings();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);

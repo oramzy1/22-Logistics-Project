@@ -40,6 +40,7 @@ export type Booking = {
   paymentRef: string;
   duration?: number;
   notes?: string;
+  trackingId: string;
   driver?: {
     name: string;
     phone: string;

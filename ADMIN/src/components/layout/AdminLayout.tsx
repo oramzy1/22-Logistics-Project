@@ -15,8 +15,21 @@ export function AdminLayout() {
   const [notifOpen, setNotifOpen] = useState(false);
   const qc = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
-  const { notifications, push, markRead, markAllRead, unreadCount } =
-    useAdminNotifications();
+  const { notifications, push, markRead, markAllRead, unreadCount } = useAdminNotifications();
+
+  const getNotifPrefs = () => {
+  try {
+    const saved = localStorage.getItem('admin_notif_prefs');
+    return saved ? JSON.parse(saved) : {
+      newBookingAlerts: true,
+      paymentAlerts: true,
+      supportAlerts: true,
+      driverVerificationAlerts: true,
+    };
+  } catch {
+    return { newBookingAlerts: true, paymentAlerts: true, supportAlerts: true, driverVerificationAlerts: true };
+  }
+};
 
   useEffect(() => {
     const token = getToken();
@@ -25,8 +38,6 @@ export function AdminLayout() {
     const BASE =
       import.meta.env.VITE_API_URL?.replace("/api", "") ??
       "http://localhost:5000";
-    // const socket = io(BASE, { transports: ['websocket', 'polling'] });
-    // socketRef.current = socket;
     socketRef.current = socket;
     socket.connect();
 
@@ -54,7 +65,8 @@ export function AdminLayout() {
         linkId: payload.bookingId,
       });
 
-      toast(
+      if (getNotifPrefs().newBookingAlerts) {
+        toast(
         `New booking — ₦${payload.amount?.toLocaleString()} · ${payload.rideType}`,
         {
           description: payload.customerName
@@ -68,6 +80,7 @@ export function AdminLayout() {
           },
         },
       );
+      }
     });
 
     // ── Driver status changes ────────────────────────────────
@@ -82,6 +95,21 @@ export function AdminLayout() {
         linkId: payload.driverProfileId,
       });
     });
+
+    socket.on('admin:trip_delay', (payload: any) => {
+  push({
+    type: 'new_booking',
+    title: '⚠️ Trip Delay',
+    body: `${payload.driverName ?? 'Driver'} is ${payload.delayMinutes}min late on ${payload.trackingId}`,
+    link: '/live-trips',
+    linkId: payload.bookingId,
+  });
+  toast.warning(`Trip Delay — ${payload.trackingId}`, {
+    description: `${payload.driverName} hasn't started yet (${payload.delayMinutes}min late). Phone: ${payload.driverPhone ?? 'N/A'}`,
+    duration: 0, // persist until dismissed
+    action: { label: 'View', onClick: () => setNotifOpen(true) },
+  });
+});
 
     socket.on("admin:driver_offline", () => {
       qc.invalidateQueries({ queryKey: ["drivers"] });
@@ -99,7 +127,8 @@ export function AdminLayout() {
         link: "/drivers",
         linkId: payload.driverId,
       });
-      toast("License review needed", {
+      if (getNotifPrefs().driverVerificationAlerts) {
+        toast("License review needed", {
         description: "A driver submitted a license for verification",
         duration: 6000,
         action: {
@@ -108,6 +137,7 @@ export function AdminLayout() {
           onClick: () => setNotifOpen(true),
         },
       });
+      }
     });
 
     // ── New user registered ──────────────────────────────────
@@ -133,11 +163,13 @@ export function AdminLayout() {
         link: "/support",
         linkId: payload.id,
       });
-      toast("New support ticket", {
+     if ( getNotifPrefs().supportAlerts) {
+       toast("New support ticket", {
         description: payload.subject,
         duration: 6000,
         action: { label: "View", onClick: () => setNotifOpen(true) },
       });
+     }
     });
 
     // ── Payment received ─────────────────────────────────────
@@ -145,13 +177,15 @@ export function AdminLayout() {
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["charts"] });
-      push({
+     if (getNotifPrefs().paymentAlerts) {
+       push({
         type: "payment",
         title: "Payment received",
         body: `₦${payload.amount?.toLocaleString()} payment confirmed`,
         link: "/payment",
         linkId: payload.bookingId,
       });
+     }
     });
     socket.on("admin:error", (err: any) => {
       console.warn("Admin socket error:", err.message);
@@ -160,7 +194,7 @@ export function AdminLayout() {
     return () => {
       socket.disconnect();
     };
-  });
+  }, []);
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar open={open} onClose={() => setOpen(false)} />

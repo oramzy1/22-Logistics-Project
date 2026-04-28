@@ -14,6 +14,7 @@ import { initSocket } from './lib/socket';
 import driverRoutes from './routes/driver.routes';
 import supportRouter from './routes/support.route';
 import adminRoutes from './routes/admin.routes';
+import { checkTripDelays } from './lib/tripDelayMonitor';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const io = initSocket(httpServer);
+setInterval(checkTripDelays, 2 * 60 * 1000); // check every 2 minutes
 
 app.use(cors());
 

@@ -52,6 +52,17 @@ const Settings = () => {
   const { data: settings, isLoading } = useSettings();
   const update = useUpdateSettings();
   const [values, setValues] = useState<Record<string, string>>({});
+const [notifSettings, setNotifSettings] = useState(() => {
+  const saved = localStorage.getItem('admin_notif_prefs');
+  return saved ? JSON.parse(saved) : {
+    newBookingAlerts: true,
+    paymentAlerts: true,
+    supportAlerts: true,
+    driverVerificationAlerts: true,
+  };
+});
+
+const [sessionTimeout, setSessionTimeout] = useState("30");
 
   useEffect(() => {
     if (settings) {
@@ -60,6 +71,12 @@ const Settings = () => {
       setValues(map);
     }
   }, [settings]);
+
+  const updateNotif = (key: string, value: boolean) => {
+  const updated = { ...notifSettings, [key]: value };
+  setNotifSettings(updated);
+  localStorage.setItem('admin_notif_prefs', JSON.stringify(updated));
+};
 
   const set = (key: string, value: string) => setValues(v => ({ ...v, [key]: value }));
 
@@ -119,18 +136,43 @@ const Settings = () => {
           <Toggle label="Require Email Verification" desc="Customers must verify before booking" defaultOn />
         </Section>
 
-        <Section icon={Bell} title="Notifications">
-          <Toggle label="New Booking Alerts" desc="Email and in-app notifications" defaultOn />
-          <Toggle label="Payment Alerts" desc="Notify on successful or failed payments" defaultOn />
-          <Toggle label="Support Ticket Alerts" desc="Get notified on new support requests" defaultOn />
-          <Toggle label="Driver Verification Alerts" desc="On successful onboarding of new drivers" />
-        </Section>
+<Section icon={Bell} title="Notifications">
+  {[
+    { key: "newBookingAlerts", label: "New Booking Alerts", desc: "Email and in-app notifications" },
+    { key: "paymentAlerts", label: "Payment Alerts", desc: "Notify on successful or failed payments" },
+    { key: "supportAlerts", label: "Support Ticket Alerts", desc: "Get notified on new support requests" },
+    { key: "driverVerificationAlerts", label: "Driver Verification Alerts", desc: "On successful onboarding of new drivers" },
+  ].map(({ key, label, desc }) => (
+    <div key={key} className="flex items-start justify-between gap-3 py-2">
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+      </div>
+      <Switch
+        checked={notifSettings[key as keyof typeof notifSettings]}
+        onCheckedChange={(v) => updateNotif(key, v)}
+      />
+    </div>
+  ))}
+</Section>
 
         <Section icon={Shield} title="Security">
           <Toggle label="Two-Factor Authentication" desc="Require 2FA for admin accounts" defaultOn />
           <Field label="Session Timeout">
-            <select className={inputCls}><option>30 minutes</option><option>1 hour</option><option>8 hours</option></select>
-          </Field>
+  <select
+    className={inputCls}
+    value={sessionTimeout}
+    onChange={e => {
+      setSessionTimeout(e.target.value);
+      // Store in localStorage so auth can read it
+      localStorage.setItem('admin_session_timeout_minutes', e.target.value);
+    }}
+  >
+    <option value="30">30 minutes</option>
+    <option value="60">1 hour</option>
+    <option value="480">8 hours</option>
+  </select>
+</Field>
         </Section>
       </div>
     </div>

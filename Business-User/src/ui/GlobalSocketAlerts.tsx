@@ -112,7 +112,7 @@ async function loadPendingRating(): Promise<PendingRating | null> {
 
 function showRatingPrompt(data: PendingRating) {
   Alert.alert(
-    '🏁 Trip Completed!',
+    'Trip Completed!',
     'Your trip has ended. Would you like to rate your driver?',
     [
       {

@@ -17,8 +17,38 @@ import Settings from "./pages/Settings";
 import{ AuthProvider } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import Login from "./pages/Login.tsx";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
+
+function MobileGuard({ children }: { children: React.ReactNode }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 text-center">
+        <div className="text-5xl mb-6">🖥️</div>
+        <h1 className="text-2xl font-bold text-foreground mb-3">Desktop Recommended</h1>
+        <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+          The 22Logistics Admin Panel is optimized for larger screens. 
+          Please use a desktop or laptop (768px+) for the best experience.
+        </p>
+        <p className="text-xs text-muted-foreground mt-6 opacity-60">
+          Current width: {window.innerWidth}px
+        </p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 const App = () => (
   <ThemeProvider defaultTheme="system">
@@ -28,7 +58,8 @@ const App = () => (
         <Sonner />
         <AuthProvider>
         <BrowserRouter>
-          <Routes>
+         <MobileGuard>
+           <Routes>
             <Route path="/login" element={<Login />} />
            <Route element={<ProtectedRoute />}>
             <Route element={<AdminLayout />}>
@@ -44,6 +75,7 @@ const App = () => (
            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+         </MobileGuard>
         </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

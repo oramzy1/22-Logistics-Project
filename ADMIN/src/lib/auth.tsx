@@ -15,23 +15,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Restore session from token — decode payload (no extra request needed)
-    const token = getToken();
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.exp * 1000 > Date.now()) {
-          setUser({ id: payload.id, name: payload.name ?? 'Admin', email: payload.email ?? '', role: payload.role });
-        } else {
-          clearToken();
-        }
-      } catch {
+  // useEffect(() => {
+  //   // Restore session from token — decode payload (no extra request needed)
+  //   const token = getToken();
+  //   if (token) {
+  //     try {
+  //       const payload = JSON.parse(atob(token.split('.')[1]));
+  //       if (payload.exp * 1000 > Date.now()) {
+  //         setUser({ id: payload.id, name: payload.name ?? 'Admin', email: payload.email ?? '', role: payload.role });
+  //       } else {
+  //         clearToken();
+  //       }
+  //     } catch {
+  //       clearToken();
+  //     }
+  //   }
+  //   setIsLoading(false);
+  // }, []);
+
+useEffect(() => {
+  const token = getToken();
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Check both JWT expiry AND admin-configured session timeout
+      const timeoutMinutes = parseInt(
+        localStorage.getItem('admin_session_timeout_minutes') ?? '480' // default 8h matches JWT
+      );
+      const sessionExpiry = payload.iat * 1000 + timeoutMinutes * 60 * 1000;
+      const isExpired = payload.exp * 1000 < Date.now() || sessionExpiry < Date.now();
+
+      if (!isExpired) {
+        setUser({ 
+          id: payload.id, 
+          name: payload.name ?? payload.email ?? 'Admin', 
+          email: payload.email ?? '', 
+          role: payload.role 
+        });
+        // Fetch real name since JWT payload doesn't include it
+        fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api'}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data) setUser({ id: data.id, name: data.name, email: data.email, role: data.role });
+          })
+          .catch(() => {});
+      } else {
         clearToken();
       }
+    } catch {
+      clearToken();
     }
-    setIsLoading(false);
-  }, []);
+  }
+  setIsLoading(false);
+}, []);
 
   const login = async (email: string, password: string) => {
     const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
@@ -49,9 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     clearToken();
     setUser(null);
-    setTimeout(() =>{
-       window.location.href = '/login';
-    }, 2000)
+    window.location.href = '/login';
   };
 
   return <Ctx.Provider value={{ user, login, logout, isLoading }}>{children}</Ctx.Provider>;

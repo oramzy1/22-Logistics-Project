@@ -292,3 +292,34 @@ export const sendSupportRequestEmail = async (
     ),
   ]);
 };
+
+export const sendTripDelayEmail = async (
+  adminEmail: string,
+  driverName: string,
+  trackingId: string,
+  delayMinutes: number,
+  driverPhone: string,
+  customerName: string,
+) => {
+  sendEmail(
+    adminEmail,
+    `⚠️ Trip Delay Alert — ${trackingId}`,
+    `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
+      <h2 style="color:#EF4444">Trip Delay Alert ⚠️</h2>
+      <p style="color:#374151">A driver has not started their assigned trip on time.</p>
+      <div style="background:#FEF2F2;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #EF4444">
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Booking ID</td><td style="color:#111;font-weight:600">${trackingId}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver Phone</td><td style="color:#111;font-weight:600">${driverPhone}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Delay</td><td style="color:#EF4444;font-weight:700">${delayMinutes} minutes late</td></tr>
+        </table>
+      </div>
+      <p style="color:#374151;font-size:14px">Please contact the driver immediately to confirm their status.</p>
+    </div>
+    `
+  );
+};

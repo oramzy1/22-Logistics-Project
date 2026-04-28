@@ -129,12 +129,13 @@ export const emitToAdmin = (event: AdminDashboardEvent, data: object) => {
 };
 
 export type AdminDashboardEvent =
-  | 'admin:new_booking'        // booking created and paid
-  | 'admin:booking_cancelled'  // any cancellation
-  | 'admin:booking_completed'  // trip ended
-  | 'admin:driver_online'      // driver status changed to ONLINE
-  | 'admin:driver_offline'     // driver status changed to OFFLINE
-  | 'admin:license_submitted'  // driver uploaded a license (pending review)
-  | 'admin:payment_received'   // payment verified
-  | 'admin:user_registered'   // new user signed up
+  | 'admin:new_booking'      
+  | 'admin:booking_cancelled'  
+  | 'admin:booking_completed'  
+  | 'admin:driver_online'      
+  | 'admin:driver_offline'     
+  | 'admin:license_submitted'  
+  | 'admin:payment_received' 
+  | 'admin:user_registered'  
   | 'admin:support_new_ticket'
+  | 'admin:trip_delay';

@@ -19,20 +19,22 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import { PackageId } from "@/src/utils/timeSlots";
 import { Clock } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const packages = [
-  { title: "3 Hours", price: "₦24,000" },
-  { title: "6 Hours", price: "₦34,000" },
-  { title: "10 Hours", price: "₦54,000" },
-  { title: "Multi-day", price: "Schedule" },
-  { title: "Airport", price: "Schedule" },
-];
+import { usePrices, formatPrice } from "@/hooks/usePrices";
 
 export default function HomeTabScreen() {
+  const { prices } = usePrices();
   const { isBusiness, user, isLoading } = useAuth();
   const { setSelectedPackage } = useSchedule();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
+
+  const packages = [
+  { title: "3 Hours",  price: formatPrice(prices.price_3_hours) },
+  { title: "6 Hours",  price: formatPrice(prices.price_6_hours) },
+  { title: "10 Hours", price: formatPrice(prices.price_10_hours) },
+  { title: "Multi-day", price: "Schedule" },
+  { title: "Airport",  price: "Schedule" },
+];
 
   const titleToId: Record<string, PackageId> = {
     "3 Hours": "3h",

@@ -36,7 +36,7 @@ import { generateTimeSlots } from "@/src/utils/timeSlots";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/src/ui/useAppTheme";
-
+import { usePrices, formatPrice} from '@/hooks/usePrices'
 
 type RidePackage = {
   id: "3h" | "6h" | "10h" | "multi" | "airport";
@@ -44,17 +44,11 @@ type RidePackage = {
   price?: string;
 };
 
-const PACKAGES: RidePackage[] = [
-  { id: "3h", title: "3-Hours", price: "₦24,000" },
-  { id: "6h", title: "6-Hours", price: "₦34,000" },
-  { id: "10h", title: "10-Hours", price: "₦54,000" },
-  { id: "multi", title: "Multi-day" },
-  { id: "airport", title: "Airport Schedule" },
-];
 
 export default function ScheduleTabScreen() {
   const { selectedPackage, setSelectedPackage } = useSchedule();
   const [extrasEnabled, setExtrasEnabled] = useState(true);
+  const { prices } = usePrices();
   const { isBusiness } = useAuth();
   // const [pickupLocation, setPickupLocation] = useState("");
   // const [dropoffLocation, setDropoffLocation] = useState("");
@@ -89,6 +83,13 @@ export default function ScheduleTabScreen() {
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
   const router = useRouter();
+  const PACKAGES = [
+  { id: "3h" as const,      title: "3-Hours",          price: `₦${prices.price_3_hours.toLocaleString()}` },
+  { id: "6h" as const,      title: "6-Hours",          price: `₦${prices.price_6_hours.toLocaleString()}` },
+  { id: "10h" as const,     title: "10-Hours",         price: `₦${prices.price_10_hours.toLocaleString()}` },
+  { id: "multi" as const,   title: "Multi-day",        price: undefined },
+  { id: "airport" as const, title: "Airport Schedule", price: undefined },
+];
 
   const pkg = selectedPackage;
   
@@ -123,36 +124,32 @@ export default function ScheduleTabScreen() {
     if (!PH_LGAS.includes(lga)) setOutOfLGATarget(which); // trigger modal
   };
 
-  const total = useMemo(() => {
-    const base =
-      pkg === "3h"
-        ? 24000
-        : pkg === "6h"
-          ? 34000
-          : pkg === "10h"
-            ? 54000
-            : 80000;
-    const add = (k: keyof typeof extras, amount: number) =>
-      extrasEnabled && extras[k] ? amount : 0;
-    const interstatePrice = interstateLocation?.price || 0;
-    // ₦3k if pickup is outside PH; ₦3k if dropoff is outside PH (only for within-Rivers trips)
-    const outOfLGAFee =
-      (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
-      (!interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA)
-        ? OUT_OF_LGA_FEE
-        : 0);
+// Replace the total useMemo base price lookup:
+const total = useMemo(() => {
+  const base =
+    pkg === "3h"      ? prices.price_3_hours :
+    pkg === "6h"      ? prices.price_6_hours :
+    pkg === "10h"     ? prices.price_10_hours :
+    pkg === "airport" ? prices.price_airport :
+    /* multi/airport */ prices.price_multiday;
 
-    return (
-      base +
-      interstatePrice +
-      outOfLGAFee +
-      add("babySeat", 2000) +
-      add("extraLuggage", 2000) +
-      add("wifi", 4000) +
-      add("coldWater", 2000) +
-      add("airportRide", 2000)
-    );
-  }, [extras, extrasEnabled, pkg, interstateLocation, pickupLGA, dropoffLGA]);
+  const add = (k: keyof typeof extras, amount: number) =>
+    extrasEnabled && extras[k] ? amount : 0;
+
+  const interstatePrice = interstateLocation?.price || 0;
+  const outOfLGAFee =
+    (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
+    (!interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA) ? OUT_OF_LGA_FEE : 0);
+
+  return (
+    base + interstatePrice + outOfLGAFee +
+    add("babySeat", 2000) +
+    add("extraLuggage", 2000) +
+    add("wifi", 4000) +
+    add("coldWater", 2000) +
+    add("airportRide", 2000)
+  );
+}, [extras, extrasEnabled, pkg, interstateLocation, pickupLGA, dropoffLGA, prices]);
 
   const totalLabel = `₦${total.toLocaleString()}`;
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
