@@ -26,5 +26,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "../Backend/src/lib/tripDelayMonitor.ts"]
+  "include": ["src", "../Backend/src/lib/tripDelayMonitor.ts", "../Backend/src/lib/keepAlive.ts"]
 }

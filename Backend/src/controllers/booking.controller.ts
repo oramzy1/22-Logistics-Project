@@ -200,6 +200,7 @@ export const getBookingById = async (req: AuthRequest, res: Response) => {
                 brandModel: true,
                 vehicleColor: true,
                 plateNumber: true,
+                id: true, 
               },
             },
           },

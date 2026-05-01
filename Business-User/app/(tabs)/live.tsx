@@ -40,6 +40,8 @@ import EmptyState from "@/src/ui/EmptyState";
 import { useAppTheme } from "@/src/ui/useAppTheme";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { usePrices, formatPrice } from "@/hooks/usePrices";
+import { CallScreen } from "../screens/call-screen";
+import { useAuth } from "@/context/AuthContext";
 
 // Simulated Images
 const MAP_IMAGE =
@@ -65,6 +67,11 @@ export default function LiveTabScreen() {
   const [showEndFlow, setShowEndFlow] = useState(false);
   const [showCancelFlow, setShowCancelFlow] = useState(false);
   const { bookingId } = useLocalSearchParams<{ bookingId?: string }>();
+  const { user } = useAuth();
+  const [showCall, setShowCall] = useState(false);
+  const [activeCallType, setActiveCallType] = useState<"audio" | "video">(
+    "audio",
+  );
 
   const bookingsWithDrivers = activeBookings.filter(
     (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS",
@@ -728,7 +735,13 @@ export default function LiveTabScreen() {
           {/* Fixed Bottom Action Buttons for Driver Details Only */}
           {showDriverDetails && (
             <View style={styles.actionFooter}>
-              <TouchableOpacity style={styles.actionBtnWhite}>
+              <TouchableOpacity
+                style={styles.actionBtnWhite}
+                onPress={() => {
+                  setActiveCallType("audio");
+                  setShowCall(true);
+                }}
+              >
                 <Phone size={16} color="#4B5563" style={{ marginRight: 6 }} />
                 <Text style={styles.actionTextDef}>Call</Text>
               </TouchableOpacity>
@@ -761,6 +774,18 @@ export default function LiveTabScreen() {
         <CancelRideFlow
           booking={activeBooking}
           onClose={() => setShowCancelFlow(false)}
+        />
+      )}
+      {showCall && activeBooking?.driver?.id && (
+        <CallScreen
+          targetUserId={activeBooking.driver?.id}
+          callerId={user!.id}
+          callerName={user!.name}
+          callType={activeCallType}
+          bookingId={activeBooking.id}
+          remoteName={activeBooking.driver?.name ?? "Driver"}
+          remoteAvatar={activeBooking.driver?.avatarUrl}
+          onClose={() => setShowCall(false)}
         />
       )}
     </View>

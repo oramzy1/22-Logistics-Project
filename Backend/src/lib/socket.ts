@@ -104,6 +104,55 @@ socket.on('support:leave_ticket', (ticketId: string) => {
   socket.leave(`ticket:${ticketId}`);
 });
 
+// ── WebRTC Signaling ─────────────────────────────────────────
+socket.on('call:initiate', (data: { 
+  targetUserId: string; 
+  callerId: string;
+  callerName: string;
+  callerAvatar?: string;
+  callType: 'audio' | 'video';
+  bookingId: string;
+}) => {
+  // Forward call invitation to target user's room
+  io.to(`user:${data.targetUserId}`).emit('call:incoming', {
+    callerId: data.callerId,
+    callerName: data.callerName,
+    callerAvatar: data.callerAvatar,
+    callType: data.callType,
+    bookingId: data.bookingId,
+    socketId: socket.id, // needed for direct P2P signaling
+  });
+  console.log(`📞 Call from ${data.callerId} → user:${data.targetUserId}`);
+});
+
+socket.on('call:answer', (data: { targetSocketId: string; accepted: boolean; bookingId: string }) => {
+  io.to(data.targetSocketId).emit('call:answered', { 
+    accepted: data.accepted,
+    bookingId: data.bookingId,
+    answerSocketId: socket.id,
+  });
+});
+
+socket.on('call:offer', (data: { targetSocketId: string; offer: any }) => {
+  io.to(data.targetSocketId).emit('call:offer', { offer: data.offer, from: socket.id });
+});
+
+socket.on('call:webrtc_answer', (data: { targetSocketId: string; answer: any }) => {
+  io.to(data.targetSocketId).emit('call:webrtc_answer', { answer: data.answer });
+});
+
+socket.on('call:ice_candidate', (data: { targetSocketId: string; candidate: any }) => {
+  io.to(data.targetSocketId).emit('call:ice_candidate', { candidate: data.candidate });
+});
+
+socket.on('call:end', (data: { targetSocketId: string; bookingId: string }) => {
+  io.to(data.targetSocketId).emit('call:ended', { bookingId: data.bookingId });
+});
+
+socket.on('call:reject', (data: { targetSocketId: string; bookingId: string }) => {
+  io.to(data.targetSocketId).emit('call:rejected', { bookingId: data.bookingId });
+});
+
     socket.on('disconnect', (reason) => {
       console.log(`🔌 Socket disconnected: ${socket.id} | Reason: ${reason}`);
     });

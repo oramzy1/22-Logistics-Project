@@ -204,6 +204,79 @@ private _reapplyRegistry() {
     this.socket?.on("booking:updated", callback);
     return this._register("booking:updated", callback);
   }
+
+  // Add to SocketService class:
+
+getSocketId(): string | null {
+  return this.socket?.id ?? null;
+}
+
+initiateCall(data: {
+  targetUserId: string;
+  callerId: string;
+  callerName: string;
+  callerAvatar?: string;
+  callType: 'audio' | 'video';
+  bookingId: string;
+}) {
+  this.socket?.emit('call:initiate', data);
+}
+
+answerCall(targetSocketId: string, accepted: boolean, bookingId: string) {
+  this.socket?.emit('call:answer', { targetSocketId, accepted, bookingId });
+}
+
+sendOffer(targetSocketId: string, offer: any) {
+  this.socket?.emit('call:offer', { targetSocketId, offer });
+}
+
+sendAnswer(targetSocketId: string, answer: any) {
+  this.socket?.emit('call:webrtc_answer', { targetSocketId, answer });
+}
+
+sendIceCandidate(targetSocketId: string, candidate: any) {
+  this.socket?.emit('call:ice_candidate', { targetSocketId, candidate });
+}
+
+endCall(targetSocketId: string, bookingId: string) {
+  this.socket?.emit('call:end', { targetSocketId, bookingId });
+}
+
+rejectCall(targetSocketId: string, bookingId: string) {
+  this.socket?.emit('call:reject', { targetSocketId, bookingId });
+}
+
+onIncomingCall(callback: (data: {
+  callerId: string; callerName: string; callerAvatar?: string;
+  callType: 'audio' | 'video'; bookingId: string; socketId: string;
+}) => void) {
+  return this._register('call:incoming', callback);
+}
+
+onCallAnswered(callback: (data: { accepted: boolean; bookingId: string; answerSocketId: string }) => void) {
+  return this._register('call:answered', callback);
+}
+
+onCallOffer(callback: (data: { offer: any; from: string }) => void) {
+  return this._register('call:offer', callback);
+}
+
+onCallWebRTCAnswer(callback: (data: { answer: any }) => void) {
+  return this._register('call:webrtc_answer', callback);
+}
+
+onIceCandidate(callback: (data: { candidate: any }) => void) {
+  return this._register('call:ice_candidate', callback);
+}
+
+onCallEnded(callback: (data: { bookingId: string }) => void) {
+  return this._register('call:ended', callback);
+}
+
+onCallRejected(callback: (data: { bookingId: string }) => void) {
+  return this._register('call:rejected', callback);
+}
+
 }
 
 export const socketService = new SocketService();

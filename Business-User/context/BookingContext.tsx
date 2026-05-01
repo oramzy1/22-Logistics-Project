@@ -31,7 +31,7 @@ export type TripExtension = {
 export type Booking = {
   id: string;
   pickupAddress: string;
-  dropoffAddress: string;
+  dropoffAddress: string; 
   scheduledAt: string;
   packageType: string;
   totalAmount: number;
@@ -45,6 +45,7 @@ export type Booking = {
     name: string;
     phone: string;
     avatarUrl?: string;
+    id?: string;
   } | null;
   extensions?: TripExtension[];
   _count?: {

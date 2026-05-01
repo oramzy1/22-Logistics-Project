@@ -12,6 +12,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vendoramarketplace.logisticsdriver",
       "infoPlist": {
+        "NSCameraUsageDescription": "Allow access to camera",
+        "NSMicrophoneUsageDescription": "Allow access to microphone",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -25,7 +27,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.vendoramarketplace.logisticsdriver",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": ["RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS"]
     },
     "web": {
       "output": "static",
@@ -49,10 +52,10 @@
       "expo-web-browser",
       "expo-localization",
       "expo-notifications",
-       [
+      [
         "@react-native-google-signin/google-signin",
         {
-           "iosUrlScheme": "com.googleusercontent.apps.552515162391-hgv9rdod9j1eavmnhrfk9vtpibk2o84u"
+          "iosUrlScheme": "com.googleusercontent.apps.552515162391-hgv9rdod9j1eavmnhrfk9vtpibk2o84u"
         }
       ]
     ],

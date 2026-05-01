@@ -24,6 +24,8 @@ import { initI18n } from "@/src/i18n";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/src/i18n";
 import { LoadingProvider } from "@/context/LoadingContext";
+import { NetworkProvider, useNetwork } from "@/context/NetworkContext";
+import OfflineBanner from "@/components/OfflineBanner";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -102,11 +104,14 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { isConnected } = useNetwork();
 
   return (
     <GestureHandlerRootView>
       <I18nextProvider i18n={i18n}>
-        <LoadingProvider>
+       <NetworkProvider>
+         <LoadingProvider>
+          <OfflineBanner isConnected={isConnected} />
           <ScheduleProvider>
             <BookingProvider>
               <AuthProvider>
@@ -151,6 +156,7 @@ function RootLayoutNav() {
           </ScheduleProvider>
           <Toast config={toastConfig} />
         </LoadingProvider>
+       </NetworkProvider>
       </I18nextProvider>
     </GestureHandlerRootView>
   );
