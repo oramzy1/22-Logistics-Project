@@ -26,6 +26,7 @@ import i18n from "@/src/i18n";
 import { LoadingProvider } from "@/context/LoadingContext";
 import { NetworkProvider, useNetwork } from "@/context/NetworkContext";
 import OfflineBanner from "@/components/OfflineBanner";
+import { CallProvider } from "@/context/CallContext";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -115,7 +116,8 @@ function RootLayoutNav() {
           <ScheduleProvider>
             <BookingProvider>
               <AuthProvider>
-                <GlobalSocketAlerts />
+                <CallProvider>
+                  <GlobalSocketAlerts />
                 <ThemeProvider
                   value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
                 >
@@ -151,6 +153,7 @@ function RootLayoutNav() {
                     />
                   </Stack>
                 </ThemeProvider>
+                </CallProvider>
               </AuthProvider>
             </BookingProvider>
           </ScheduleProvider>

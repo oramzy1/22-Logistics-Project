@@ -10,36 +10,32 @@ import { useWebRTCCall } from '@/hooks/useWebRTCCall';
 import { useAppTheme } from '@/src/ui/useAppTheme';
 
 type Props = {
-  // Caller props (when initiating)
+  webrtc: ReturnType<typeof useWebRTCCall>; // ← accept from parent
+  remoteName: string;
+  remoteAvatar?: string;
+  bookingId: string;
+  // For outgoing calls initiated from customer side:
   targetUserId?: string;
   callerId?: string;
   callerName?: string;
-  callerAvatar?: string;
   callType?: 'audio' | 'video';
-  bookingId?: string;
-  // Display
-  remoteName: string;
-  remoteAvatar?: string;
   onClose: () => void;
 };
 
-export function CallScreen({
-  targetUserId, callerId, callerName, callerAvatar,
-  callType = 'audio', bookingId = '', remoteName, onClose,
-}: Props) {
+export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, callerId, callerName, callType = 'audio', onClose }: Props) {
   useKeepAwake();
-  const { colors: themeColors } = useAppTheme();
   const {
     callState, localStream, remoteStream,
     incomingCall, isMuted, isSpeakerOn,
-    startCall, acceptCall, rejectCall, endCall,
+    acceptCall, rejectCall, endCall,
     toggleMute, toggleSpeaker,
-  } = useWebRTCCall();
+    startCall,
+  } = webrtc;
 
   // Auto-initiate if we have a target (outgoing call)
-  useEffect(() => {
-    if (targetUserId && callerId && callerName && bookingId) {
-      startCall({ targetUserId, callerId, callerName, callerAvatar, callType, bookingId });
+ useEffect(() => {
+    if (targetUserId && callerId && callerName) {
+      startCall({ targetUserId, callerId, callerName, callType, bookingId });
     }
   }, []);
 

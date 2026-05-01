@@ -62,32 +62,42 @@ export function useWebRTCCall() {
   }, [localStream]);
 
   // ── Create peer connection ───────────────────────────────────
-  const createPC = useCallback(() => {
-    const peerConnection = new RTCPeerConnection(ICE_SERVERS);
+const createPC = useCallback(() => {
+  const peerConnection = new RTCPeerConnection(ICE_SERVERS);
 
-    peerConnection.onicecandidate = ({ candidate }) => {
-      if (candidate && remoteSocketId.current) {
-        socketService.sendIceCandidate(remoteSocketId.current, candidate.toJSON());
-      }
-    };
+  // react-native-webrtc uses addEventListener, not property assignment
+  peerConnection.addEventListener('icecandidate', (event: any) => {
+    const candidate = event.candidate;
+    if (candidate && remoteSocketId.current) {
+      socketService.sendIceCandidate(remoteSocketId.current, candidate.toJSON());
+    }
+  });
 
-    peerConnection.ontrack = (event) => {
-      if (event.streams?.[0]) {
-        setRemoteStream(event.streams[0]);
-      }
-    };
+  peerConnection.addEventListener('track', (event: any) => {
+    const streams = event.streams;
+    if (streams?.[0]) {
+      setRemoteStream(streams[0]);
+    }
+  });
 
-    peerConnection.onconnectionstatechange = () => {
-      const state = peerConnection.connectionState;
-      if (state === 'connected') setCallState('connected');
-      if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-        cleanup();
-      }
-    };
+  peerConnection.addEventListener('connectionstatechange', () => {
+    const state = (peerConnection as any).connectionState;
+    if (state === 'connected') setCallState('connected');
+    if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+      cleanup();
+    }
+  });
 
-    pc.current = peerConnection;
-    return peerConnection;
-  }, [cleanup]);
+  // Also listen to iceconnectionstatechange as fallback
+  peerConnection.addEventListener('iceconnectionstatechange', () => {
+    const state = peerConnection.iceConnectionState;
+    if (state === 'connected' || state === 'completed') setCallState('connected');
+    if (state === 'failed' || state === 'closed') cleanup();
+  });
+
+  pc.current = peerConnection;
+  return peerConnection;
+}, [cleanup]);
 
   // ── Get local media ──────────────────────────────────────────
   const getLocalStream = useCallback(async (type: 'audio' | 'video') => {

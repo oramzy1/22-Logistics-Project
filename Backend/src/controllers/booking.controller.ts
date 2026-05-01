@@ -9,14 +9,6 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { getIO, emitToAdmin } from "../lib/socket";
 import { getPackagePrices } from "../lib/getPrices";
 
-// Package pricing in Naira
-// const PACKAGE_PRICES: Record<string, number> = {
-//   "3 Hours": 24000,
-//   "6 Hours": 34000,
-//   "10 Hours": 54000,
-//   "Airport Schedule": 80000,
-//   "Multi-day": 80000,
-// };
 
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
@@ -161,6 +153,7 @@ export const getBookings = async (req: AuthRequest, res: Response) => {
       include: {
         driver: {
           select: {
+            id: true,
             name: true,
             phone: true,
             avatarUrl: true,
@@ -192,6 +185,7 @@ export const getBookingById = async (req: AuthRequest, res: Response) => {
       include: {
         driver: {
           select: {
+            id: true,
             name: true,
             phone: true,
             avatarUrl: true,
@@ -200,7 +194,6 @@ export const getBookingById = async (req: AuthRequest, res: Response) => {
                 brandModel: true,
                 vehicleColor: true,
                 plateNumber: true,
-                id: true, 
               },
             },
           },

@@ -42,14 +42,9 @@ import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { usePrices, formatPrice } from "@/hooks/usePrices";
 import { CallScreen } from "../screens/call-screen";
 import { useAuth } from "@/context/AuthContext";
-
-// Simulated Images
-const MAP_IMAGE =
-  "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800";
-const DRIVER_IMAGE =
-  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80";
-const CAR_THUMB =
-  "https://img.freepik.com/free-photo/black-sedan-parked-outdoors_114579-22736.jpg";
+import { useWebRTCCall } from "@/hooks/useWebRTCCall";
+import { socketService } from "@/api/socket.service";
+import { useCall } from "@/context/CallContext";
 
 export default function LiveTabScreen() {
   const { colors: themeColors } = useAppTheme();
@@ -72,6 +67,13 @@ export default function LiveTabScreen() {
   const [activeCallType, setActiveCallType] = useState<"audio" | "video">(
     "audio",
   );
+  const webrtc = useCall();
+
+ useEffect(() => {
+  if (webrtc.callState === 'incoming') {
+    setShowCall(true);
+  }
+}, [webrtc.callState]);
 
   const bookingsWithDrivers = activeBookings.filter(
     (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS",
@@ -666,7 +668,7 @@ export default function LiveTabScreen() {
                     <Text style={styles.driverName}>
                       {activeBooking.driver?.name ?? "Unknown Driver"}
                     </Text>
-                    <View style={styles.driverMetaRow}>
+                    {/* <View style={styles.driverMetaRow}>
                       <View style={styles.driverMetaPill}>
                         <MapPin size={12} color="#D97706" />
                         <Text style={styles.metaText}>Port Harcourt</Text>
@@ -675,7 +677,7 @@ export default function LiveTabScreen() {
                         <Text style={styles.langIcon}>A</Text>
                         <Text style={styles.metaText}>English</Text>
                       </View>
-                    </View>
+                    </View> */}
                   </View>
                   {/* Ratings Segment */}
                   <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
@@ -708,7 +710,9 @@ export default function LiveTabScreen() {
                               style={[
                                 styles.progressFill,
                                 {
-                                  width: `${["80%", "40%", "30%", "10%", "5%"][idx]}`,
+                                  width: ["80%", "40%", "30%", "10%", "5%"][
+                                    idx
+                                  ] as any,
                                 },
                               ]}
                             />
@@ -776,15 +780,15 @@ export default function LiveTabScreen() {
           onClose={() => setShowCancelFlow(false)}
         />
       )}
-      {showCall && activeBooking?.driver?.id && (
+      {showCall && (
         <CallScreen
-          targetUserId={activeBooking.driver?.id}
-          callerId={user!.id}
-          callerName={user!.name}
+          webrtc={webrtc}
+          targetUserId={activeBooking?.driver?.id}
+          callerId={user?.id}
+          callerName={user?.name ?? "Passenger"}
           callType={activeCallType}
-          bookingId={activeBooking.id}
-          remoteName={activeBooking.driver?.name ?? "Driver"}
-          remoteAvatar={activeBooking.driver?.avatarUrl}
+          bookingId={activeBooking?.id ?? ""}
+          remoteName={activeBooking?.driver?.name ?? "Driver"}
           onClose={() => setShowCall(false)}
         />
       )}

@@ -227,6 +227,7 @@ initiateCall(data: {
   callType: 'audio' | 'video';
   bookingId: string;
 }) {
+  console.log('📞 Emitting call:initiate to', data.targetUserId, '| socket connected:', this.socket?.connected);
   this.socket?.emit('call:initiate', data);
 }
 
