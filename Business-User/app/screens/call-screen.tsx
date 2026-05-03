@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import {
-  View, TouchableOpacity, StyleSheet, StatusBar,
+  View, TouchableOpacity, StyleSheet, StatusBar, Modal, Animated
 } from 'react-native';
 import { RTCView } from 'react-native-webrtc';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -14,6 +14,7 @@ type Props = {
   remoteName: string;
   remoteAvatar?: string;
   bookingId: string;
+  visible?: boolean;
   // For outgoing calls initiated from customer side:
   targetUserId?: string;
   callerId?: string;
@@ -22,7 +23,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, callerId, callerName, callType = 'audio', onClose }: Props) {
+export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, callerId, callerName, callType = 'audio', onClose, visible= true }: Props) {
   useKeepAwake();
   const {
     callState, localStream, remoteStream,
@@ -38,6 +39,15 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
       startCall({ targetUserId, callerId, callerName, callType, bookingId });
     }
   }, []);
+  useEffect(() => {
+  if (['rejected', 'no_answer', 'ended'].includes(callState)) {
+    const t = setTimeout(() => {
+      endCall(bookingId);
+      onClose();
+    }, 2500); // show message for 2.5s then dismiss
+    return () => clearTimeout(t);
+  }
+}, [callState]);
 
   const handleEnd = () => {
     endCall(bookingId);
@@ -54,8 +64,15 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
   const isIncoming = callState === 'incoming';
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+    <Modal
+    visible={visible}
+    animationType="slide"
+    statusBarTranslucent
+    transparent={false}
+    onRequestClose={handleEnd}
+    >
+      <View style={styles.root}>
+       <StatusBar barStyle="light-content" backgroundColor="#0B1B2B" />
 
       {/* Video streams */}
       {isVideo && remoteStream && (
@@ -87,32 +104,62 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
           </View>
           <Text style={styles.remoteName}>{remoteName}</Text>
           <Text style={styles.callStatus}>
-            {isIncoming ? 'Incoming call...' :
-             callState === 'calling' ? 'Calling...' :
-             isConnected ? 'Connected' : 'Connecting...'}
+            {isIncoming
+    ? 'Incoming call...'
+    : callState === 'connecting'
+    ? 'Connecting...'          // SIP/WebSocket not yet reached remote
+    : callState === 'ringing'
+    ? 'Ringing...'             // Remote device is being alerted
+    : callState === 'connected'
+    ? 'Connected'
+    : callState === 'rejected'
+    ? 'Call Declined'
+    : callState === 'no_answer'
+    ? 'No Answer'
+    : callState === 'ended'
+    ? 'Call Ended'
+    : 'Connecting...'}
           </Text>
         </View>
       )}
 
       {/* Incoming call UI */}
-      {isIncoming && (
+       {isIncoming && (
         <View style={styles.incomingActions}>
           <Text style={styles.incomingLabel}>
-            {incomingCall?.callerName} is calling...
+            {remoteName} is calling...
           </Text>
           <View style={styles.incomingBtns}>
             <TouchableOpacity style={styles.rejectBtn} onPress={handleReject}>
               <PhoneOff size={28} color="#FFF" />
+              <Text style={styles.controlLabel}>Decline</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.acceptBtn} onPress={acceptCall}>
               <Phone size={28} color="#FFF" />
+              <Text style={styles.controlLabel}>Accept</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
+      {['rejected', 'no_answer', 'ended'].includes(callState) && (
+        <View style={styles.terminalOverlay}>
+          <Text style={styles.terminalIcon}>
+            {callState === 'rejected' ? '🚫' : callState === 'no_answer' ? '📵' : '📞'}
+          </Text>
+          <Text style={styles.terminalText}>
+            {callState === 'rejected'
+              ? 'Call was declined'
+              : callState === 'no_answer'
+              ? `${remoteName} didn't answer`
+              : 'Call ended'}
+          </Text>
+        </View>
+      )}
+
+
       {/* Active call controls */}
-      {!isIncoming && (
+      {!isIncoming && !['rejected', 'no_answer'].includes(callState) && (
         <View style={styles.controls}>
           <TouchableOpacity style={styles.controlBtn} onPress={toggleMute}>
             {isMuted ? <MicOff size={22} color="#FFF" /> : <Mic size={22} color="#FFF" />}
@@ -130,6 +177,7 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
         </View>
       )}
     </View>
+    </Modal>
   );
 }
 
@@ -174,4 +222,13 @@ const styles = StyleSheet.create({
     width: 70, height: 70, borderRadius: 35,
     backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center',
   },
+  terminalOverlay: {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: 'rgba(11,27,43,0.92)',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 16,
+},
+terminalIcon: { fontSize: 52 },
+terminalText: { color: '#FFF', fontSize: 20, fontWeight: '600' },
 });

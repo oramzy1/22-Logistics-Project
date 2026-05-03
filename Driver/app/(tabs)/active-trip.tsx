@@ -111,7 +111,15 @@ export default function ActiveTripScreen() {
 
   return (
     <View style={styles.container}>
-      {showCall && (
+    
+      {/* Map Placeholder */}
+      {/* <View style={styles.mapBase}>
+         <Image source={{ uri: "https://maps.googleapis.com/maps/api/staticmap?center=Port+Harcourt&zoom=14&size=600x600&key=YOUR_API_KEY_HERE" }} style={{flex: 1, backgroundColor: '#E5E7EB'}} />
+      </View> */}
+
+      {/* Bottom Sheet Card */}
+      <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
+          {showCall && (
   <CallScreen
     // For incoming: no targetUserId needed, CallScreen detects incoming state
     targetUserId={callState !== 'incoming' ? activeTrip?.customerId : undefined}
@@ -123,13 +131,6 @@ export default function ActiveTripScreen() {
     onClose={() => setShowCall(false)}
   />
 )}
-      {/* Map Placeholder */}
-      {/* <View style={styles.mapBase}>
-         <Image source={{ uri: "https://maps.googleapis.com/maps/api/staticmap?center=Port+Harcourt&zoom=14&size=600x600&key=YOUR_API_KEY_HERE" }} style={{flex: 1, backgroundColor: '#E5E7EB'}} />
-      </View> */}
-
-      {/* Bottom Sheet Card */}
-      <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
         <View style={styles.cardHeader}>
           <Text style={styles.enRouteText}>
             {activeTrip.status === "IN_PROGRESS"

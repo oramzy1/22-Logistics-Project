@@ -1,8 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { useRouter } from 'expo-router'
-
-const router = useRouter();
+import { router } from 'expo-router'; 
 
 const API_URL =
   process.env.API_URL || "https://two2-logistics-project.onrender.com/api";

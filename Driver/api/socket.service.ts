@@ -182,17 +182,14 @@ private _reapplyRegistry() {
   }
 
   onRideRemoved(callback: (bookingId: string) => void) {
-    this.socket?.on("ride:removed", callback);
     return this._register("ride:removed", callback);
   }
 
   onRideRequest(callback: (data: any) => void) {
-    this.socket?.on("ride:new_request", callback);
     return this._register("ride:new_request", callback);
   }
 
   onLicenseVerified(callback: (data: any) => void) {
-    this.socket?.on("license:verified", callback);
     return this._register("license:verified", callback);
   }
 

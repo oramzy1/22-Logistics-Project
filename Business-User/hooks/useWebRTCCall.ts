@@ -24,7 +24,15 @@ const ICE_SERVERS = {
   ],
 };
 
-export type CallState = 'idle' | 'calling' | 'incoming' | 'connected' | 'ended';
+export type CallState =
+  | 'idle'
+  | 'connecting'   // outgoing: socket sent, awaiting remote device
+  | 'ringing'      // outgoing: remote device received + is alerting user
+  | 'incoming'     // this device is being called
+  | 'connected'
+  | 'rejected'     // remote actively declined
+  | 'no_answer'    // timeout expired, nobody picked up
+  | 'ended';
 
 export type IncomingCallData = {
   callerId: string;
