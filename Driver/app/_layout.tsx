@@ -25,6 +25,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n, { initI18n } from "@/src/i18n";
 import { NetworkProvider, useNetwork } from "@/context/NetworkContext";
 import OfflineBanner from "@/components/OfflineBanner";
+import { CallProvider } from "@/context/CallContext";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -120,7 +121,8 @@ function RootLayoutNav() {
             <OfflineBanner isConnected={isConnected} />
             <ScheduleProvider>
               <AuthProvider>
-                <ThemeProvider
+                <CallProvider>
+                  <ThemeProvider
                   value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
                 >
                   <Stack>
@@ -155,6 +157,7 @@ function RootLayoutNav() {
                     />
                   </Stack>
                 </ThemeProvider>
+                </CallProvider>
               </AuthProvider>
             </ScheduleProvider>
             <Toast config={toastConfig} />

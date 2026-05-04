@@ -270,8 +270,23 @@ onCallEnded(callback: (data: { bookingId: string }) => void) {
   return this._register('call:ended', callback);
 }
 
+cancelCall(targetUserId: string, bookingId: string) {
+  this.socket?.emit('call:cancel', { targetUserId, bookingId });
+}
+
+onCallCancelled(callback: (data: { bookingId: string }) => void) {
+  return this._register('call:cancelled', callback);
+}
+
 onCallRejected(callback: (data: { bookingId: string }) => void) {
   return this._register('call:rejected', callback);
+}
+emitRinging(targetSocketId: string, bookingId: string) {
+  this.socket?.emit('call:ringing', { targetSocketId, bookingId });
+}
+
+onCallRinging(callback: (data: { bookingId: string }) => void) {
+  return this._register('call:ringing', callback);
 }
 
 }

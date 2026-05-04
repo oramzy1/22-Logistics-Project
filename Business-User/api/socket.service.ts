@@ -286,6 +286,22 @@ onCallRejected(callback: (data: { bookingId: string }) => void) {
   return this._register('call:rejected', callback);
 }
 
+emitRinging(targetSocketId: string, bookingId: string) {
+  this.socket?.emit('call:ringing', { targetSocketId, bookingId });
+}
+
+onCallRinging(callback: (data: { bookingId: string }) => void) {
+  return this._register('call:ringing', callback);
+}
+
+cancelCall(targetUserId: string, bookingId: string) {
+  this.socket?.emit('call:cancel', { targetUserId, bookingId });
+}
+
+onCallCancelled(callback: (data: { bookingId: string }) => void) {
+  return this._register('call:cancelled', callback);
+}
+
   private _reapplyRegistry() {
     // Re-register all persistent listeners onto the current socket
     this.registry.forEach(({ event, callback }) => {

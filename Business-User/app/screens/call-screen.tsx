@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+// Business-User
+import React, { useEffect, useState } from 'react';
 import {
   View, TouchableOpacity, StyleSheet, StatusBar, Modal, Animated
 } from 'react-native';
@@ -23,40 +24,48 @@ type Props = {
   onClose: () => void;
 };
 
+const formatDuration = (secs: number) => {
+  const m = Math.floor(secs / 60).toString().padStart(2, '0');
+  const s = (secs % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+};
+
 export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, callerId, callerName, callType = 'audio', onClose, visible= true }: Props) {
+
+const [exitDuration, setExitDuration] = useState(0);
   useKeepAwake();
   const {
-    callState, localStream, remoteStream,
+    callState, localStream, remoteStream, callDuration,
     incomingCall, isMuted, isSpeakerOn,
     acceptCall, rejectCall, endCall,
-    toggleMute, toggleSpeaker,
+    toggleMute, toggleSpeaker, cleanup,
     startCall,
   } = webrtc;
 
   // Auto-initiate if we have a target (outgoing call)
- useEffect(() => {
-    if (targetUserId && callerId && callerName) {
-      startCall({ targetUserId, callerId, callerName, callType, bookingId });
-    }
-  }, []);
   useEffect(() => {
+  if (targetUserId && callerId && callerName) {
+    startCall({ targetUserId, callerId, callerName, callType, bookingId });
+  }
+}, []);
+
+ useEffect(() => {
   if (['rejected', 'no_answer', 'ended'].includes(callState)) {
+    setExitDuration(callDuration);
     const t = setTimeout(() => {
-      endCall(bookingId);
+      cleanup(); // ← NOW we cleanup, after the message has shown
       onClose();
-    }, 2500); // show message for 2.5s then dismiss
+    }, 2500);
     return () => clearTimeout(t);
   }
 }, [callState]);
 
   const handleEnd = () => {
     endCall(bookingId);
-    onClose();
   };
 
   const handleReject = () => {
     rejectCall();
-    onClose();
   };
 
   const isVideo = callType === 'video';
@@ -104,21 +113,15 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
           </View>
           <Text style={styles.remoteName}>{remoteName}</Text>
           <Text style={styles.callStatus}>
-            {isIncoming
-    ? 'Incoming call...'
-    : callState === 'connecting'
-    ? 'Connecting...'          // SIP/WebSocket not yet reached remote
-    : callState === 'ringing'
-    ? 'Ringing...'             // Remote device is being alerted
-    : callState === 'connected'
-    ? 'Connected'
-    : callState === 'rejected'
-    ? 'Call Declined'
-    : callState === 'no_answer'
-    ? 'No Answer'
-    : callState === 'ended'
-    ? 'Call Ended'
-    : 'Connecting...'}
+            {callState === 'connected'
+  ? formatDuration(callDuration)         // live timer while connected
+  : callState === 'incoming'  ? 'Incoming call...'
+  : callState === 'connecting'? 'Connecting...'
+  : callState === 'ringing'   ? 'Ringing...'
+  : callState === 'rejected'  ? 'Call Declined'
+  : callState === 'no_answer' ? 'No Answer'
+  : callState === 'ended'     ? `Call ended · ${formatDuration(exitDuration)}`
+  : 'Connecting...'}
           </Text>
         </View>
       )}

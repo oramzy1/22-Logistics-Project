@@ -15,6 +15,7 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import { CallScreen } from "../screens/call-screen";
 import { useAuth } from "@/context/AuthContext";
 import { useWebRTCCall } from "@/hooks/useWebRTCCall";
+import { useCall } from "@/context/CallContext";
 
 export default function ActiveTripScreen() {
   const [activeTrip, setActiveTrip] = useState<any>(null);
@@ -23,12 +24,17 @@ export default function ActiveTripScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { colors: themeColors } = useAppTheme();
   const { user } = useAuth();
-  const { callState, incomingCall } = useWebRTCCall();
+  const webrtc = useCall();
+  const { callState, incomingCall } = webrtc;
   const [showCall, setShowCall] = useState(false);
+  const [isOutgoingCall, setIsOutgoingCall] = useState(false);
 
   // Show incoming call screen automatically:
   useEffect(() => {
-    if (callState === "incoming") setShowCall(true);
+    if (callState === "incoming" && !showCall) {
+      setIsOutgoingCall(false);
+      setShowCall(true);
+    }
   }, [callState]);
 
   const styles = createStyles(themeColors);
@@ -111,7 +117,6 @@ export default function ActiveTripScreen() {
 
   return (
     <View style={styles.container}>
-    
       {/* Map Placeholder */}
       {/* <View style={styles.mapBase}>
          <Image source={{ uri: "https://maps.googleapis.com/maps/api/staticmap?center=Port+Harcourt&zoom=14&size=600x600&key=YOUR_API_KEY_HERE" }} style={{flex: 1, backgroundColor: '#E5E7EB'}} />
@@ -119,18 +124,18 @@ export default function ActiveTripScreen() {
 
       {/* Bottom Sheet Card */}
       <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
-          {showCall && (
-  <CallScreen
-    // For incoming: no targetUserId needed, CallScreen detects incoming state
-    targetUserId={callState !== 'incoming' ? activeTrip?.customerId : undefined}
-    callerId={user?.id}
-    callerName={user?.name ?? 'Driver'}
-    callType="audio"
-    bookingId={activeTrip?.id ?? ''}
-    remoteName={activeTrip?.customer?.name ?? 'Passenger'}
-    onClose={() => setShowCall(false)}
-  />
-)}
+        {showCall && (
+          <CallScreen
+            webrtc={webrtc} // ← THIS WAS MISSING — caused the crash
+            targetUserId={isOutgoingCall ? activeTrip?.customerId : undefined}
+            callerId={user?.id}
+            callerName={user?.name ?? "Driver"}
+            callType="audio"
+            bookingId={activeTrip?.id ?? ""}
+            remoteName={activeTrip?.customer?.name ?? "Passenger"}
+            onClose={() => { setShowCall(false); setIsOutgoingCall(false); }}
+          />
+        )}
         <View style={styles.cardHeader}>
           <Text style={styles.enRouteText}>
             {activeTrip.status === "IN_PROGRESS"
@@ -151,7 +156,10 @@ export default function ActiveTripScreen() {
             </View>
             <TouchableOpacity
               style={styles.callBtn}
-              onPress={() => setShowCall(true)}
+              onPress={() => {
+                setIsOutgoingCall(true); // ← mark as outgoing BEFORE showing screen
+                setShowCall(true);
+              }}
             >
               <Phone size={18} color="#FFF" />
             </TouchableOpacity>
