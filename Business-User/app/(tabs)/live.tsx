@@ -691,7 +691,7 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
                   </Text>
                   <View style={styles.ratingOverview}>
                     <View style={styles.mainScore}>
-                      <Text style={styles.ratingNumber}>{activeBooking.driver?.rating ?? "4.5"}</Text>
+                      <Text style={styles.ratingNumber}> {(activeBooking.driver as any)?.driverProfile?.rating?.toFixed(1) ?? "5.0"}</Text>
                       <View style={styles.starsRow}>
                         {[1, 2, 3, 4].map((i) => (
                           <Star

@@ -50,8 +50,6 @@
 
 // export const socketService = new SocketService();
 
-
-
 // // Business-User/api/socket.service.ts
 // import { io, Socket } from "socket.io-client";
 
@@ -128,10 +126,6 @@
 
 // export const socketService = new SocketService();
 
-
-
-
-
 // Business-User/api/socket.service.ts
 import { io, Socket } from "socket.io-client";
 
@@ -196,111 +190,149 @@ class SocketService {
     }
   }
 
-  onSupportMessage(callback: (data: { ticketId: string; message: any }) => void) {
-  return this._register("support:new_message", callback);
-}
+  onSupportMessage(
+    callback: (data: { ticketId: string; message: any }) => void,
+  ) {
+    return this._register("support:new_message", callback);
+  }
 
-joinTicket(ticketId: string) {
-  this.socket?.emit("support:join_ticket", ticketId);
-}
+  joinTicket(ticketId: string) {
+    this.socket?.emit("support:join_ticket", ticketId);
+  }
 
-leaveTicket(ticketId: string) {
-  this.socket?.emit("support:leave_ticket", ticketId);
-}
-onSupportTicketUpdated(callback: (data: {
-    id: string; ticketId: string; status: string; priority: string 
-}) => void) {
-  return this._register("support:ticket_updated", callback);
-}
+  leaveTicket(ticketId: string) {
+    this.socket?.emit("support:leave_ticket", ticketId);
+  }
+  onSupportTicketUpdated(
+    callback: (data: {
+      id: string;
+      ticketId: string;
+      status: string;
+      priority: string;
+    }) => void,
+  ) {
+    return this._register("support:ticket_updated", callback);
+  }
 
-// Add to SocketService class:
+  // Add to SocketService class:
 
-getSocketId(): string | null {
-  return this.socket?.id ?? null;
-}
+  getSocketId(): string | null {
+    return this.socket?.id ?? null;
+  }
 
-initiateCall(data: {
-  targetUserId: string;
-  callerId: string;
-  callerName: string;
-  callerAvatar?: string;
-  callType: 'audio' | 'video';
-  bookingId: string;
-}) {
-  console.log('📞 Emitting call:initiate to', data.targetUserId, '| socket connected:', this.socket?.connected);
-  this.socket?.emit('call:initiate', data);
-}
+  initiateCall(data: {
+    targetUserId: string;
+    callerId: string;
+    callerName: string;
+    callerAvatar?: string;
+    callType: "audio" | "video";
+    bookingId: string;
+  }) {
+    console.log(
+      "📞 Emitting call:initiate to",
+      data.targetUserId,
+      "| socket connected:",
+      this.socket?.connected,
+    );
+    this.socket?.emit("call:initiate", data);
+  }
 
-answerCall(targetSocketId: string, accepted: boolean, bookingId: string) {
-  this.socket?.emit('call:answer', { targetSocketId, accepted, bookingId });
-}
+  answerCall(targetSocketId: string, accepted: boolean, bookingId: string) {
+    this.socket?.emit("call:answer", { targetSocketId, accepted, bookingId });
+  }
 
-sendOffer(targetSocketId: string, offer: any) {
-  this.socket?.emit('call:offer', { targetSocketId, offer });
-}
+  sendOffer(targetSocketId: string, offer: any) {
+    this.socket?.emit("call:offer", { targetSocketId, offer });
+  }
 
-sendAnswer(targetSocketId: string, answer: any) {
-  this.socket?.emit('call:webrtc_answer', { targetSocketId, answer });
-}
+  sendAnswer(targetSocketId: string, answer: any) {
+    this.socket?.emit("call:webrtc_answer", { targetSocketId, answer });
+  }
 
-sendIceCandidate(targetSocketId: string, candidate: any) {
-  this.socket?.emit('call:ice_candidate', { targetSocketId, candidate });
-}
+  sendIceCandidate(targetSocketId: string, candidate: any) {
+    this.socket?.emit("call:ice_candidate", { targetSocketId, candidate });
+  }
 
-endCall(targetSocketId: string, bookingId: string) {
-  this.socket?.emit('call:end', { targetSocketId, bookingId });
-}
+  endCall(targetSocketId: string, bookingId: string) {
+    this.socket?.emit("call:end", { targetSocketId, bookingId });
+  }
 
-rejectCall(targetSocketId: string, bookingId: string) {
-  this.socket?.emit('call:reject', { targetSocketId, bookingId });
-}
+  rejectCall(targetSocketId: string, bookingId: string) {
+    this.socket?.emit("call:reject", { targetSocketId, bookingId });
+  }
 
-onIncomingCall(callback: (data: {
-  callerId: string; callerName: string; callerAvatar?: string;
-  callType: 'audio' | 'video'; bookingId: string; socketId: string;
-}) => void) {
-  return this._register('call:incoming', callback);
-}
+  sendTripMessage(targetUserId: string, message: string, sender: string) {
+    this.socket?.emit("trip:send_message", { targetUserId, message, sender });
+  }
 
-onCallAnswered(callback: (data: { accepted: boolean; bookingId: string; answerSocketId: string }) => void) {
-  return this._register('call:answered', callback);
-}
+  onTripMessage(
+    callback: (data: {
+      targetUserId: string;
+      message: string;
+      sender: string;
+    }) => void,
+  ) {
+    return this._register("trip:new_message", callback);
+  }
 
-onCallOffer(callback: (data: { offer: any; from: string }) => void) {
-  return this._register('call:offer', callback);
-}
+  onIncomingCall(
+    callback: (data: {
+      callerId: string;
+      callerName: string;
+      callerAvatar?: string;
+      callType: "audio" | "video";
+      bookingId: string;
+      socketId: string;
+    }) => void,
+  ) {
+    return this._register("call:incoming", callback);
+  }
 
-onCallWebRTCAnswer(callback: (data: { answer: any }) => void) {
-  return this._register('call:webrtc_answer', callback);
-}
+  onCallAnswered(
+    callback: (data: {
+      accepted: boolean;
+      bookingId: string;
+      answerSocketId: string;
+    }) => void,
+  ) {
+    return this._register("call:answered", callback);
+  }
 
-onIceCandidate(callback: (data: { candidate: any }) => void) {
-  return this._register('call:ice_candidate', callback);
-}
+  onCallOffer(callback: (data: { offer: any; from: string }) => void) {
+    return this._register("call:offer", callback);
+  }
 
-onCallEnded(callback: (data: { bookingId: string }) => void) {
-  return this._register('call:ended', callback);
-}
+  onCallWebRTCAnswer(callback: (data: { answer: any }) => void) {
+    return this._register("call:webrtc_answer", callback);
+  }
 
-onCallRejected(callback: (data: { bookingId: string }) => void) {
-  return this._register('call:rejected', callback);
-}
+  onIceCandidate(callback: (data: { candidate: any }) => void) {
+    return this._register("call:ice_candidate", callback);
+  }
 
-emitRinging(targetSocketId: string, bookingId: string) {
-  this.socket?.emit('call:ringing', { targetSocketId, bookingId });
-}
+  onCallEnded(callback: (data: { bookingId: string }) => void) {
+    return this._register("call:ended", callback);
+  }
 
-onCallRinging(callback: (data: { bookingId: string }) => void) {
-  return this._register('call:ringing', callback);
-}
+  onCallRejected(callback: (data: { bookingId: string }) => void) {
+    return this._register("call:rejected", callback);
+  }
 
-cancelCall(targetUserId: string, bookingId: string) {
-  this.socket?.emit('call:cancel', { targetUserId, bookingId });
-}
+  emitRinging(targetSocketId: string, bookingId: string) {
+    this.socket?.emit("call:ringing", { targetSocketId, bookingId });
+  }
 
-onCallCancelled(callback: (data: { bookingId: string }) => void) {
-  return this._register('call:cancelled', callback);
-}
+  onCallRinging(callback: (data: { bookingId: string }) => void) {
+    return this._register("call:ringing", callback);
+  }
+
+  cancelCall(targetUserId: string, bookingId: string) {
+    this.socket?.emit("call:cancel", { targetUserId, bookingId });
+  }
+
+  onCallCancelled(callback: (data: { bookingId: string }) => void) {
+    return this._register("call:cancelled", callback);
+  }
 
   private _reapplyRegistry() {
     // Re-register all persistent listeners onto the current socket

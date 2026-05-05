@@ -243,6 +243,15 @@ rejectCall(targetSocketId: string, bookingId: string) {
   this.socket?.emit('call:reject', { targetSocketId, bookingId });
 }
 
+  sendTripMessage(targetUserId: string, message: string, sender: string) {
+    this.socket?.emit('trip:send_message', { targetUserId, message, sender });
+  }
+
+  onTripMessage(callback: (data: { targetUserId: string; message: string; sender: string }) => void) {
+    return this._register('trip:new_message', callback);
+  }
+
+
 onIncomingCall(callback: (data: {
   callerId: string; callerName: string; callerAvatar?: string;
   callType: 'audio' | 'video'; bookingId: string; socketId: string;

@@ -107,7 +107,7 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={styles.root}>
-      <AppHeader title={ticket?.ticketId ?? "Messaging"} showBack />
+      <AppHeader title={ticket?.ticketId ?? " Messaging"} showBack />
 
       {/* Ticket subject banner */}
       {ticket && (

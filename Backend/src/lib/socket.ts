@@ -50,6 +50,29 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
     socket.on('support:join_ticket', (ticketId: string) => {
   socket.join(`ticket:${ticketId}`);
   console.log(`📡 Socket ${socket.id} joined ticket:${ticketId}`);
+
+  socket.on('trip:send_message', (data: {
+  targetUserId: string;
+  message: string;
+  sender: string;
+  senderId: string;
+  bookingId: string;
+  timestamp: string;
+}) => {
+  // Forward to the other party's user room
+  io.to(`user:${data.targetUserId}`).emit('trip:new_message', data);
+  // Echo back to sender so they see it confirmed
+  socket.emit('trip:message_sent', data);
+});
+
+socket.on('trip:join', (bookingId: string) => {
+  socket.join(`trip:${bookingId}`);
+  console.log(`📡 Socket ${socket.id} joined trip chat: trip:${bookingId}`);
+});
+
+socket.on('trip:leave', (bookingId: string) => {
+  socket.leave(`trip:${bookingId}`);
+});
 });
 
 socket.on('support:leave_ticket', (ticketId: string) => {
