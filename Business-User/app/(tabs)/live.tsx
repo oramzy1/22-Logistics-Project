@@ -7,6 +7,7 @@ import { EndTripFlow } from "@/src/ui/EndTripFlow";
 import { LiveSkeleton } from "@/src/ui/skeletons/LiveSkeleton";
 import { getRideTimeLabel, getRideTimeRemaining } from "@/src/utils/rideTimer";
 import { router, useLocalSearchParams } from "expo-router";
+import { useUnreadTripMessages } from '@/hooks/useUnreadTripMessages';
 import {
   ArrowRight,
   Bell,
@@ -61,7 +62,6 @@ export default function LiveTabScreen() {
   const { prices } = usePrices();
   const { activeBookings, isLoading, fetchBookings, patchBooking } =
     useBookings();
-
   const [isExtending, setIsExtending] = useState(false);
   const [showEndFlow, setShowEndFlow] = useState(false);
   const [showCancelFlow, setShowCancelFlow] = useState(false);
@@ -89,6 +89,12 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
     ? (bookingsWithDrivers.find((b) => b.id === bookingId) ??
       bookingsWithDrivers[0])
     : bookingsWithDrivers[0];
+
+
+const { unreadCount, clearUnread } = useUnreadTripMessages(
+  activeBooking?.id ?? null,
+  user?.id ?? ''
+);
 
   const [timeResult, setTimeResult] = useState(() =>
     getRideTimeRemaining(
@@ -766,16 +772,23 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
                 <Phone size={16} color="#4B5563" style={{ marginRight: 6 }} />
                 <Text style={styles.actionTextDef}>Call</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtnBlue}>
-                <Text
-                  style={[
-                    styles.actionTextDef,
-                    { color: "#000", fontWeight: "bold" },
-                  ]}
-                >
-                  Message
-                </Text>
-              </TouchableOpacity>
+             <TouchableOpacity
+  style={styles.actionBtnBlue}
+  onPress={() => { setShowChat(true); clearUnread(); }}
+>
+  <View style={{ position: 'relative' }}>
+    <Text style={[styles.actionTextDef, { color: '#000', fontWeight: 'bold' }]}>
+      Message
+    </Text>
+    {unreadCount > 0 && (
+      <View style={styles.unreadBadge}>
+        <Text style={styles.unreadBadgeText}>
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </Text>
+      </View>
+    )}
+  </View>
+</TouchableOpacity>
               <TouchableOpacity onPress={() => setShowChat(true)} style={styles.actionBtnWhite}>
                 <Text style={styles.actionTextDef}>Chat</Text>
               </TouchableOpacity>
@@ -1139,4 +1152,12 @@ const createStyles = (themeColors: any) =>
       marginTop: 10,
     },
     cancelTripText: { color: "#EF4444", fontWeight: "600", fontSize: 14 },
+    unreadBadge: {
+  position: 'absolute', top: -8, right: -12,
+  backgroundColor: '#EF4444', borderRadius: 10,
+  minWidth: 18, height: 18,
+  alignItems: 'center', justifyContent: 'center',
+  paddingHorizontal: 4,
+},
+unreadBadgeText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
   });

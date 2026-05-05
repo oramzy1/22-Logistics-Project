@@ -12,11 +12,10 @@ import { useRouter } from "expo-router";
 import EmptyState from "@/src/ui/EmptyState";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { useAppTheme } from "@/src/ui/useAppTheme";
-import { CallScreen } from "../screens/call-screen";
 import { useAuth } from "@/context/AuthContext";
-import { useWebRTCCall } from "@/hooks/useWebRTCCall";
 import {Chat} from "@/components/Chat";
 import { useCall } from "@/context/CallContext";
+import { useUnreadTripMessages } from "@/hooks/useUnreadTripMessages";
 
 export default function ActiveTripScreen() {
   const [activeTrip, setActiveTrip] = useState<any>(null);
@@ -30,6 +29,10 @@ export default function ActiveTripScreen() {
   const { callState, incomingCall } = webrtc;
   const [showCall, setShowCall] = useState(false);
   const [isOutgoingCall, setIsOutgoingCall] = useState(false);
+    const { unreadCount, clearUnread } = useUnreadTripMessages(
+  activeTrip?.id ?? null,
+  user?.id ?? ''
+);
 
   // Show incoming call screen automatically:
   useEffect(() => {
@@ -178,12 +181,24 @@ export default function ActiveTripScreen() {
             >
               <Phone size={18} color="#FFF" />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.callBtn}
-              onPress={() =>setShowChat(true)}
-            >
-              <MessageSquare size={18} color="#FFF" />
-            </TouchableOpacity>
+           <TouchableOpacity
+  style={styles.callBtn}
+  onPress={() => { setShowChat(true); clearUnread(); }}
+>
+  <MessageSquare size={18} color="#FFF" />
+  {unreadCount > 0 && (
+    <View style={{
+      position: 'absolute', top: -4, right: -4,
+      backgroundColor: '#EF4444', borderRadius: 8,
+      minWidth: 16, height: 16,
+      alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>
+        {unreadCount > 9 ? '9+' : unreadCount}
+      </Text>
+    </View>
+  )}
+</TouchableOpacity>
           </View>
         </View>
 
@@ -341,4 +356,12 @@ const createStyles = (themeColors: any) =>
       alignItems: "center",
     },
     primaryBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
+    unreadBadge: {
+  position: 'absolute', top: -8, right: -12,
+  backgroundColor: '#EF4444', borderRadius: 10,
+  minWidth: 18, height: 18,
+  alignItems: 'center', justifyContent: 'center',
+  paddingHorizontal: 4,
+},
+unreadBadgeText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
   });

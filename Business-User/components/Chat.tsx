@@ -1,4 +1,4 @@
-
+// Buiness-User
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
@@ -21,6 +21,7 @@ type Message = {
   senderId: string;
   bookingId: string;
   timestamp: string;
+  isRead: boolean;
 };
 
 type Props = {
@@ -37,6 +38,28 @@ const formatTime = (ts: string) => {
   return d.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: true });
 };
 
+function getDateLabel(timestamp: string): string {
+  const date = new Date(timestamp);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString('en-NG', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+// Group messages by date:
+function groupMessagesByDate(messages: Message[]): { label: string; messages: Message[] }[] {
+  const groups: Record<string, Message[]> = {};
+  messages.forEach((msg) => {
+    const label = getDateLabel(msg.timestamp);
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(msg);
+  });
+  return Object.entries(groups).map(([label, messages]) => ({ label, messages }));
+}
+
 export function Chat({
   bookingId, currentUserId, currentUserName,
   targetUserId, targetUserName, onClose,
@@ -48,40 +71,53 @@ export function Chat({
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
 
-  useEffect(() => {
-    socketService.joinTripChat(bookingId);
+useEffect(() => {
 
-   const unsubNew = socketService.onTripMessage((data) => {
-  if (data.bookingId !== bookingId) return;
-  setMessages((prev) => {
-    // Remove any optimistic message with same content+sender, then add real one
-    const withoutOptimistic = prev.filter(
-      (m) => !(m.id.startsWith('optimistic-') && m.senderId === data.senderId && m.message === data.message)
-    );
-    const isDupe = withoutOptimistic.some(
-      (m) => m.timestamp === data.timestamp && m.senderId === data.senderId
-    );
-    return isDupe ? withoutOptimistic : [...withoutOptimistic, { ...data, id: `${data.senderId}-${data.timestamp}` }];
+  // Load persisted history
+  const unsubHistory = socketService.onTripHistory((history) => {
+    setMessages(history);
   });
-});
 
-    // Confirm sent message echoed back
-    const unsubSent = socketService.onTripMessageSent((data) => {
-      if (data.bookingId !== bookingId) return;
-      setMessages((prev) => {
-        const isDupe = prev.some(
-          (m) => m.timestamp === data.timestamp && m.senderId === data.senderId
-        );
-        return isDupe ? prev : [...prev, { ...data, id: `${data.senderId}-${data.timestamp}` }];
-      });
+  const unsubNew = socketService.onTripMessage((data) => {
+    if (data.bookingId !== bookingId) return;
+    setMessages((prev) => {
+      const withoutOptimistic = prev.filter(
+        (m) => !(m.id.startsWith('optimistic-') && m.senderId === data.senderId && m.message === data.message)
+      );
+      const isDupe = withoutOptimistic.some((m) => m.id === data?.id);
+      if (isDupe) return withoutOptimistic;
+      // Mark as read immediately since chat is open
+      socketService.markTripMessagesRead(bookingId, currentUserId);
+      return [...withoutOptimistic, data];
     });
+  });
 
-    return () => {
-      unsubNew();
-      unsubSent();
-      socketService.leaveTripChat(bookingId);
-    };
-  }, [bookingId]);
+  const unsubSent = socketService.onTripMessageSent((data) => {
+    if (data.bookingId !== bookingId) return;
+    setMessages((prev) => {
+      const withoutOptimistic = prev.filter(
+        (m) => !(m.id.startsWith('optimistic-') && m.message === data.message)
+      );
+      const isDupe = withoutOptimistic.some((m) => m.id === data.id);
+      return isDupe ? withoutOptimistic : [...withoutOptimistic, data];
+    });
+  });
+
+  const unsubRead = socketService.onTripMessagesRead(() => {
+    setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
+  });
+  
+  socketService.joinTripChat(bookingId);
+  socketService.markTripMessagesRead(bookingId, currentUserId);
+
+  return () => {
+    unsubHistory();
+    unsubNew();
+    unsubSent();
+    unsubRead();
+    socketService.leaveTripChat(bookingId);
+  };
+}, [bookingId, currentUserId]);
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -151,43 +187,51 @@ export function Chat({
               </Text>
             </View>
           )}
-          {messages.map((msg) => {
-            const isMe = msg.senderId === currentUserId;
-            return (
-              <View
-                key={msg.id}
-                style={[styles.bubble, isMe ? styles.bubbleRight : styles.bubbleLeft]}
-              >
-                {!isMe && (
-                  <View style={styles.remoteAvatar}>
-                    <Text style={styles.remoteAvatarText}>
-                      {msg.sender?.charAt(0)?.toUpperCase() ?? "?"}
-                    </Text>
-                  </View>
-                )}
-                <View style={[
-                  styles.bubbleInner,
-                  isMe ? styles.bubbleInnerRight : styles.bubbleInnerLeft,
-                ]}>
-                  {!isMe && (
-                    <Text style={styles.senderLabel}>{msg.sender}</Text>
-                  )}
-                  <Text style={[
-                    styles.msgText,
-                    { color: isMe ? "#3E2723" : themeColors.text }
-                  ]}>
-                    {msg.message}
-                  </Text>
-                  <Text style={[
-                    styles.msgTime,
-                    { textAlign: isMe ? "right" : "left" }
-                  ]}>
-                    {formatTime(msg.timestamp)}
-                  </Text>
-                </View>
+         {(() => {
+  const groups = groupMessagesByDate(messages);
+  return groups.map(({ label, messages: groupMsgs }) => (
+    <View key={label}>
+      {/* Date stamp */}
+      <View style={styles.dateDivider}>
+        <View style={styles.dateDividerLine} />
+        <Text style={styles.dateDividerText}>{label}</Text>
+        <View style={styles.dateDividerLine} />
+      </View>
+
+      {groupMsgs.map((msg) => {
+        const isMe = msg.senderId === currentUserId;
+        return (
+          <View key={msg.id} style={[styles.bubble, isMe ? styles.bubbleRight : styles.bubbleLeft]}>
+            {!isMe && (
+              <View style={styles.remoteAvatar}>
+                <Text style={styles.remoteAvatarText}>
+                  {msg.sender?.charAt(0)?.toUpperCase() ?? '?'}
+                </Text>
               </View>
-            );
-          })}
+            )}
+            <View style={[styles.bubbleInner, isMe ? styles.bubbleInnerRight : styles.bubbleInnerLeft]}>
+              {!isMe && <Text style={styles.senderLabel}>{msg.sender}</Text>}
+              <Text style={[styles.msgText, { color: isMe ? '#3E2723' : themeColors.text }]}>
+                {msg.message}
+              </Text>
+              <View style={styles.msgMeta}>
+                <Text style={[styles.msgTime, { textAlign: isMe ? 'right' : 'left' }]}>
+                  {formatTime(msg.timestamp)}
+                </Text>
+                {/* Read receipt — only for sender's messages */}
+                {isMe && (
+                  <Text style={styles.readReceipt}>
+                    {msg.isRead ? ' ✓✓' : ' ✓'}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  ));
+})()}
         </ScrollView>
 
         {/* Input */}
@@ -274,4 +318,21 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: "#E4C77B", alignItems: "center", justifyContent: "center",
   },
+  dateDivider: {
+  flexDirection: 'row', alignItems: 'center',
+  marginVertical: 16, gap: 8,
+},
+dateDividerLine: {
+  flex: 1, height: 1, backgroundColor: themeColors.border,
+},
+dateDividerText: {
+  fontSize: 11, color: '#9CA3AF', fontWeight: '600',
+  paddingHorizontal: 8,
+  backgroundColor: themeColors.background, // sits on top of line
+},
+msgMeta: {
+  flexDirection: 'row', alignItems: 'center',
+  justifyContent: 'flex-end', marginTop: 4,
+},
+readReceipt: { fontSize: 10, color: '#9CA3AF' },
 });

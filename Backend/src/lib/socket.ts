@@ -53,6 +53,35 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
   socket.join(`ticket:${ticketId}`);
   console.log(`📡 Socket ${socket.id} joined ticket:${ticketId}`);
 
+// Fetch message history when joining
+socket.on('trip:join', async (bookingId: string) => {
+  socket.join(`trip:${bookingId}`);
+  
+  // Send message history to the joining client
+  try {
+    const history = await prisma.tripMessages.findMany({
+      where: { bookingId, archivedAt: null },
+      orderBy: { createdAt: 'asc' },
+    });
+    socket.emit('trip:history', history.map(m => ({
+      id: m.id,
+      message: m.message,
+      sender: m.senderName,
+      senderId: m.senderId,
+      bookingId: m.bookingId,
+      timestamp: m.createdAt.toISOString(),
+      isRead: m.isRead,
+    })));
+  } catch (err) {
+    console.error('trip:join history error:', err);
+  }
+});
+
+socket.on('trip:leave', (bookingId: string) => {
+  socket.leave(`trip:${bookingId}`);
+});
+
+
 // Replace the existing trip:send_message handler:
 socket.on('trip:send_message', async (data: {
   targetUserId: string;
@@ -126,30 +155,6 @@ socket.on('trip:send_message', async (data: {
   }
 });
 
-// Fetch message history when joining
-socket.on('trip:join', async (bookingId: string) => {
-  socket.join(`trip:${bookingId}`);
-  
-  // Send message history to the joining client
-  try {
-    const history = await prisma.tripMessages.findMany({
-      where: { bookingId, archivedAt: null },
-      orderBy: { createdAt: 'asc' },
-    });
-    socket.emit('trip:history', history.map(m => ({
-      id: m.id,
-      message: m.message,
-      sender: m.senderName,
-      senderId: m.senderId,
-      bookingId: m.bookingId,
-      timestamp: m.createdAt.toISOString(),
-      isRead: m.isRead,
-    })));
-  } catch (err) {
-    console.error('trip:join history error:', err);
-  }
-});
-
 // Mark messages as read
 socket.on('trip:mark_read', async (data: { bookingId: string; readerUserId: string }) => {
   await prisma.tripMessages.updateMany({
@@ -160,18 +165,6 @@ socket.on('trip:mark_read', async (data: { bookingId: string; readerUserId: stri
   io.to(`trip:${data.bookingId}`).emit('trip:messages_read', { bookingId: data.bookingId });
 });
 
-socket.on('trip:leave', (bookingId: string) => {
-  socket.leave(`trip:${bookingId}`);
-});
-});
-
-socket.on('support:leave_ticket', (ticketId: string) => {
-  socket.leave(`ticket:${ticketId}`);
-});
-
-socket.on('trip:send_message', (data: { targetUserId: string; message: string; sender: string }) => {
-  // Immediately relay to target user's personal room
-  io.to(`user:${data.targetUserId}`).emit('trip:new_message', data);
 });
 
 // ── WebRTC Signaling ─────────────────────────────────────────
