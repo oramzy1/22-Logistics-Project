@@ -2,6 +2,8 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { createNotification } from './notifications';
+import prisma from './prisma';
 
 let io: SocketServer;
 
@@ -51,7 +53,8 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
   socket.join(`ticket:${ticketId}`);
   console.log(`📡 Socket ${socket.id} joined ticket:${ticketId}`);
 
-  socket.on('trip:send_message', (data: {
+// Replace the existing trip:send_message handler:
+socket.on('trip:send_message', async (data: {
   targetUserId: string;
   message: string;
   sender: string;
@@ -59,15 +62,102 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
   bookingId: string;
   timestamp: string;
 }) => {
-  // Forward to the other party's user room
-  io.to(`user:${data.targetUserId}`).emit('trip:new_message', data);
-  // Echo back to sender so they see it confirmed
-  socket.emit('trip:message_sent', data);
+  try {
+    // Persist to DB
+    const saved = await prisma.tripMessage.create({
+      data: {
+        bookingId: data.bookingId,
+        senderId: data.senderId,
+        senderName: data.sender,
+        message: data.message,
+      },
+    });
+
+    const payload = {
+      id: saved.id,
+      message: saved.message,
+      sender: saved.senderName,
+      senderId: saved.senderId,
+      bookingId: saved.bookingId,
+      timestamp: saved.createdAt.toISOString(),
+      isRead: false,
+    };
+
+    // Send to recipient
+    io.to(`user:${data.targetUserId}`).emit('trip:new_message', payload);
+
+    // Echo to sender (to replace optimistic message with real ID)
+    socket.emit('trip:message_sent', payload);
+
+    // Push notification to recipient
+    const recipient = await prisma.user.findUnique({
+      where: { id: data.targetUserId },
+      select: { pushToken: true, name: true },
+    });
+
+    if (recipient?.pushToken) {
+      // Use your existing push notification utility
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: recipient.pushToken,
+          title: `Message from ${data.sender}`,
+          body: data.message.slice(0, 100),
+          data: { type: 'trip_message', bookingId: data.bookingId },
+          sound: 'default',
+          badge: 1,
+        }),
+      });
+    }
+
+    // Save in-app notification
+    await createNotification(
+      data.targetUserId,
+      `Message from ${data.sender}`,
+      data.message.slice(0, 80),
+      'TRIP_MESSAGE',
+      data.bookingId,
+    );
+
+  } catch (err) {
+    console.error('trip:send_message error:', err);
+    socket.emit('trip:message_error', { error: 'Failed to send message' });
+  }
 });
 
-socket.on('trip:join', (bookingId: string) => {
+// Fetch message history when joining
+socket.on('trip:join', async (bookingId: string) => {
   socket.join(`trip:${bookingId}`);
-  console.log(`📡 Socket ${socket.id} joined trip chat: trip:${bookingId}`);
+  
+  // Send message history to the joining client
+  try {
+    const history = await prisma.tripMessages.findMany({
+      where: { bookingId, archivedAt: null },
+      orderBy: { createdAt: 'asc' },
+    });
+    socket.emit('trip:history', history.map(m => ({
+      id: m.id,
+      message: m.message,
+      sender: m.senderName,
+      senderId: m.senderId,
+      bookingId: m.bookingId,
+      timestamp: m.createdAt.toISOString(),
+      isRead: m.isRead,
+    })));
+  } catch (err) {
+    console.error('trip:join history error:', err);
+  }
+});
+
+// Mark messages as read
+socket.on('trip:mark_read', async (data: { bookingId: string; readerUserId: string }) => {
+  await prisma.tripMessages.updateMany({
+    where: { bookingId: data.bookingId, senderId: { not: data.readerUserId }, isRead: false },
+    data: { isRead: true },
+  });
+  // Notify sender their messages were read
+  io.to(`trip:${data.bookingId}`).emit('trip:messages_read', { bookingId: data.bookingId });
 });
 
 socket.on('trip:leave', (bookingId: string) => {

@@ -9,6 +9,12 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { getIO, emitToAdmin } from "../lib/socket";
 import { getPackagePrices } from "../lib/getPrices";
 
+export const archiveTripMessages = async (bookingId: string) => {
+  await prisma.tripMessages.updateMany({
+    where: { bookingId },
+    data: { archivedAt: new Date() },
+  });
+};
 
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
@@ -232,6 +238,8 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { status: "CANCELLED" },
     });
+
+    await archiveTripMessages(updated.id);
 
     if (booking.driverId) {
       await prisma.driverProfile.update({
@@ -467,6 +475,8 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { status: "COMPLETED" },
     });
+
+    await archiveTripMessages(updated.id);
 
     if (booking.driverId) {
       await prisma.driverProfile.update({

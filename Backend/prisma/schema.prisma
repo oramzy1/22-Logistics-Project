@@ -39,7 +39,7 @@ model User {
   authProvider     String    @default("email") // "email" | "google" | "apple" | "hybrid"
   actionOtp        String?
   actionOtpExpiry  DateTime?
-  pendingEmail         String?   // new email awaiting verification
+  pendingEmail         String?   // new email awaiting verificationn
   pendingPassword      String?   // hashed password awaiting email confirmation
   pendingEmailToken    String?   // hashed OTP for new email verification
   pendingEmailExpiry   DateTime?
@@ -54,6 +54,7 @@ model User {
   reviewsAsCustomer  DriverReview[] @relation("CustomerReviews")
   supportTickets   SupportTicket[]
   supportMessages  SupportMessage[]
+  TripMessages  TripMessages[]
 }
 
 model BusinessProfile {
@@ -115,6 +116,7 @@ model Booking {
   updatedAt     DateTime      @updatedAt
 
   rideRequests  RideRequest[]
+  TripMessages  TripMessages[]
   notifications Notification[]
   extensions    TripExtension[]
   review        DriverReview?
@@ -273,6 +275,19 @@ model SupportMessage {
   body      String
   isAdmin   Boolean        @default(false)
   createdAt DateTime       @default(now())
+}
+
+model TripMessages {
+  id         String   @id @default(uuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  senderId   String
+  sender     User     @relation(fields: [senderId], references: [id])
+  senderName String
+  message    String
+  isRead     Boolean  @default(false)
+  archivedAt DateTime?
+  createdAt  DateTime @default(now())
 }
 
 enum SupportCategory {

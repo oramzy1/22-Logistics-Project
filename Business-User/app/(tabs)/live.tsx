@@ -36,7 +36,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
-import Chat from "../../components/Chat";
+import {Chat} from "../../components/Chat";
 import { BookingsSkeleton } from "@/src/ui/skeletons/BookingsSkeleton";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
 import EmptyState from "@/src/ui/EmptyState";
@@ -809,11 +809,18 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
            onClose={() => { setShowCall(false); setIsOutgoingCall(false); }}
         />
       )}
-      {showChat && (
-        <Modal visible={showChat}>
-          <Chat/>
-        </Modal>
-      )}
+    {showChat && activeBooking?.driver?.id && (
+  <Modal visible={showChat} animationType="slide">
+    <Chat
+      bookingId={activeBooking.id}
+      currentUserId={user!.id}
+      currentUserName={user?.name ?? "Passenger"}
+      targetUserId={activeBooking.driver.id}
+      targetUserName={activeBooking.driver?.name ?? "Driver"}
+      onClose={() => setShowChat(false)}
+    />
+  </Modal>
+)}
     </View>
   );
 }

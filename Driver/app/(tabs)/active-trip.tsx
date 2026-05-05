@@ -15,7 +15,7 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import { CallScreen } from "../screens/call-screen";
 import { useAuth } from "@/context/AuthContext";
 import { useWebRTCCall } from "@/hooks/useWebRTCCall";
-import Chat from "@/components/Chat";
+import {Chat} from "@/components/Chat";
 import { useCall } from "@/context/CallContext";
 
 export default function ActiveTripScreen() {
@@ -227,11 +227,18 @@ export default function ActiveTripScreen() {
           )}
         </View>
         
-      {showChat && (
-        <Modal visible={showChat}>
-          <Chat/>
-        </Modal>
-      )}
+      {showChat && activeTrip?.customerId && (
+  <Modal visible={showChat} animationType="slide">
+    <Chat
+      bookingId={activeTrip.id}
+      currentUserId={user!.id}
+      currentUserName={user?.name ?? "Driver"}
+      targetUserId={activeTrip.customerId}
+      targetUserName={activeTrip.customer?.name ?? "Passenger"}
+      onClose={() => setShowChat(false)}
+    />
+  </Modal>
+)}
       </SafeAreaView>
     </View>
   );
