@@ -64,7 +64,7 @@ socket.on('trip:send_message', async (data: {
 }) => {
   try {
     // Persist to DB
-    const saved = await prisma.tripMessage.create({
+    const saved = await prisma.tripMessages.create({
       data: {
         bookingId: data.bookingId,
         senderId: data.senderId,
