@@ -124,7 +124,7 @@ export default function ActiveTripScreen() {
 
       {/* Bottom Sheet Card */}
       <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
-        {showCall && (
+        {/* {showCall && (
           <CallScreen
             webrtc={webrtc} // ← THIS WAS MISSING — caused the crash
             targetUserId={isOutgoingCall ? activeTrip?.customerId : undefined}
@@ -138,7 +138,7 @@ export default function ActiveTripScreen() {
               setIsOutgoingCall(false);
             }}
           />
-        )}
+        )} */}
         <View style={styles.cardHeader}>
           <Text style={styles.enRouteText}>
             {activeTrip.status === "IN_PROGRESS"

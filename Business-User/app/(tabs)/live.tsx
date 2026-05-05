@@ -26,6 +26,7 @@ import {
   FlatList,
   Image,
   ImageBackground,
+  Modal,
   ScrollView,
   StyleSheet,
   Switch,
@@ -34,6 +35,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
+import Chat from "../../components/Chat";
 import { BookingsSkeleton } from "@/src/ui/skeletons/BookingsSkeleton";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
 import EmptyState from "@/src/ui/EmptyState";
@@ -54,6 +56,7 @@ export default function LiveTabScreen() {
   const [selectedExtension, setSelectedExtension] = useState<string | null>(
     null,
   );
+  const [showChat, setShowChat] = useState(false);
   const { prices } = usePrices();
   const { activeBookings, isLoading, fetchBookings, patchBooking } =
     useBookings();
@@ -687,7 +690,7 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
                   </Text>
                   <View style={styles.ratingOverview}>
                     <View style={styles.mainScore}>
-                      <Text style={styles.ratingNumber}>4.5</Text>
+                      <Text style={styles.ratingNumber}>{activeBooking.driver?.rating ?? "4.5"}</Text>
                       <View style={styles.starsRow}>
                         {[1, 2, 3, 4].map((i) => (
                           <Star
@@ -762,7 +765,7 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
                   Message
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtnWhite}>
+              <TouchableOpacity onPress={() => setShowChat(true)} style={styles.actionBtnWhite}>
                 <Text style={styles.actionTextDef}>Chat</Text>
               </TouchableOpacity>
             </View>
@@ -794,6 +797,11 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
           remoteName={activeBooking?.driver?.name ?? "Driver"}
            onClose={() => { setShowCall(false); setIsOutgoingCall(false); }}
         />
+      )}
+      {showChat && (
+        <Modal visible={showChat}>
+          <Chat/>
+        </Modal>
       )}
     </View>
   );

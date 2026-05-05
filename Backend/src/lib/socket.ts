@@ -56,6 +56,11 @@ socket.on('support:leave_ticket', (ticketId: string) => {
   socket.leave(`ticket:${ticketId}`);
 });
 
+socket.on('trip:send_message', (data: { targetUserId: string; message: string; sender: string }) => {
+  // Immediately relay to target user's personal room
+  io.to(`user:${data.targetUserId}`).emit('trip:new_message', data);
+});
+
 // ── WebRTC Signaling ─────────────────────────────────────────
 socket.on('call:initiate', (data: { 
   targetUserId: string; 

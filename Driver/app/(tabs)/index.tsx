@@ -355,13 +355,13 @@ export default function HomeTabScreen() {
                       <View style={styles.rideCardBody}>
                         {/* Meta row: Ride ID | Ride Type */}
                         <View style={styles.rideMetaRow}>
-                          <View style={styles.rideMetaCol}>
+                          <View>
                             <Text style={styles.rideMetaLabel}>Ride ID</Text>
                             <Text style={styles.rideMetaValue}>
                               Log-{req.id?.slice(0, 5)}
                             </Text>
                           </View>
-                          <View style={styles.rideMetaCol}>
+                          <View>
                             <Text style={styles.rideMetaLabel}>Ride Type</Text>
                             <View
                               style={[
@@ -429,7 +429,7 @@ export default function HomeTabScreen() {
                           </View>
                         </View>
 
-                        <View style={styles.rideMetaCol}>
+                        <View>
                           <Text style={styles.rideMetaLabel}>Add Ons</Text>
                           <Text style={styles.rideMetaValue}>
                             {req.addOns?.join(", ")}
@@ -438,7 +438,7 @@ export default function HomeTabScreen() {
 
                         {/* Scheduled date + duration */}
                         <View style={[styles.rideFooterRow, isDark ? { backgroundColor: '#2c2c2c'} : { backgroundColor: '#F6F6F6'}]}>
-                          <View style={styles.rideFooterCol}>
+                          <View >
                             <Text style={styles.rideMetaLabel}>
                               SCHEDULED DATE
                             </Text>
@@ -449,7 +449,7 @@ export default function HomeTabScreen() {
                               {scheduledTime}
                             </Text>
                           </View>
-                          <View style={styles.rideFooterCol}>
+                          <View>
                             <Text style={styles.rideMetaLabel}>
                               ESTIMATED DURATION
                             </Text>
@@ -774,7 +774,6 @@ const createStyles = ( themeColors: any) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    py: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E5E7EB",
@@ -786,7 +785,6 @@ const createStyles = ( themeColors: any) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    py: 12,
     borderRadius: 8,
     backgroundColor: "#E4C77B",
     paddingVertical: 12,

@@ -328,7 +328,9 @@ const endCall = useCallback((bookingId: string) => {
     // Ringing but unanswered? Dispatch cancellation
     else if (targetUserIdRef.current) {
       socketService.cancelCall(targetUserIdRef.current, bookingId);
-    }
+    } else if (callStateRef.current !== 'ended') { 
+          cleanup();
+        }
     
     callStateRef.current = 'ended';
     setCallState("ended");
@@ -458,9 +460,8 @@ useEffect(() => {
   // Caller cancelled before callee answered
   const unsubCancelled = socketService.onCallCancelled(() => {
     stopIncomingRing();
-    setIncomingCall(null);
-    callStateRef.current = 'idle';
-    setCallState('idle');
+    callStateRef.current = 'ended';
+    setCallState('ended');
   });
 
   return () => {
