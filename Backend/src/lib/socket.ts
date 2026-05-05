@@ -109,6 +109,11 @@ socket.on('call:ringing', (data: { targetSocketId: string; bookingId: string }) 
   io.to(data.targetSocketId).emit('call:ringing', { bookingId: data.bookingId });
 });
 
+socket.on('call:cancel', (data: { targetUserId: string; bookingId: string }) => {
+  // Gracefully tell targeted user that the incoming call was cancelled
+  io.to(`user:${data.targetUserId}`).emit('call:cancelled', { bookingId: data.bookingId });
+});
+
     socket.on('disconnect', (reason) => {
       console.log(`🔌 Socket disconnected: ${socket.id} | Reason: ${reason}`);
     });

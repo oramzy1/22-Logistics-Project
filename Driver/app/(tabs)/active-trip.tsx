@@ -133,7 +133,10 @@ export default function ActiveTripScreen() {
             callType="audio"
             bookingId={activeTrip?.id ?? ""}
             remoteName={activeTrip?.customer?.name ?? "Passenger"}
-            onClose={() => { setShowCall(false); setIsOutgoingCall(false); }}
+            onClose={() => {
+              setShowCall(false);
+              setIsOutgoingCall(false);
+            }}
           />
         )}
         <View style={styles.cardHeader}>
@@ -156,9 +159,19 @@ export default function ActiveTripScreen() {
             </View>
             <TouchableOpacity
               style={styles.callBtn}
+              // onPress={() => {
+              //   setIsOutgoingCall(true); // ← mark as outgoing BEFORE showing screen
+              //   setShowCall(true);
+              // }}
               onPress={() => {
-                setIsOutgoingCall(true); // ← mark as outgoing BEFORE showing screen
-                setShowCall(true);
+                webrtc.startCall({
+                  targetUserId: activeTrip?.customerId,
+                  callerId: user?.id,
+                  callerName: user?.name ?? "Driver",
+                  callType: "audio",
+                  bookingId: activeTrip?.id ?? "",
+                  remoteName: activeTrip?.customer?.name ?? "Passenger",
+                });
               }}
             >
               <Phone size={18} color="#FFF" />

@@ -1,5 +1,5 @@
 // Driver
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, TouchableOpacity, StyleSheet, StatusBar, Modal, Animated
 } from 'react-native';
@@ -31,6 +31,8 @@ const formatDuration = (secs: number) => {
 };
 
 export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, callerId, callerName, callType = 'audio', onClose, visible= true }: Props) {
+
+const [exitDuration, setExitDuration] = useState(0);
   useKeepAwake();
   const {
     callState, localStream, remoteStream, callDuration,
@@ -49,6 +51,7 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
 
  useEffect(() => {
   if (['rejected', 'no_answer', 'ended'].includes(callState)) {
+    setExitDuration(callDuration);
     const t = setTimeout(() => {
       cleanup(); // ← NOW we cleanup, after the message has shown
       onClose();
@@ -59,12 +62,10 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
 
   const handleEnd = () => {
     endCall(bookingId);
-    onClose();
   };
 
   const handleReject = () => {
     rejectCall();
-    onClose();
   };
 
   const isVideo = callType === 'video';
@@ -119,7 +120,7 @@ export function CallScreen({ webrtc, remoteName, bookingId, targetUserId, caller
   : callState === 'ringing'   ? 'Ringing...'
   : callState === 'rejected'  ? 'Call Declined'
   : callState === 'no_answer' ? 'No Answer'
-  : callState === 'ended'     ? `Call ended · ${formatDuration(callDuration)}`
+  : callState === 'ended'     ? `Call ended · ${formatDuration(exitDuration)}`
   : 'Connecting...'}
           </Text>
         </View>

@@ -27,6 +27,7 @@ import { LoadingProvider } from "@/context/LoadingContext";
 import { NetworkProvider, useNetwork } from "@/context/NetworkContext";
 import OfflineBanner from "@/components/OfflineBanner";
 import { CallProvider } from "@/context/CallContext";
+import { GlobalCallUI } from "@/components/GlobalCallUI";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -81,7 +82,7 @@ export default function RootLayout() {
   useEffect(() => {
     initI18n().then(() => setI18nReady(true));
   }, []);
-  
+
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -110,56 +111,57 @@ function RootLayoutNav() {
   return (
     <GestureHandlerRootView>
       <I18nextProvider i18n={i18n}>
-       <NetworkProvider>
-         <LoadingProvider>
-          <OfflineBanner isConnected={isConnected} />
-          <ScheduleProvider>
-            <BookingProvider>
-              <AuthProvider>
-                <CallProvider>
-                  <GlobalSocketAlerts />
-                <ThemeProvider
-                  value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-                >
-                  <Stack>
-                    <Stack.Screen
-                      name="index"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(auth)"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(tabs)"
-                      options={{ headerShown: false }}
-                    />
-                    {/* Main flow screens */}
-                    <Stack.Screen
-                      name="screens"
-                      options={{ headerShown: false }}
-                    />
+        <NetworkProvider>
+          <LoadingProvider>
+            <OfflineBanner isConnected={isConnected} />
+            <ScheduleProvider>
+              <BookingProvider>
+                <AuthProvider>
+                  <CallProvider>
+                    <GlobalSocketAlerts />
+                    <GlobalCallUI />
+                    <ThemeProvider
+                      value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+                    >
+                      <Stack>
+                        <Stack.Screen
+                          name="index"
+                          options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                          name="(auth)"
+                          options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                          name="(tabs)"
+                          options={{ headerShown: false }}
+                        />
+                        {/* Main flow screens */}
+                        <Stack.Screen
+                          name="screens"
+                          options={{ headerShown: false }}
+                        />
 
-                    {/* Booking detail */}
-                    <Stack.Screen
-                      name="payment-history"
-                      options={{ headerShown: false }}
-                    />
+                        {/* Booking detail */}
+                        <Stack.Screen
+                          name="payment-history"
+                          options={{ headerShown: false }}
+                        />
 
-                    {/* Keeping template modal available (not used). */}
-                    <Stack.Screen
-                      name="modal"
-                      options={{ presentation: "modal" }}
-                    />
-                  </Stack>
-                </ThemeProvider>
-                </CallProvider>
-              </AuthProvider>
-            </BookingProvider>
-          </ScheduleProvider>
-          <Toast config={toastConfig} />
-        </LoadingProvider>
-       </NetworkProvider>
+                        {/* Keeping template modal available (not used). */}
+                        <Stack.Screen
+                          name="modal"
+                          options={{ presentation: "modal" }}
+                        />
+                      </Stack>
+                    </ThemeProvider>
+                  </CallProvider>
+                </AuthProvider>
+              </BookingProvider>
+            </ScheduleProvider>
+            <Toast config={toastConfig} />
+          </LoadingProvider>
+        </NetworkProvider>
       </I18nextProvider>
     </GestureHandlerRootView>
   );

@@ -45,11 +45,21 @@ export type IncomingCallData = {
   bookingId: string;
   socketId: string;
 };
+
+type CallMeta = {
+  remoteName: string;
+  remoteAvatar?: string;
+  bookingId: string;
+} | null;
+
 async function playOutgoingRing() {
   try {
+     await stopOutgoingRing();
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
+      allowsRecordingIOS: false,        
+      playThroughEarpieceAndroid: false, 
     });
     outgoingSound = new Audio.Sound();
     // Standard dial/ringback tone — swap for a local require() if you bundle one
@@ -65,9 +75,12 @@ async function playOutgoingRing() {
 
 async function playIncomingRing() {
   try {
+    await stopIncomingRing();
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
+      allowsRecordingIOS: false,        
+      playThroughEarpieceAndroid: false, 
     });
     incomingSound = new Audio.Sound();
     await incomingSound.loadAsync(require("../assets/audio/ringtone.wav"), {
@@ -96,6 +109,7 @@ async function stopIncomingRing() {
   incomingSound = null;
 }
 export function useWebRTCCall() {
+  const [callMeta, setCallMeta] = useState<CallMeta>(null);
   const [callState, setCallState] = useState<CallState>("idle");
   const [callType, setCallType] = useState<"audio" | "video">("audio");
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -140,6 +154,7 @@ const targetUserIdRef = useRef<string | null>(null);
   callStateRef.current = 'idle';
   setCallState('idle');
   setIncomingCall(null);
+  setCallMeta(null);
 }, []);
 
   // ── Create peer connection ───────────────────────────────────
@@ -172,7 +187,9 @@ const targetUserIdRef = useRef<string | null>(null);
         state === "failed" ||
         state === "closed"
       ) {
-        cleanup();
+        if (callStateRef.current !== 'ended') { 
+      cleanup();
+    }
       }
     });
 
@@ -181,7 +198,11 @@ const targetUserIdRef = useRef<string | null>(null);
       const state = peerConnection.iceConnectionState;
       if (state === "connected" || state === "completed")
         setCallState("connected");
-      if (state === "failed" || state === "closed") cleanup();
+      if (state === "failed" || state === "closed"){
+        if (callStateRef.current !== 'ended') { 
+          cleanup();
+        }
+      }
     });
 
     pc.current = peerConnection;
@@ -210,11 +231,18 @@ const targetUserIdRef = useRef<string | null>(null);
       callerAvatar?: string;
       callType: "audio" | "video";
       bookingId: string;
+      remoteName: string; 
+      remoteAvatar?: string;
     }) => {
       targetUserIdRef.current = params.targetUserId;
       setCallType(params.callType);
       setCallState("connecting");
       playOutgoingRing();
+      setCallMeta({
+        remoteName: params.remoteName,
+        remoteAvatar: params.remoteAvatar,
+        bookingId: params.bookingId,
+      });
 
       const stream = await getLocalStream(params.callType);
       const peerConnection = createPC();
@@ -254,7 +282,10 @@ const targetUserIdRef = useRef<string | null>(null);
 
   // ── Answer incoming call ─────────────────────────────────────
   const acceptCall = useCallback(async () => {
-    if (!incomingCall) return;
+    if (!incomingCall || callStateRef.current === "connected") return;
+    stopOutgoingRing();
+    stopIncomingRing();
+    callStateRef.current = "connected";
     setCallState("connected");
     remoteSocketId.current = incomingCall.socketId;
     setCallType(incomingCall.callType);
@@ -276,6 +307,7 @@ const targetUserIdRef = useRef<string | null>(null);
   const rejectCall = useCallback(() => {
     if (!incomingCall) return;
     stopIncomingRing();
+    stopOutgoingRing();
      localStreamRef.current?.getTracks().forEach((t) => t.stop());
   pc.current?.close();
   pc.current = null;
@@ -286,11 +318,19 @@ const targetUserIdRef = useRef<string | null>(null);
 
   // ── End active call ──────────────────────────────────────────
   const endCall = useCallback((bookingId: string) => {
-    stopOutgoingRing(); // ADD
-    stopIncomingRing(); // ADD
+    stopOutgoingRing(); 
+    stopIncomingRing(); 
+    
+    // Connected? Drop WebRTC
     if (remoteSocketId.current) {
       socketService.endCall(remoteSocketId.current, bookingId);
+    } 
+    // Ringing but unanswered? Dispatch cancellation
+    else if (targetUserIdRef.current) {
+      socketService.cancelCall(targetUserIdRef.current, bookingId);
     }
+    
+    callStateRef.current = 'ended';
     setCallState("ended");
   }, []);
 
@@ -332,6 +372,11 @@ useEffect(() => {
   const unsubIncoming = socketService.onIncomingCall((data) => {
     // Critical guard: ignore if WE are the one placing a call
     if (['connecting', 'ringing', 'connected'].includes(callStateRef.current)) return;
+     setCallMeta({
+      remoteName: data.callerName,
+      remoteAvatar: data.callerAvatar,
+      bookingId: data.bookingId,
+    });
     setIncomingCall(data);
     callStateRef.current = 'incoming';
     setCallState('incoming');
@@ -345,9 +390,12 @@ useEffect(() => {
   });
 
   const unsubAnswered = socketService.onCallAnswered(async ({ accepted, answerSocketId }) => {
+    if (callStateRef.current === 'connected') return;
     stopOutgoingRing();
     if (noAnswerTimer.current) { clearTimeout(noAnswerTimer.current); noAnswerTimer.current = null; }
     if (accepted) {
+       callStateRef.current = 'connected';
+      setCallState('connected');
       await sendWebRTCOfferRef.current(answerSocketId);
     } else {
       cleanupRef.current();
@@ -445,6 +493,7 @@ useEffect(() => { localStreamRef.current = localStream; }, [localStream]);
     endCall,
     toggleMute,
     cleanup,
+    callMeta,
     toggleSpeaker,
   };
 }

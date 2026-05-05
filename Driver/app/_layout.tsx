@@ -26,6 +26,7 @@ import i18n, { initI18n } from "@/src/i18n";
 import { NetworkProvider, useNetwork } from "@/context/NetworkContext";
 import OfflineBanner from "@/components/OfflineBanner";
 import { CallProvider } from "@/context/CallContext";
+import { GlobalCallUI } from "@/components/GlobalCallUI";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -122,6 +123,8 @@ function RootLayoutNav() {
             <ScheduleProvider>
               <AuthProvider>
                 <CallProvider>
+                  
+  <GlobalCallUI />   
                   <ThemeProvider
                   value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
                 >

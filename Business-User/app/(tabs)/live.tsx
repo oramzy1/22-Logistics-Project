@@ -64,6 +64,7 @@ export default function LiveTabScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId?: string }>();
   const { user } = useAuth();
   const [showCall, setShowCall] = useState(false);
+const [isOutgoingCall, setIsOutgoingCall] = useState(false);
   const [activeCallType, setActiveCallType] = useState<"audio" | "video">(
     "audio",
   );
@@ -71,6 +72,7 @@ export default function LiveTabScreen() {
 
  useEffect(() => {
   if (webrtc.callState === 'incoming') {
+    setIsOutgoingCall(false);
     setShowCall(true);
   }
 }, [webrtc.callState]);
@@ -743,6 +745,7 @@ export default function LiveTabScreen() {
                 style={styles.actionBtnWhite}
                 onPress={() => {
                   setActiveCallType("audio");
+                  setIsOutgoingCall(true);
                   setShowCall(true);
                 }}
               >
@@ -783,13 +786,13 @@ export default function LiveTabScreen() {
       {showCall && (
         <CallScreen
           webrtc={webrtc}
-          targetUserId={activeBooking?.driver?.id}
+          targetUserId={isOutgoingCall ? activeBooking?.driver?.id : undefined} 
           callerId={user?.id}
           callerName={user?.name ?? "Passenger"}
           callType={activeCallType}
           bookingId={activeBooking?.id ?? ""}
           remoteName={activeBooking?.driver?.name ?? "Driver"}
-          onClose={() => setShowCall(false)}
+           onClose={() => { setShowCall(false); setIsOutgoingCall(false); }}
         />
       )}
     </View>
