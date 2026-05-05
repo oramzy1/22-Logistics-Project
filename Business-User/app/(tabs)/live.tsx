@@ -28,6 +28,7 @@ import {
   ImageBackground,
   Modal,
   ScrollView,
+  Linking,
   StyleSheet,
   Switch,
   TouchableOpacity,
@@ -726,14 +727,24 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
                       ))}
                     </View>
                   </View>
-                  <View style={styles.phoneBox}>
-                    <View style={styles.phoneIconBox}>
-                      <Phone size={14} color="#D97706" />
-                    </View>
-                    <Text style={styles.phoneNumber}>
-                      {activeBooking.driver?.phone || "No phone number"}
-                    </Text>
-                  </View>
+                 <TouchableOpacity 
+  style={styles.phoneBox}
+  onPress={() => {
+    const phoneNumber = activeBooking.driver?.phone;
+    if (phoneNumber) {
+      Linking.openURL(`tel:${phoneNumber}`);
+    } else {
+      Alert.alert("No number available", "The driver has not provided a phone number.");
+    }
+  }}
+>
+  <View style={styles.phoneIconBox}>
+    <Phone size={14} color="#D97706" />
+  </View>
+  <Text style={styles.phoneNumber}>
+    {activeBooking.driver?.phone || "No phone number"}
+  </Text>
+</TouchableOpacity>
                   {/* Spacer for bottom actions */}
                   <View style={{ height: 80 }} />
                 </>

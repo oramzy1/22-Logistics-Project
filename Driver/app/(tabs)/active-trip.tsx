@@ -1,9 +1,9 @@
 // Driver/app/(tabs)/active-trip.tsx
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Image, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Phone, MapPin, CarFront } from "lucide-react-native";
+import { Phone, MapPin, CarFront, MessageSquare } from "lucide-react-native";
 import { DriverService } from "@/api/driver.service";
 import { useFocusEffect } from "expo-router";
 import { Text } from "../../components/AppText";
@@ -15,6 +15,7 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import { CallScreen } from "../screens/call-screen";
 import { useAuth } from "@/context/AuthContext";
 import { useWebRTCCall } from "@/hooks/useWebRTCCall";
+import Chat from "@/components/Chat";
 import { useCall } from "@/context/CallContext";
 
 export default function ActiveTripScreen() {
@@ -22,6 +23,7 @@ export default function ActiveTripScreen() {
   const router = useRouter();
   const activeTripRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const { colors: themeColors } = useAppTheme();
   const { user } = useAuth();
   const webrtc = useCall();
@@ -176,6 +178,12 @@ export default function ActiveTripScreen() {
             >
               <Phone size={18} color="#FFF" />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.callBtn}
+              onPress={() =>setShowChat(true)}
+            >
+              <MessageSquare size={18} color="#FFF" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -218,6 +226,12 @@ export default function ActiveTripScreen() {
             />
           )}
         </View>
+        
+      {showChat && (
+        <Modal visible={showChat}>
+          <Chat/>
+        </Modal>
+      )}
       </SafeAreaView>
     </View>
   );
