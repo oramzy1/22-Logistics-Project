@@ -6,6 +6,7 @@ import { createNotification } from "./notifications";
 import prisma from "./prisma";
 
 let io: SocketServer;
+const onlineUsers = new Set<string>();
 
 export const initSocket = (httpServer: HttpServer): SocketServer => {
   io = new SocketServer(httpServer, {
@@ -24,6 +25,7 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
       console.log(
         `📡 User ${userId} joined room user:${userId} [socket: ${socket.id}]`,
       );
+      onlineUsers.add(userId);
     });
 
     socket.on("join_driver", (driverProfileId: string) => {
@@ -149,7 +151,9 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
             select: { pushToken: true, name: true },
           });
 
-          if (recipient?.pushToken) {
+          const isOnline = onlineUsers.has(data.targetUserId);
+
+          if (recipient?.pushToken && isOnline) {
             // Use your existing push notification utility
             await fetch("https://exp.host/--/api/v2/push/send", {
               method: "POST",
@@ -306,6 +310,10 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
 
     socket.on("disconnect", (reason) => {
       console.log(`🔌 Socket disconnected: ${socket.id} | Reason: ${reason}`);
+      const userId = socket.data.userId;
+      if (userId){
+        onlineUsers.delete(userId);
+      }
     });
   });
 
