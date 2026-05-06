@@ -27,6 +27,7 @@ import { NetworkProvider, useNetwork } from "@/context/NetworkContext";
 import OfflineBanner from "@/components/OfflineBanner";
 import { CallProvider } from "@/context/CallContext";
 import { GlobalCallUI } from "@/components/GlobalCallUI";
+import { useSocketNotifications } from "@/hooks/useSocketNotification";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -70,6 +71,7 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  useSocketNotifications();
   const [loaded, error] = useFonts({
     "Grotesque-Regular": require("../assets/fonts/BricolageGrotesque-Regular.ttf"),
     "Grotesque-Medium": require("../assets/fonts/BricolageGrotesque-Medium.ttf"),

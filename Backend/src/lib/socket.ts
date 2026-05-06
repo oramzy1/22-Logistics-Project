@@ -153,7 +153,7 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
 
           const isOnline = onlineUsers.has(data.targetUserId);
 
-          if (recipient?.pushToken && isOnline) {
+          if (recipient?.pushToken && !isOnline) {
             // Use your existing push notification utility
             await fetch("https://exp.host/--/api/v2/push/send", {
               method: "POST",
@@ -170,13 +170,15 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
           }
 
           // Save in-app notification
-          await createNotification(
+          if (!isOnline){
+            await createNotification(
             data.targetUserId,
             `Message from ${data.sender}`,
             data.message.slice(0, 80),
             "TRIP_MESSAGE",
             data.bookingId,
           );
+          }
         } catch (err) {
           console.error("trip:send_message error:", err);
           socket.emit("trip:message_error", {

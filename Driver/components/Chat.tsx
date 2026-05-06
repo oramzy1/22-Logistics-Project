@@ -13,6 +13,7 @@ import { AppHeader } from "@/src/ui/AppHeader";
 import { socketService } from "@/api/socket.service";
 import { useAppTheme } from "@/src/ui/useAppTheme";
 import { spacing, radius } from "@/src/ui/theme";
+import { setCurrentChat } from './chatState'
 
 type Message = {
   id: string;
@@ -25,7 +26,7 @@ type Message = {
 };
 
 type Props = {
-  bookingId: string;
+  bookingId: string; 
   currentUserId: string;
   currentUserName: string;
   targetUserId: string;
@@ -72,6 +73,7 @@ export function Chat({
   const styles = createStyles(themeColors);
 
 useEffect(() => {
+  setCurrentChat(bookingId);
 
   // Load persisted history
   const unsubHistory = socketService.onTripHistory((history) => {
@@ -114,6 +116,7 @@ useEffect(() => {
     unsubNew();
     unsubSent();
     unsubRead();
+  setCurrentChat(null);
     socketService.leaveTripChat(bookingId);
   };
 }, [bookingId, currentUserId]);

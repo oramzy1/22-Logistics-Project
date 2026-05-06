@@ -23,7 +23,7 @@ export default function ActiveTripScreen() {
   const activeTripRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const { colors: themeColors } = useAppTheme();
+  const { colors: themeColors } = useAppTheme(); 
   const { user } = useAuth();
   const webrtc = useCall();
   const { callState, incomingCall } = webrtc;
