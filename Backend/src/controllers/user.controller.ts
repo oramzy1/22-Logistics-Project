@@ -18,6 +18,49 @@ const generateCode = () => {
   return { code, hashed, expiry };
 };
 
+export const getDriverRatingStats = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params; // Driver's User ID
+
+    // 1. Get the aggregate (average and total count)
+    const aggregate = await prisma.driverReview.aggregate({
+      where: { driverId: id },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
+
+    const totalRatings = aggregate._count.id;
+    const averageRating = parseFloat((aggregate._avg.rating ?? 5.0).toFixed(1));
+
+    // 2. Use Prisma's groupBy to fetch exactly how many 5, 4, 3, 2, and 1 star ratings exist
+    const grouped = await prisma.driverReview.groupBy({
+      by: ['rating'],
+      where: { driverId: id },
+      _count: { id: true },
+    });
+
+    // Default breakdown structure
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    
+    // Map the grouped SQL result to the JS Object
+    grouped.forEach((g) => {
+      if (g.rating >= 1 && g.rating <= 5) {
+        breakdown[g.rating as keyof typeof breakdown] = g._count.id;
+      }
+    });
+
+    res.json({
+      totalRatings,
+      averageRating,
+      breakdown
+    });
+  } catch (error) {
+    console.error("Failed to fetch rating stats:", error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
 type VerifyResult = 
   | { ok: true } 
   | { ok: false; status: number; message: string; requiresPasswordSetup: boolean; useOtp?: boolean};

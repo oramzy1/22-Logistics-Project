@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMe, updateProfile, updateEmail, changePassword, deactivateAccount, deleteAccount, uploadAvatar, savePushToken, setupPassword, requestPasswordSetupOtp, requestEmailChange, confirmEmailChange, requestActionOtp, verifyActionOtp } from '../controllers/user.controller';
+import { getMe, getDriverRatingStats, updateProfile, updateEmail, changePassword, deactivateAccount, deleteAccount, uploadAvatar, savePushToken, setupPassword, requestPasswordSetupOtp, requestEmailChange, confirmEmailChange, requestActionOtp, verifyActionOtp } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { upload } from '../lib/upload';
 
@@ -24,6 +24,7 @@ router.post('/avatar', (req, res, next) => {
 // router.post('/request-password-setup-otp', requestPasswordSetupOtp);
 // router.post('/setup-password', setupPassword)
 router.post('/request-email-change', requestEmailChange)
+router.get('/:id/rating-stats', authenticate, getDriverRatingStats);
 router.post('/confirm-email-change', confirmEmailChange)
 router.post('/request-action-otp', requestActionOtp)
 router.post('/verify-action-otp', verifyActionOtp) // can be used for both email change and password setup verification
