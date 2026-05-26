@@ -1,3 +1,4 @@
+// Business-User App/context/AuthContext
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -98,7 +99,13 @@ useEffect(() => {
   const clearAuthData = useCallback(async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
-    await GoogleSignin.signOut();
+     try {
+    const hasUser = GoogleSignin.hasPreviousSignIn();
+
+    if (hasUser) {
+      await GoogleSignin.signOut();
+    }
+  } catch (_) {}
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);

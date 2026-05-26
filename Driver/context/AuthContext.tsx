@@ -1,3 +1,4 @@
+// Driver/context/AuthContext
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -126,7 +127,14 @@ export function AuthProvider({
   const clearAuthData = useCallback(async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
-    await GoogleSignin.signOut();
+    try {
+    const hasUser = GoogleSignin.hasPreviousSignIn();
+
+    if (hasUser) {
+      await GoogleSignin.signOut();
+    }
+  } catch (_) {}
+    socketService.disconnect();
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
@@ -165,6 +173,23 @@ export function AuthProvider({
       return updated;
     });
   }, []);
+
+  useEffect(() => {
+  if (user?.role !== "DRIVER") return;
+
+  const unsubscribe = socketService.onLicenseVerified(
+    ({ status }: { status: string }) => {
+      updateUser({
+        driverProfile: {
+          ...user?.driverProfile,
+          licenseStatus: status,
+        },
+      });
+    }
+  );
+
+  return unsubscribe;
+}, [user?.role, user?.driverProfile, updateUser]);
 
   return (
     <AuthContext.Provider

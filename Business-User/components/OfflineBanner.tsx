@@ -1,19 +1,36 @@
-import { useEffect } from "react";
-import { Text } from "react-native";
+import { useEffect, useState } from "react";
+import { Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function OfflineBanner({ isConnected }: { isConnected: boolean }) {
+  const insets = useSafeAreaInsets();
   const height = useSharedValue(0);
+  const [wasOffline, setWasOffline] = useState(false);
+  const [showOnline, setShowOnline] = useState(false);
 
   useEffect(() => {
     if (!isConnected) {
-      height.value = withTiming(50, { duration: 500 }); // slide down
-    } else {
-      height.value = withTiming(0, { duration: 500 }); // slide up
+      setWasOffline(true);
+      setShowOnline(false);
+      height.value = withTiming(50, { duration: 500 });
+    } else if (wasOffline) {
+      setShowOnline(true);
+      height.value = withTiming(50, { duration: 500 });
+
+      const timer = setTimeout(() => {
+        height.value = withTiming(0, { duration: 500 });
+        setTimeout(() => {
+          setShowOnline(false);
+          setWasOffline(false);
+        }, 500);
+      }, 2500);
+
+      return () => clearTimeout(timer);
     }
   }, [isConnected]);
 
@@ -26,7 +43,7 @@ export default function OfflineBanner({ isConnected }: { isConnected: boolean })
     <Animated.View
       style={[
         {
-          backgroundColor: "#b91c1c",
+           backgroundColor: showOnline ? "#15803d" : "#b91c1c",
           justifyContent: "center",
           alignItems: "center",
           overflow: "hidden",
@@ -34,8 +51,8 @@ export default function OfflineBanner({ isConnected }: { isConnected: boolean })
         animatedStyle,
       ]}
     >
-      <Text style={{ color: "white", fontWeight: "500" }}>
-        You are offline - No internet connection
+      <Text style={{ color: "white", fontWeight: "500", paddingTop: 14, }}>
+        {showOnline ? 'Back online - Network Restored' : 'You are offline - No internet connection'}
       </Text>
     </Animated.View>
   );

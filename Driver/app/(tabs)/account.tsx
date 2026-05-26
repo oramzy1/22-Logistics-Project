@@ -547,7 +547,8 @@ const handleChangeEmail = () => {
                   try {
                     await UserService.deactivateAccount(otp);
                     await clearAuthData();
-                    router.replace("/(auth)/sign-in");
+                    setTimeout(() => router.replace("/(auth)/sign-in"), 0);
+                    showToast.success("Account deactivated")
                   } catch (err: any) {
                     showToast.error(err?.response?.data?.message || "Failed");
                   } finally {
@@ -582,7 +583,7 @@ const handleChangeEmail = () => {
                 try {
                   await UserService.deleteAccount(otp);
                   await clearAuthData();
-                  router.replace("/(auth)/sign-in");
+                  setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                 } catch (err: any) {
                   showToast.error(
                     err?.response?.data?.message || "Deletion failed",
@@ -610,7 +611,7 @@ const handleChangeEmail = () => {
           showLoading("Removing Session...");
           try {
             await signOut();
-            router.replace("/(auth)/sign-in");
+            setTimeout(() => router.replace("/(auth)/sign-in"), 0);
             showToast.success("Signed out successfully", "See you Soon!");
           } catch (err) {
             showToast.error("Failed to Sign out");
@@ -1222,7 +1223,7 @@ const handleChangeEmail = () => {
                           );
                           setActiveModal(null);
                           await clearAuthData();
-                          router.replace("/(auth)/sign-in");
+                          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
@@ -1280,7 +1281,7 @@ const handleChangeEmail = () => {
                           );
                           setActiveModal(null);
                           await clearAuthData();
-                          router.replace("/(auth)/sign-in");
+                          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Failed",
@@ -1462,7 +1463,7 @@ const handleChangeEmail = () => {
         }}
         onEmailChangeComplete={async () => {
           await clearAuthData();
-          router.replace("/(auth)/sign-in");
+          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
         }}
       />
     </SafeAreaView>

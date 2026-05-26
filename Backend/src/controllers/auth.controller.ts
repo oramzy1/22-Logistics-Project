@@ -14,8 +14,8 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { validatePassword } from "../lib/password.validator";
 
 const ALLOWED_GOOGLE_CLIENT_IDS = [
-  process.env.GOOGLE_CLIENT_ID_USER_APP, // user/business app client ID
-  process.env.GOOGLE_CLIENT_ID_DRIVER_APP, // driver app client ID 
+  process.env.GOOGLE_CLIENT_ID_USER_APP,
+  process.env.GOOGLE_CLIENT_ID_DRIVER_APP, 
 ].filter(Boolean) as string[];
 
 const generateCode = () => {
@@ -388,11 +388,10 @@ async function verifyGoogleToken(idToken: string) {
       });
       return ticket.getPayload();
     } catch {
-      // This client ID didn't match — try the next one
       continue;
     }
   }
-  return null; // none matched
+  return null; 
 }
 
 export const googleAuth = async (req: Request, res: Response) => {

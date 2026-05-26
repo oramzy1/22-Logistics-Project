@@ -68,6 +68,7 @@ export function Chat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
@@ -78,6 +79,7 @@ useEffect(() => {
   // Load persisted history
   const unsubHistory = socketService.onTripHistory((history) => {
     setMessages(history);
+    setLoadingHistory(false);
   });
 
   const unsubNew = socketService.onTripMessage((data) => {
@@ -182,7 +184,12 @@ useEffect(() => {
           contentContainerStyle={styles.messages}
           showsVerticalScrollIndicator={false}
         >
-          {messages.length === 0 && (
+          {loadingHistory ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
+               <ActivityIndicator size="large" color={themeColors.text} />
+               <Text style={{ marginTop: 12, color: themeColors.textSecondary }}>Loading messages...</Text>
+            </View>
+          ) : messages.length === 0 && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>No messages yet</Text>
               <Text style={styles.emptySub}>

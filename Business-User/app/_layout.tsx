@@ -19,7 +19,7 @@ import Toast from "react-native-toast-message";
 import { GlobalSocketAlerts } from "@/src/ui/GlobalSocketAlerts";
 import { NotificationService } from "@/api/notification.service";
 import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
+import * as Device from "expo-device"; 
 import { initI18n } from "@/src/i18n";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/src/i18n";
@@ -40,7 +40,7 @@ Notifications.setNotificationHandler({
 });
 
 async function registerPushToken() {
-  if (!Device.isDevice) return; // simulators don't get push tokens
+  if (!Device.isDevice) return;
   const { status: existing } = await Notifications.getPermissionsAsync();
   const { status } =
     existing === "granted"
@@ -106,15 +106,11 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-function RootLayoutNav() {
+function AppLayout(){
   const colorScheme = useColorScheme();
   const { isConnected } = useNetwork();
-
-
+  
   return (
-    <GestureHandlerRootView>
-      <I18nextProvider i18n={i18n}>
-        <NetworkProvider>
           <LoadingProvider>
             <OfflineBanner isConnected={isConnected} />
             <ScheduleProvider>
@@ -164,6 +160,15 @@ function RootLayoutNav() {
             </ScheduleProvider>
             <Toast config={toastConfig} />
           </LoadingProvider>
+  )
+}
+
+function RootLayoutNav() {
+  return (
+    <GestureHandlerRootView>
+      <I18nextProvider i18n={i18n}>
+        <NetworkProvider>
+          <AppLayout />
         </NetworkProvider>
       </I18nextProvider>
     </GestureHandlerRootView>

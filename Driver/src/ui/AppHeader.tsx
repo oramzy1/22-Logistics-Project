@@ -59,9 +59,6 @@ export function AppHeader({ title, showBack, rightIcons, leftAvatar, translucent
         {rightIcons ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={styles.circle}>
-              <Text style={styles.circleText}><Headphones  color="#fff" size={18} /></Text>
-            </View>
-            <View style={styles.circle}>
               <NotificationBell />
             </View>
           </View>

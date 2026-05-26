@@ -15,15 +15,40 @@ let outgoingSound: Audio.Sound | null = null;
 let incomingSound: Audio.Sound | null = null;
 
 const ICE_SERVERS = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    // Free TURN fallback via Open Relay — replace with your own for production
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
+  // iceServers: [
+  //   { urls: "stun:stun.l.google.com:19302" },
+  //   { urls: "stun:stun1.l.google.com:19302" },
+  //   // Free TURN fallback via Open Relay — replace with your own for production
+  //   {
+  //     urls: "turn:openrelay.metered.ca:80",
+  //     username: "openrelayproject",
+  //     credential: "openrelayproject",
+  //   },
+  // ],
+    iceServers: [
+      {
+        urls: "stun:stun.relay.metered.ca:80",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80",
+        username: "0462f6b1ff476a28f354390d",
+        credential: "q5QAvXxs/GYIXKJP",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80?transport=tcp",
+        username: "0462f6b1ff476a28f354390d",
+        credential: "q5QAvXxs/GYIXKJP",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:443",
+        username: "0462f6b1ff476a28f354390d",
+        credential: "q5QAvXxs/GYIXKJP",
+      },
+      {
+        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+        username: "0462f6b1ff476a28f354390d",
+        credential: "q5QAvXxs/GYIXKJP",
+      },
   ],
 };
 

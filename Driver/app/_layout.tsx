@@ -49,7 +49,7 @@ async function registerPushToken() {
 
   const token = (
     await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_PROJECT_ID, // from app.json extra.eas.projectId
+      projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
     })
   ).data;
 
@@ -85,7 +85,7 @@ export default function RootLayout() {
     initI18n().then(() => setI18nReady(true));
   }, []);
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -107,10 +107,50 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+function AppLayout() {
+  const colorScheme = useColorScheme();
+  const { isConnected } = useNetwork();
+  return (
+    <LoadingProvider>
+      <OfflineBanner isConnected={isConnected} />
+      <ScheduleProvider>
+        <AuthProvider>
+          <CallProvider>
+            <GlobalCallUI />
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                {/* Main flow screens */}
+                <Stack.Screen name="screens" options={{ headerShown: false }} />
+
+                {/* Booking detail */}
+                <Stack.Screen
+                  name="payment-history"
+                  options={{ headerShown: false }}
+                />
+
+                {/* Keeping template modal available (not used). */}
+                <Stack.Screen
+                  name="modal"
+                  options={{ presentation: "modal" }}
+                />
+              </Stack>
+            </ThemeProvider>
+          </CallProvider>
+        </AuthProvider>
+      </ScheduleProvider>
+      <Toast config={toastConfig} />
+    </LoadingProvider>
+  );
+}
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { isConnected } = useNetwork();
 
   return (
     <GestureHandlerRootView>
@@ -120,53 +160,7 @@ function RootLayoutNav() {
           backgroundColor={isDark ? "#060F18" : "#0B1B2B"}
         />
         <NetworkProvider>
-          <LoadingProvider>
-            <OfflineBanner isConnected={isConnected} />
-            <ScheduleProvider>
-              <AuthProvider>
-                <CallProvider>
-                  
-  <GlobalCallUI />   
-                  <ThemeProvider
-                  value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-                >
-                  <Stack>
-                    <Stack.Screen
-                      name="index"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(auth)"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(tabs)"
-                      options={{ headerShown: false }}
-                    />
-                    {/* Main flow screens */}
-                    <Stack.Screen
-                      name="screens"
-                      options={{ headerShown: false }}
-                    />
-
-                    {/* Booking detail */}
-                    <Stack.Screen
-                      name="payment-history"
-                      options={{ headerShown: false }}
-                    />
-
-                    {/* Keeping template modal available (not used). */}
-                    <Stack.Screen
-                      name="modal"
-                      options={{ presentation: "modal" }}
-                    />
-                  </Stack>
-                </ThemeProvider>
-                </CallProvider>
-              </AuthProvider>
-            </ScheduleProvider>
-            <Toast config={toastConfig} />
-          </LoadingProvider>
+          <AppLayout />
         </NetworkProvider>
       </I18nextProvider>
     </GestureHandlerRootView>

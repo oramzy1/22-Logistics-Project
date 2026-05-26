@@ -545,7 +545,7 @@ export default function AccountTabScreen() {
                   try {
                     await UserService.deactivateAccount(otp);
                     await clearAuthData();
-                    router.replace("/(auth)/sign-in");
+                    setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                   } catch (err: any) {
                     showToast.error(err?.response?.data?.message || "Failed");
                   } finally {
@@ -580,7 +580,7 @@ export default function AccountTabScreen() {
                 try {
                   await UserService.deleteAccount(otp);
                   await clearAuthData();
-                  router.replace("/(auth)/sign-in");
+                  setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                 } catch (err: any) {
                   showToast.error(
                     err?.response?.data?.message || "Deletion failed",
@@ -609,7 +609,7 @@ export default function AccountTabScreen() {
           showLoading("Removing Session...");
           try {
             await signOut();
-            router.replace("/(auth)/sign-in");
+            setTimeout(() => router.replace("/(auth)/sign-in"), 0);
             showToast.success("Signed out successfully", "See you Soon!");
           } catch (err) {
             showToast.error("Failed to Sign out");
@@ -1156,7 +1156,7 @@ export default function AccountTabScreen() {
                           );
                           setActiveModal(null);
                           await clearAuthData();
-                          router.replace("/(auth)/sign-in");
+                          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
@@ -1215,7 +1215,7 @@ export default function AccountTabScreen() {
                           );
                           setActiveModal(null);
                           await clearAuthData();
-                          router.replace("/(auth)/sign-in");
+                          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Failed",
@@ -1248,7 +1248,7 @@ export default function AccountTabScreen() {
         }}
         onEmailChangeComplete={async () => {
           await clearAuthData();
-          router.replace("/(auth)/sign-in");
+         setTimeout(() => router.replace("/(auth)/sign-in"), 0);
         }}
       />
     </SafeAreaView>

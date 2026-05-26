@@ -7,7 +7,7 @@ import { EndTripFlow } from "@/src/ui/EndTripFlow";
 import { LiveSkeleton } from "@/src/ui/skeletons/LiveSkeleton";
 import { getRideTimeLabel, getRideTimeRemaining } from "@/src/utils/rideTimer";
 import { router, useLocalSearchParams } from "expo-router";
-import { useUnreadTripMessages } from '@/hooks/useUnreadTripMessages';
+import { useUnreadTripMessages } from "@/hooks/useUnreadTripMessages";
 import {
   ArrowRight,
   Bell,
@@ -37,7 +37,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
-import {Chat} from "../../components/Chat";
+import { Chat } from "../../components/Chat";
 import { BookingsSkeleton } from "@/src/ui/skeletons/BookingsSkeleton";
 import { useBookingSocket } from "@/hooks/useBookingSocket";
 import EmptyState from "@/src/ui/EmptyState";
@@ -49,6 +49,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useWebRTCCall } from "@/hooks/useWebRTCCall";
 import { socketService } from "@/api/socket.service";
 import { useCall } from "@/context/CallContext";
+import apiClient from "@/api/api";
 
 export default function LiveTabScreen() {
   const { colors: themeColors } = useAppTheme();
@@ -68,18 +69,23 @@ export default function LiveTabScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId?: string }>();
   const { user } = useAuth();
   const [showCall, setShowCall] = useState(false);
-const [isOutgoingCall, setIsOutgoingCall] = useState(false);
+  const [isOutgoingCall, setIsOutgoingCall] = useState(false);
   const [activeCallType, setActiveCallType] = useState<"audio" | "video">(
     "audio",
   );
   const webrtc = useCall();
+  const [ratingStats, setRatingStats] = useState({
+    totalRatings: 0,
+    averageRating: 5.0,
+    breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+  });
 
- useEffect(() => {
-  if (webrtc.callState === 'incoming') {
-    setIsOutgoingCall(false);
-    setShowCall(true);
-  }
-}, [webrtc.callState]);
+  useEffect(() => {
+    if (webrtc.callState === "incoming") {
+      setIsOutgoingCall(false);
+      setShowCall(true);
+    }
+  }, [webrtc.callState]);
 
   const bookingsWithDrivers = activeBookings.filter(
     (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS",
@@ -90,11 +96,10 @@ const [isOutgoingCall, setIsOutgoingCall] = useState(false);
       bookingsWithDrivers[0])
     : bookingsWithDrivers[0];
 
-
-const { unreadCount, clearUnread } = useUnreadTripMessages(
-  activeBooking?.id ?? null,
-  user?.id ?? ''
-);
+  const { unreadCount, clearUnread } = useUnreadTripMessages(
+    activeBooking?.id ?? null,
+    user?.id ?? "",
+  );
 
   const [timeResult, setTimeResult] = useState(() =>
     getRideTimeRemaining(
@@ -125,6 +130,23 @@ const { unreadCount, clearUnread } = useUnreadTripMessages(
         : null,
     extensionMinutes: paidExtensionMinutes,
   };
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const driverId = activeBooking?.driver?.id;
+      if (driverId) {
+        try {
+          const response = await apiClient.get(
+            `/users/${driverId}/rating-stats`,
+          );
+          setRatingStats(response.data);
+        } catch (err) {
+          console.error("Failed to load rating stats", err);
+        }
+      }
+    };
+    fetchStats();
+  }, [activeBooking?.driver?.id]);
 
   useEffect(() => {
     if (!activeBooking) return;
@@ -697,60 +719,89 @@ const { unreadCount, clearUnread } = useUnreadTripMessages(
                   </Text>
                   <View style={styles.ratingOverview}>
                     <View style={styles.mainScore}>
-                      <Text style={styles.ratingNumber}> {(activeBooking.driver as any)?.driverProfile?.rating?.toFixed(1) ?? "5.0"}</Text>
+                      <Text style={styles.ratingNumber}>
+                        {ratingStats.averageRating}
+                      </Text>
+
+                      {/* Loop your Star component based on rounded averageRating here */}
                       <View style={styles.starsRow}>
-                        {[1, 2, 3, 4].map((i) => (
+                        {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
                             size={12}
-                            color="#FBBF24"
-                            fill="#FBBF24"
+                            color={
+                              i < Math.round(ratingStats.averageRating)
+                                ? "#FBBF24"
+                                : "#D1D5DB"
+                            }
+                            fill={
+                              i < Math.round(ratingStats.averageRating)
+                                ? "#FBBF24"
+                                : "#D1D5DB"
+                            }
                             style={{ marginRight: 2 }}
                           />
                         ))}
-                        <Star size={12} color="#D1D5DB" />
                       </View>
-                      <Text style={styles.ratingCount}>1,215 ratings</Text>
+                      <Text style={styles.ratingCount}>
+                        {ratingStats.totalRatings.toLocaleString()} ratings
+                      </Text>
                     </View>
+
                     <View style={styles.barsContainer}>
-                      {[5, 4, 3, 2, 1].map((lvl, idx) => (
-                        <View key={lvl} style={styles.barRow}>
-                          <Text style={styles.barLevelText}>{lvl}</Text>
-                          <Star size={10} color="#111827" fill="#111827" />
-                          <View style={styles.progressTrack}>
-                            <View
-                              style={[
-                                styles.progressFill,
-                                {
-                                  width: ["80%", "40%", "30%", "10%", "5%"][
-                                    idx
-                                  ] as any,
-                                },
-                              ]}
-                            />
+                      {[5, 4, 3, 2, 1].map((lvl) => {
+                        // Get exact count from breakdown (e.g. how many people rated 5)
+                        const countForLevel =
+                          ratingStats.breakdown[
+                            lvl as keyof typeof ratingStats.breakdown
+                          ];
+
+                        // Calculate fraction width for the styled track bar (e.g. 80%)
+                        const percentage =
+                          ratingStats.totalRatings > 0
+                            ? (countForLevel / ratingStats.totalRatings) * 100
+                            : 0;
+
+                        return (
+                          <View key={lvl} style={styles.barRow}>
+                            <Text style={styles.barLevelText}>{lvl}</Text>
+                            <Star size={10} color="#111827" fill="#111827" />
+                            <View style={styles.progressTrack}>
+                              <View
+                                style={[
+                                  styles.progressFill,
+                                  // Apply the calculated % width dynamically to fill the bar
+                                  { width: `${percentage}%` },
+                                ]}
+                              />
+                            </View>
                           </View>
-                        </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   </View>
-                 <TouchableOpacity 
-  style={styles.phoneBox}
-  onPress={() => {
-    const phoneNumber = activeBooking.driver?.phone;
-    if (phoneNumber) {
-      Linking.openURL(`tel:${phoneNumber}`);
-    } else {
-      Alert.alert("No number available", "The driver has not provided a phone number.");
-    }
-  }}
->
-  <View style={styles.phoneIconBox}>
-    <Phone size={14} color="#D97706" />
-  </View>
-  <Text style={styles.phoneNumber}>
-    {activeBooking.driver?.phone || "No phone number"}
-  </Text>
-</TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.phoneBox}
+                    onPress={() => {
+                      const phoneNumber = activeBooking.driver?.phone;
+                      if (phoneNumber) {
+                        Linking.openURL(`tel:${phoneNumber}`);
+                      } else {
+                        Alert.alert(
+                          "No number available",
+                          "The driver has not provided a phone number.",
+                        );
+                      }
+                    }}
+                  >
+                    <View style={styles.phoneIconBox}>
+                      <Phone size={14} color="#D97706" />
+                    </View>
+                    <Text style={styles.phoneNumber}>
+                      {activeBooking.driver?.phone || "No phone number"}
+                    </Text>
+                  </TouchableOpacity>
                   {/* Spacer for bottom actions */}
                   <View style={{ height: 80 }} />
                 </>
@@ -772,24 +823,42 @@ const { unreadCount, clearUnread } = useUnreadTripMessages(
                 <Phone size={16} color="#4B5563" style={{ marginRight: 6 }} />
                 <Text style={styles.actionTextDef}>Call</Text>
               </TouchableOpacity>
-             <TouchableOpacity
-  style={styles.actionBtnBlue}
-  onPress={() => { setShowChat(true); clearUnread(); }}
->
-  <View style={{ position: 'relative' }}>
-    <Text style={[styles.actionTextDef, { color: '#000', fontWeight: 'bold' }]}>
-      Message
-    </Text>
-    {unreadCount > 0 && (
-      <View style={styles.unreadBadge}>
-        <Text style={styles.unreadBadgeText}>
-          {unreadCount > 99 ? '99+' : unreadCount}
-        </Text>
-      </View>
-    )}
-  </View>
-</TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowChat(true)} style={styles.actionBtnWhite}>
+              <TouchableOpacity
+                style={[
+                  styles.actionBtnBlue,
+                  !activeBooking?.driver?.id && { opacity: 0.5 },
+                ]}
+                onPress={() => {
+                  if (!activeBooking?.driver?.id) {
+                    return;
+                  }
+                  setShowChat(true);
+                  clearUnread();
+                }}
+                disabled={!activeBooking?.driver?.id}
+              >
+                <View style={{ position: "relative" }}>
+                  <Text
+                    style={[
+                      styles.actionTextDef,
+                      { color: "#000", fontWeight: "bold" },
+                    ]}
+                  >
+                    Message
+                  </Text>
+                  {unreadCount > 0 && (
+                    <View style={styles.unreadBadge}>
+                      <Text style={styles.unreadBadgeText}>
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowChat(true)}
+                style={styles.actionBtnWhite}
+              >
                 <Text style={styles.actionTextDef}>Chat</Text>
               </TouchableOpacity>
             </View>
@@ -813,27 +882,45 @@ const { unreadCount, clearUnread } = useUnreadTripMessages(
       {showCall && (
         <CallScreen
           webrtc={webrtc}
-          targetUserId={isOutgoingCall ? activeBooking?.driver?.id : undefined} 
+          targetUserId={isOutgoingCall ? activeBooking?.driver?.id : undefined}
           callerId={user?.id}
           callerName={user?.name ?? "Passenger"}
           callType={activeCallType}
           bookingId={activeBooking?.id ?? ""}
           remoteName={activeBooking?.driver?.name ?? "Driver"}
-           onClose={() => { setShowCall(false); setIsOutgoingCall(false); }}
+          onClose={() => {
+            setShowCall(false);
+            setIsOutgoingCall(false);
+          }}
         />
       )}
-    {showChat && activeBooking?.driver?.id && (
-  <Modal visible={showChat} animationType="slide">
-    <Chat
-      bookingId={activeBooking.id}
-      currentUserId={user!.id}
-      currentUserName={user?.name ?? "Passenger"}
-      targetUserId={activeBooking.driver.id}
-      targetUserName={activeBooking.driver?.name ?? "Driver"}
-      onClose={() => setShowChat(false)}
-    />
-  </Modal>
-)}
+      {/* {showChat && activeBooking?.driver?.id && (
+        <Modal visible={showChat} animationType="slide">
+          <Chat
+            bookingId={activeBooking.id}
+            currentUserId={user!.id}
+            currentUserName={user?.name ?? "Passenger"}
+            targetUserId={activeBooking.driver.id}
+            targetUserName={activeBooking.driver?.name ?? "Driver"}
+            onClose={() => setShowChat(false)}
+          />
+        </Modal>
+      )} */}
+      {showChat && activeBooking && (
+        <Modal visible={showChat} animationType="slide">
+          <Chat
+            bookingId={activeBooking.id}
+            currentUserId={user!.id}
+            currentUserName={user?.name ?? "Passenger"}
+            // Use fallback for targetUserId to ensure it's a string, or guard it
+            targetUserId={
+              activeBooking.driver?.id || (activeBooking as any).driverId || ""
+            }
+            targetUserName={activeBooking.driver?.name ?? "Driver"}
+            onClose={() => setShowChat(false)}
+          />
+        </Modal>
+      )}
     </View>
   );
 }
@@ -1153,11 +1240,16 @@ const createStyles = (themeColors: any) =>
     },
     cancelTripText: { color: "#EF4444", fontWeight: "600", fontSize: 14 },
     unreadBadge: {
-  position: 'absolute', top: -8, right: -12,
-  backgroundColor: '#EF4444', borderRadius: 10,
-  minWidth: 18, height: 18,
-  alignItems: 'center', justifyContent: 'center',
-  paddingHorizontal: 4,
-},
-unreadBadgeText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
+      position: "absolute",
+      top: -8,
+      right: -12,
+      backgroundColor: "#EF4444",
+      borderRadius: 10,
+      minWidth: 18,
+      height: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 4,
+    },
+    unreadBadgeText: { color: "#FFF", fontSize: 10, fontWeight: "800" },
   });

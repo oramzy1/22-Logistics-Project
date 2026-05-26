@@ -9,6 +9,7 @@ import { io, Socket } from "socket.io-client";
 import { NotificationsSheet } from "@/components/dashboard/NotificationsSheet";
 import { useAdminNotifications } from "@/lib/useAdminNotifications";
 import { socket } from "@/lib/socket";
+import AdminWalkthrough from "../AdminWalkthrough";
 
 export function AdminLayout() {
   const [open, setOpen] = useState(false);
@@ -215,6 +216,7 @@ export function AdminLayout() {
         onMarkAllRead={markAllRead}
         onRead={markRead}
       />
+      <AdminWalkthrough />
     </div>
   );
 }

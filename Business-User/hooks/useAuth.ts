@@ -159,7 +159,7 @@ export function useOAuth({ appType, role }: OAuthOptions) {
         await GoogleSignin.hasPlayServices({
           showPlayServicesUpdateDialog: true,
         });
-        
+         
         // Force the account picker ONLY on Android to avoid breaking the iOS sheet!
         await GoogleSignin.signOut();
       }
