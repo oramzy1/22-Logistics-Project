@@ -8,6 +8,7 @@ import {
   createPromo, getAllPromos, togglePromo, deletePromo, validatePromoCode,
   getAuditLog,
   getChartData,
+  assignPromoToUsers,
 } from '../controllers/admin.controller';
 import {
   verifyDriverLicense, assignDriverToBooking, getAvailableDrivers,
@@ -53,6 +54,7 @@ router.patch('/settings', updateSettings);
 // Promos
 router.post('/promos', createPromo);
 router.get('/promos', getAllPromos);
+router.post('/promos/assign', assignPromoToUsers);
 router.patch('/promos/:id/toggle', togglePromo);
 router.delete('/promos/:id', deletePromo);
 

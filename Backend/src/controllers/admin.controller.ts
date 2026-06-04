@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { getIO } from "../lib/socket";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { createNotification } from "../lib/notifications";
+import { sendPromoEmail } from "../lib/email.service";
 // import { Prisma } from "@prisma/client";
 
 // ── Helper: write audit log ─────────────────────────────────────
@@ -1163,5 +1165,160 @@ export const getAuditLog = async (req: AuthRequest, res: Response) => {
     res.json({ logs, total });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+// export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
+//   try {
+//     const { userIds, code, description, discountValue, discountType, expiresInDays = 30 } = req.body;
+
+//     if (!userIds?.length) return res.status(400).json({ message: 'No users specified' });
+
+//     const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+
+//     const existing = await prisma.promoCode.findUnique({ where: { code: code.toUpperCase() } });
+//     if (existing) return res.status(400).json({ message: 'Promo code already exists' });
+
+//     const promo = await prisma.promoCode.create({
+//       data: {
+//         code: code.toUpperCase(),
+//         description,
+//         discountType,
+//         discountValue,
+//         usageLimit:    userIds.length, // one use per targeted user
+//         expiresAt,
+//         targetType:    'USER_SPECIFIC',
+//         targetUserIds: userIds,
+//         isActive:      true,
+//         createdBy:     req.user!.id,
+//       },
+//     });
+
+//     // Notify + email each user
+//     const users = await prisma.user.findMany({
+//       where: { id: { in: userIds } },
+//       select: { id: true, email: true, name: true },
+//     });
+
+//     await Promise.all(users.map(async (u) => {
+//       await createNotification(u.id, '🎉 You have a new promo!', `${description} — Code: ${code.toUpperCase()}`, 'PROMO_GRANTED', undefined);
+//       await sendPromoEmail(u.email, u.name, code.toUpperCase(), description, discountValue, discountType, expiresAt);
+//     }));
+
+//     await audit(req.user!.id, 'ASSIGN_PROMO', 'SETTINGS', promo.id, { userIds, code });
+//     res.status(201).json({ message: `Promo assigned to ${users.length} users`, promo });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error });
+//   }
+// };
+
+export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      userIds,
+      // Existing promo path
+      promoId,
+      // New promo path
+      code,
+      description,
+      discountValue,
+      discountType,
+      expiresInDays = 30,
+      // Notification flags
+      sendPush = true,
+      sendEmail: doEmail = true,
+    } = req.body;
+
+    if (!userIds?.length) {
+      return res.status(400).json({ message: 'No users specified' });
+    }
+
+    let promo: any;
+
+    if (promoId) {
+      // ── Use existing promo ──
+      promo = await prisma.promoCode.findUnique({ where: { id: promoId } });
+      if (!promo) return res.status(404).json({ message: 'Promo not found' });
+      if (!promo.isActive) return res.status(400).json({ message: 'Promo is not active' });
+    } else {
+      // ── Create new promo on the fly ──
+      if (!code || discountValue === undefined) {
+        return res.status(400).json({ message: 'code and discountValue are required' });
+      }
+      const upperCode = code.toUpperCase();
+      const existing = await prisma.promoCode.findUnique({ where: { code: upperCode } });
+      if (existing) return res.status(400).json({ message: 'Promo code already exists' });
+
+      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+
+      promo = await prisma.promoCode.create({
+        data: {
+          code: upperCode,
+          description: description ?? null,
+          discountType: discountType ?? 'PERCENTAGE',
+          discountValue,
+          usageLimit: userIds.length,   // one use per targeted user
+          expiresAt,
+          targetType: 'USER_SPECIFIC',
+          targetUserIds: userIds,
+          isActive: true,
+          createdBy: req.user!.id,
+        },
+      });
+    }
+
+    // ── Fetch targeted users ──
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds }, isDeleted: false, isActive: true },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (!users.length) {
+      return res.status(404).json({ message: 'No valid users found' });
+    }
+
+    // ── Notify each user ──
+    await Promise.allSettled(
+      users.map(async (u) => {
+        if (sendPush) {
+          await createNotification(
+            u.id,
+            '🎉 You have a new promo!',
+            `${promo.description ?? 'Special offer'} — Code: ${promo.code}`,
+            'PROMO_GRANTED',
+            undefined,
+          );
+        }
+
+        if (doEmail) {
+          await sendPromoEmail(
+            u.email,
+            u.name,
+            promo.code,
+            promo.description ?? 'Special offer just for you',
+            promo.discountValue,
+            promo.discountType,
+            promo.expiresAt ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          );
+        }
+      })
+    );
+
+    await audit(req.user!.id, 'ASSIGN_PROMO', 'SETTINGS', promo.id, {
+      userIds,
+      code: promo.code,
+      notifiedPush: sendPush,
+      notifiedEmail: doEmail,
+    });
+
+    res.status(201).json({
+      message: `Promo "${promo.code}" assigned and ${sendPush || doEmail ? 'notifications sent' : 'no notifications sent'} to ${users.length} user(s)`,
+      promo,
+      notifiedCount: users.length,
+    });
+  } catch (error) {
+    console.error('assignPromoToUsers error:', error);
+    res.status(500).json({ message: 'Server error', error });
   }
 };

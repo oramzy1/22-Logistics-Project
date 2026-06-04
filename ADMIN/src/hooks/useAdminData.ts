@@ -19,7 +19,9 @@ export const useChartData = (period: string, rideType: string) =>
 // };
 
 export const useBookings = (params: Record<string, string> = {}) => {
-  const cleaned = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== ''));
+  const cleaned = Object.fromEntries(
+  Object.entries(params).filter(([_, v]) => v !== '' && v !== undefined)
+);
   const qs = new URLSearchParams(cleaned).toString();
   return useQuery({ queryKey: ['bookings', params], queryFn: () => api.get<any>(`/admin/bookings?${qs}`) });
 };
@@ -43,7 +45,9 @@ export const useCancelBooking = () => {
 // };
 
 export const useDrivers = (params: Record<string, string> = {}) => {
-  const cleaned = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== ''));
+  const cleaned = Object.fromEntries(
+  Object.entries(params).filter(([_, v]) => v !== '' && v !== undefined)
+);
   const qs = new URLSearchParams(cleaned).toString();
   return useQuery({ queryKey: ['drivers', params], queryFn: () => api.get<any>(`/admin/drivers?${qs}`) });
 };
@@ -87,7 +91,9 @@ export const useAvailableDrivers = () =>
 // };
 
 export const useUsers = (params: Record<string, string> = {}) => {
-  const cleaned = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== ''));
+  const cleaned = Object.fromEntries(
+  Object.entries(params).filter(([_, v]) => v !== '' && v !== undefined)
+);
   const qs = new URLSearchParams(cleaned).toString();
   return useQuery({ queryKey: ['users', params], queryFn: () => api.get<any>(`/admin/users?${qs}`) });
 };
@@ -143,13 +149,13 @@ export const useUpdateSettings = () => {
 export const usePromos = () =>
   useQuery({ queryKey: ['promos'], queryFn: () => api.get<any[]>('/admin/promos') });
 
-export const useCreatePromo = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: any) => api.post('/admin/promos', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['promos'] }),
-  });
-};
+// export const useCreatePromo = () => {
+//   const qc = useQueryClient();
+//   return useMutation({
+//     mutationFn: (body: any) => api.post('/admin/promos', body),
+//     onSuccess: () => qc.invalidateQueries({ queryKey: ['promos'] }),
+//   });
+// };
 
 export const useTogglePromo = () => {
   const qc = useQueryClient();
@@ -164,5 +170,72 @@ export const useBookingStats = () =>
     queryKey: ['booking-stats'],
     queryFn: () => api.get<any>('/admin/dashboard'),
   });
+
+
+
+
+export function useCreatePromo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      code: string;
+      description?: string;
+      discountType: "PERCENTAGE" | "FIXED";
+      discountValue: number;
+      minBookingAmount?: number;
+      maxDiscount?: number;
+      usageLimit?: number;
+      expiresAt?: string;
+      targetType: "ALL" | "INDIVIDUAL" | "BUSINESS" | "USER_SPECIFIC";
+      targetUserIds?: string[];
+    }) => api.post("/admin/promos", body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["promos"] }),
+  });
+}
+
+export const useDeletePromo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/promos/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['promos'] }),
+  });
+};
+ 
+export function useAssignPromo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      userIds: string[];
+      // Either promoId (existing) OR code+discountValue+discountType (new)
+      promoId?: string;
+      code?: string;
+      description?: string;
+      discountValue?: number;
+      discountType?: "PERCENTAGE" | "FIXED";
+      expiresInDays?: number;
+      sendPush?: boolean;
+      sendEmail?: boolean;
+    }) => api.post("/admin/promos/assign", body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["promos"] }),
+  });
+}
+ 
+// useSettings and useUpdateSettings already exist — no changes needed.
+// useUsers already exists — no changes needed.
+ 
+// Optional: dedicated milestone tracker query that enriches users with booking counts.
+// Your existing useUsers already returns _count.bookingsAsCustomer so this is just an alias.
+export function useUserMilestones(params?: Record<string, string>) {
+  const cleaned = Object.fromEntries(
+    Object.entries({ limit: "50", ...params }).filter(([_, v]) => v !== '')
+  );
+  const qs = new URLSearchParams(cleaned).toString();
+  return useQuery({
+    queryKey: ["user-milestones", params],
+    queryFn: () => api.get<{ users: any[]; total: number }>(`/admin/users?${qs}`),
+    staleTime: 30_000,
+  });
+}
+ 
 
 //   export const useBookingStats = useDashboard;

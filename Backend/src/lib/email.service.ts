@@ -323,3 +323,110 @@ export const sendTripDelayEmail = async (
     `
   );
 };
+
+// ── Promo Grant Email ─────────────────────────────────────────
+export const sendPromoEmail = async (
+  email: string,
+  name: string,
+  code: string,
+  description: string,
+  discountValue: number,
+  discountType: 'PERCENTAGE' | 'FIXED',
+  expiresAt: Date,
+) => {
+  const discountLabel = discountType === 'PERCENTAGE' ? `${discountValue}%` : `₦${discountValue.toLocaleString()}`;
+  const expiry = expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  sendEmail(
+    email,
+    `🎉 You've earned a promo — ${discountLabel} off your next ride!`,
+    `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
+      <h2 style="color:#0B1B2B">You've earned a reward, ${name}! 🎉</h2>
+      <p style="color:#374151">${description}</p>
+      <div style="background:#FBF7EC;border:2px dashed #E4C77B;border-radius:12px;padding:24px;text-align:center;margin:24px 0">
+        <p style="color:#6B7280;font-size:13px;margin:0 0 8px">Your promo code</p>
+        <p style="font-size:28px;font-weight:800;letter-spacing:6px;color:#E4C77B;margin:0">${code}</p>
+        <p style="color:#9CA3AF;font-size:12px;margin:8px 0 0">Expires ${expiry}</p>
+      </div>
+      <p style="color:#374151;font-size:14px">Apply this code at checkout to redeem your discount.</p>
+      <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:24px">© 22Logistics — Moving you forward.</p>
+    </div>
+    `,
+  );
+};
+
+// ── Admin: New Booking Alert ──────────────────────────────────
+export const sendAdminNewBookingEmail = async (
+  adminEmail: string,
+  customerName: string,
+  trackingId: string,
+  packageType: string,
+  pickupAddress: string,
+  dropoffAddress: string,
+  scheduledAt: Date,
+  totalAmount: number,
+  rideType: string,
+) => {
+  sendEmail(
+    adminEmail,
+    `📦 New Booking — ${trackingId}`,
+    `
+    <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
+      <h2 style="color:#0B1B2B">New Booking Received</h2>
+      <div style="background:#F9F6F0;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0;width:140px">Tracking ID</td><td style="color:#111;font-weight:600">${trackingId}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Package</td><td style="color:#111;font-weight:600">${packageType}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Type</td><td style="color:#111;font-weight:600">${rideType}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Scheduled</td><td style="color:#111;font-weight:600">${new Date(scheduledAt).toLocaleString('en-GB')}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Pickup</td><td style="color:#111">${pickupAddress}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Dropoff</td><td style="color:#111">${dropoffAddress}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Amount</td><td style="color:#0B1B2B;font-weight:700;font-size:15px">₦${totalAmount.toLocaleString()}</td></tr>
+        </table>
+      </div>
+      <p style="color:#9CA3AF;font-size:12px;text-align:center">© 22Logistics Admin Alerts</p>
+    </div>
+    `,
+  );
+};
+
+// ── Admin: Booking Status Update Alert ───────────────────────
+export const sendAdminBookingStatusEmail = async (
+  adminEmail: string,
+  trackingId: string,
+  customerName: string,
+  newStatus: string,
+  driverName?: string,
+) => {
+  const statusColors: Record<string, string> = {
+    ACCEPTED:    '#10B981',
+    IN_PROGRESS: '#3B82F6',
+    COMPLETED:   '#6366F1',
+    CANCELLED:   '#EF4444',
+  };
+  const color = statusColors[newStatus] ?? '#6B7280';
+
+  sendEmail(
+    adminEmail,
+    `🔔 Booking ${trackingId} — Status: ${newStatus}`,
+    `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
+      <h2 style="color:#0B1B2B">Booking Status Update</h2>
+      <div style="background:#F9F6F0;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid ${color}">
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0;width:120px">Tracking ID</td><td style="color:#111;font-weight:600">${trackingId}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">New Status</td><td style="font-weight:700;color:${color}">${newStatus}</td></tr>
+          ${driverName ? `<tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>` : ''}
+        </table>
+      </div>
+      <p style="color:#9CA3AF;font-size:12px;text-align:center">© 22Logistics Admin Alerts</p>
+    </div>
+    `,
+  );
+};

@@ -12,6 +12,7 @@ import { sendWelcomeEmail } from "../lib/email.service";
 import { OAuth2Client } from "google-auth-library";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { validatePassword } from "../lib/password.validator";
+import { grantNewUserPromo } from '../lib/promoMilestones';
 
 const ALLOWED_GOOGLE_CLIENT_IDS = [
   process.env.GOOGLE_CLIENT_ID_USER_APP,
@@ -130,7 +131,7 @@ export const register = async (
     const hashedPassword = await bcrypt.hash(password, 10);
     const { code, hashed, expiry } = generateCode();
 
-    await prisma.user.create({
+   const createdUser = await prisma.user.create({
       data: {
         email: emailNormalized,
         password: hashedPassword,
@@ -150,6 +151,7 @@ export const register = async (
     }
     try {
       await sendWelcomeEmail(emailNormalized, name, "INDIVIDUAL");
+      try { await grantNewUserPromo(createdUser.id, emailNormalized, name); } catch (e) { console.error('New user promo failed:', e); }
     } catch (e) {
       console.error("Welcome email failed:", e);
     }

@@ -8,6 +8,8 @@ import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { getIO, emitToAdmin } from "../lib/socket";
 import { getPackagePrices } from "../lib/getPrices";
+import { sendAdminNewBookingEmail } from "../lib/email.service";
+import { checkAndGrantMilestonePromo } from "../lib/promoMilestones";
 
 export const archiveTripMessages = async (bookingId: string) => {
   await prisma.tripMessages.updateMany({
@@ -357,6 +359,9 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
       const updated = await prisma.booking.update({
         where: { id: booking.id },
         data: { paymentStatus: "PAID", status: "AWAITING_DRIVER" },
+        include: {
+          customer: { select: { name: true, email: true } },
+        },
       });
 
       try {
@@ -373,6 +378,24 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
         rideType: updated.rideType,
         customerName: booking.customer?.name, // need to include customer in findFirst
       });
+
+      const admins = await prisma.user.findMany({
+        where: { role: "ADMIN", isActive: true },
+        select: { email: true },
+      });
+      admins.forEach((a) =>
+        sendAdminNewBookingEmail(
+          a.email,
+          updated.customer?.name ?? "Customer",
+          updated.trackingId ?? updated.id,
+          updated.packageType ?? "-",
+          updated.pickupAddress,
+          updated.dropoffAddress,
+          updated.scheduledAt,
+          updated.totalAmount,
+          updated.rideType,
+        ),
+      );
 
       await notifyAdmins(
         "New Booking Payment",

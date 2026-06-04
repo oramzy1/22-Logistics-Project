@@ -12,6 +12,8 @@ import { getIO, emitToAdmin } from "../lib/socket";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { createNotification, notifyAdmins } from "../lib/notifications";
+import { checkAndGrantMilestonePromo } from "../lib/promoMilestones";
+import { sendAdminBookingStatusEmail } from "../lib/email.service";
 
 const generateCode = () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -450,6 +452,20 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
         console.log("Socket emit failed", err);
       }
 
+      const admins = await prisma.user.findMany({
+        where: { role: "ADMIN", isActive: true },
+        select: { email: true },
+      });
+      admins.forEach((a) =>
+        sendAdminBookingStatusEmail(
+          a.email,
+          updated!.trackingId ?? requestId,
+          "",
+          "ACCEPTED",
+          profile.user?.name,
+        ),
+      );
+
       await prisma.driverProfile.update({
         where: { id: profile.id },
         data: {
@@ -549,6 +565,20 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
         },
       },
     });
+
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN", isActive: true },
+      select: { email: true },
+    });
+
+    admins.forEach((a) =>
+      sendAdminBookingStatusEmail(
+        a.email,
+        updated.trackingId ?? bookingId,
+        "",
+        "IN_PROGRESS",
+      ),
+    );
 
     // Notify customer
     getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
@@ -754,6 +784,22 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
         },
       },
     });
+
+    await checkAndGrantMilestonePromo(booking.customerId);
+
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN", isActive: true },
+      select: { email: true },
+    });
+    admins.forEach((a) =>
+      sendAdminBookingStatusEmail(
+        a.email,
+        updated.trackingId ?? updated.id,
+        customer?.name ?? "Customer",
+        "COMPLETED",
+        updated.driver?.name,
+      ),
+    );
 
     await prisma.driverProfile.update({
       where: { userId: req.user!.id },
