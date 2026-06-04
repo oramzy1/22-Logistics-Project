@@ -4,6 +4,9 @@ import prisma from '../lib/prisma';
 import { initializeTransaction, verifyTransaction } from '../lib/paystack';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { getExtensionPrices } from '../lib/getPrices';
+import { sendExtensionEmail, sendAdminNewBookingEmail } from '../lib/email.service';
+import { createNotification, notifyAdmins } from '../lib/notifications'
+
 
 // const EXTENSION_PRICES: Record<string, number> = {
 //   '1-Hours': 10000,
@@ -87,6 +90,50 @@ export const verifyExtensionPayment = async (req: AuthRequest, res: Response) =>
         where: { id: extension.id },
         data: { paymentStatus: 'PAID' },
       });
+        const booking = await prisma.booking.findUnique({
+    where: { id: extension.bookingId },
+    include: {
+      customer: { select: { name: true, email: true } },
+      driver: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+    if (booking) {
+      const trackingId = booking.trackingId ?? booking.id;
+    // Notify driver
+    if (booking.driverId && booking.driver) {
+      await createNotification(
+        booking.driverId,
+        'Trip Extended',
+        `${booking.customer.name} extended the trip by ${extension.hours} hour(s). ₦${extension.amount.toLocaleString()} received.`,
+        'BOOKING_UPDATED',
+        booking.id,
+      );
+        sendExtensionEmail(
+      booking?.driver.email, booking?.driver.name, 'driver',
+      booking.customer.name, trackingId, extension.hours, extension.amount,
+    );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      'Trip Extension Payment',
+      `₦${extension.amount.toLocaleString()} · ${extension.hours}h extension by ${booking.customer.name}`,
+      'NEW_BOOKING',
+      booking.id,
+    );
+     const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN', isActive: true },
+    select: { email: true, name: true },
+  });
+   admins.forEach(a =>
+    sendExtensionEmail(
+      a.email, a.name, 'admin',
+      booking.customer.name, trackingId, extension.hours, extension.amount,
+      booking.driver?.name,
+    )
+  );
+  }
       return res.json({ message: 'Extension payment verified', extension: updated });
     }
 

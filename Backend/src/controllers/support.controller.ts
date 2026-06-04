@@ -50,7 +50,7 @@
 //       await sendSupportRequestEmail(user.email, user.name, subject, description, screenshotUrl);
 //       console.log('✅ Support email sent for:', user.email);
 //     } catch (emailErr) {
-//       // Log but don't block the response — request is still recorded
+//       // Log but don't block the response - request is still recorded
 //       console.error('❌ Support email failed:', emailErr);
 //     }
 
@@ -120,15 +120,15 @@ export const createTicket = async (req: AuthRequest, res: Response) => {
     emitToAdmin("admin:support_new_ticket", ticket);
 
     try {
-  await notifyAdmins(
-    "New Support Ticket",
-    `${user.name} submitted: ${subject}`,
-    "SUPPORT_TICKET",
-    undefined,
-  );
-} catch (notifErr) {
-  console.error("Admin notification failed:", notifErr);
-}
+      await notifyAdmins(
+        "New Support Ticket",
+        `${user.name} submitted: ${subject}`,
+        "SUPPORT_TICKET",
+        undefined,
+      );
+    } catch (notifErr) {
+      console.error("Admin notification failed:", notifErr);
+    }
 
     // Still send the email as a backup notification to admins
     try {
@@ -299,7 +299,7 @@ export const updateTicket = async (req: AuthRequest, res: Response) => {
       .to(`ticket:${ticketId}`)
       .emit("support:ticket_updated", {
         ...ticket,
-        ticketId, 
+        ticketId,
       });
     getIO()
       .to("admin:dashboard")

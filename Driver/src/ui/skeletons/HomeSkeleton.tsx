@@ -6,7 +6,7 @@ import { colors, radius, spacing } from "@/src/ui/theme";
 import { useAppTheme } from "../useAppTheme";
 
 function PackageCardSkeleton() {
-  const {  colors: themeColors } = useAppTheme();
+  const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
   return (
     <View style={styles.pkg}>
@@ -84,7 +84,7 @@ export function HomeSkeleton() {
           <SkeletonBox width={160} height={16} radius={6} />
           <SkeletonSpacer height={12} />
 
-          {/* Package grid — 5 cards, matching "47%" width layout */}
+          {/* Package grid - 5 cards, matching "47%" width layout */}
           <View style={styles.grid}>
             {Array(4)
               .fill(0)

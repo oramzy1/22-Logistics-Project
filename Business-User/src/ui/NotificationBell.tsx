@@ -30,7 +30,7 @@ export function NotificationBell({
       const data = await NotificationService.getUnreadCount();
       setCount(data.count ?? 0);
     } catch {
-      // fail silently — don't block UI
+      // fail silently - don't block UI
     }
   }, [user]);
 

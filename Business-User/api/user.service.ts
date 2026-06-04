@@ -32,23 +32,30 @@ export const UserService = {
     return response.data;
   },
 
-requestActionOtp: async () => {
-  const response = await apiClient.post("/users/request-action-otp");
-  return response.data;
-},
+  requestActionOtp: async () => {
+    const response = await apiClient.post("/users/request-action-otp");
+    return response.data;
+  },
 
-requestEmailChange: async (newEmail: string, newPassword: string, otp: string) => {
-  const response = await apiClient.post("/users/request-email-change", {
-    newEmail, newPassword, otp
-  });
-  return response.data;
-},
+  requestEmailChange: async (
+    newEmail: string,
+    newPassword: string,
+    otp: string,
+  ) => {
+    const response = await apiClient.post("/users/request-email-change", {
+      newEmail,
+      newPassword,
+      otp,
+    });
+    return response.data;
+  },
 
-confirmEmailChange: async (otp: string) => {
-  const response = await apiClient.post("/users/confirm-email-change", { otp });
-  return response.data;
-},
-
+  confirmEmailChange: async (otp: string) => {
+    const response = await apiClient.post("/users/confirm-email-change", {
+      otp,
+    });
+    return response.data;
+  },
 
   uploadAvatar: async (imageUri: string) => {
     const token = await AsyncStorage.getItem("token");
@@ -97,12 +104,12 @@ confirmEmailChange: async (otp: string) => {
     return response.data;
   },
 
-   sendSupportRequest: async (data: {
+  sendSupportRequest: async (data: {
     subject: string;
     description: string;
     screenshotUri?: string;
   }) => {
-    // If there's a screenshot, use multipart — otherwise plain JSON is fine
+    // If there's a screenshot, use multipart - otherwise plain JSON is fine
     if (data.screenshotUri) {
       const token = await AsyncStorage.getItem("token");
 
@@ -124,7 +131,7 @@ confirmEmailChange: async (otp: string) => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          // Do NOT set Content-Type manually — fetch sets it with the boundary
+          // Do NOT set Content-Type manually - fetch sets it with the boundary
         },
         body: formData,
       });
@@ -141,7 +148,7 @@ confirmEmailChange: async (otp: string) => {
       return response.json();
     }
 
-    // No screenshot — plain JSON
+    // No screenshot - plain JSON
     const response = await apiClient.post("/support/request", {
       subject: data.subject,
       description: data.description,
@@ -150,65 +157,70 @@ confirmEmailChange: async (otp: string) => {
   },
 
   createSupportTicket: async (data: {
-  subject: string;
-  description: string;
-  category: string;
-  screenshotUri?: string;
-}) => {
-  const token = await AsyncStorage.getItem("token");
+    subject: string;
+    description: string;
+    category: string;
+    screenshotUri?: string;
+  }) => {
+    const token = await AsyncStorage.getItem("token");
 
-  const formData = new FormData();
-  formData.append("subject", data.subject);
-  formData.append("description", data.description);
-  formData.append("category", data.category);
+    const formData = new FormData();
+    formData.append("subject", data.subject);
+    formData.append("description", data.description);
+    formData.append("category", data.category);
 
-  if (data.screenshotUri) {
-    const filename = data.screenshotUri.split("/").pop() ?? "screenshot.jpg";
-    const ext = filename.split(".").pop()?.toLowerCase();
-    const mimeType = ext === "png" ? "image/png" : "image/jpeg";
-    formData.append("screenshot", {
-      uri: data.screenshotUri,
-      type: mimeType,
-      name: filename,
-    } as any);
-  }
+    if (data.screenshotUri) {
+      const filename = data.screenshotUri.split("/").pop() ?? "screenshot.jpg";
+      const ext = filename.split(".").pop()?.toLowerCase();
+      const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+      formData.append("screenshot", {
+        uri: data.screenshotUri,
+        type: mimeType,
+        name: filename,
+      } as any);
+    }
 
-  const response = await fetch(`${API_URL}/support/tickets`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      // No Content-Type — let fetch set multipart boundary automatically
-    },
-    body: formData,
-  });
+    const response = await fetch(`${API_URL}/support/tickets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // No Content-Type - let fetch set multipart boundary automatically
+      },
+      body: formData,
+    });
 
-  if (!response.ok) {
-    const text = await response.text();
-    let message = "Failed to create support ticket";
-    try { message = JSON.parse(text)?.message ?? message; } catch {}
-    throw new Error(message);
-  }
+    if (!response.ok) {
+      const text = await response.text();
+      let message = "Failed to create support ticket";
+      try {
+        message = JSON.parse(text)?.message ?? message;
+      } catch {}
+      throw new Error(message);
+    }
 
-  return response.json();
-},
+    return response.json();
+  },
 
-getMyTickets: async () => {
-  const response = await apiClient.get("/support/tickets");
-  return response.data;
-},
+  getMyTickets: async () => {
+    const response = await apiClient.get("/support/tickets");
+    return response.data;
+  },
 
-getTicketById: async (ticketId: string) => {
-  const response = await apiClient.get(`/support/tickets/${ticketId}`);
-  return response.data;
-},
+  getTicketById: async (ticketId: string) => {
+    const response = await apiClient.get(`/support/tickets/${ticketId}`);
+    return response.data;
+  },
 
-sendTicketMessage: async (ticketId: string, body: string) => {
-  const response = await apiClient.post(`/support/tickets/${ticketId}/messages`, { body });
-  return response.data;
-},
+  sendTicketMessage: async (ticketId: string, body: string) => {
+    const response = await apiClient.post(
+      `/support/tickets/${ticketId}/messages`,
+      { body },
+    );
+    return response.data;
+  },
 
   verifyActionOtp: async (otp: string) => {
-  const response = await apiClient.post("/users/verify-action-otp", { otp });
-  return response.data;
-},
+    const response = await apiClient.post("/users/verify-action-otp", { otp });
+    return response.data;
+  },
 };

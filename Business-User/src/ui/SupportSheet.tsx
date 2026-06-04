@@ -1,6 +1,6 @@
 // src/ui/SupportSheet.tsx
 // Drop-in bottom sheet for Help Center, FAQs, Contact Support, Report an Issue
-// Requires NO new packages — uses the existing Modal pattern from Account tabs.
+// Requires NO new packages - uses the existing Modal pattern from Account tabs.
 
 import React, { useState } from "react";
 import {

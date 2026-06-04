@@ -111,8 +111,6 @@ const androidId =
   "986510137107-fj6gotsvndl794i6rj3aqu4achgspmhk.apps.googleusercontent.com";
 const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
-console.log("ios:", iosId, "android:", androidId, "web:", clientId);
-
 GoogleSignin.configure({
   iosClientId: iosId,
   webClientId: clientId,
@@ -122,7 +120,7 @@ GoogleSignin.configure({
 
 interface OAuthOptions {
   appType: "user-app" | "driver-app";
-  // Only set on registration screens — omit on sign-in screen
+  // Only set on registration screens - omit on sign-in screen
   role?: "INDIVIDUAL" | "BUSINESS" | "DRIVER";
   // Derived automatically: if role is provided → 'register', else → 'signin'
 }
@@ -155,17 +153,17 @@ export function useOAuth({ appType, role }: OAuthOptions) {
   const signInWithGoogle = async () => {
     showLoading("Please Wait...");
     try {
-     if (Platform.OS === "android") {
+      if (Platform.OS === "android") {
         await GoogleSignin.hasPlayServices({
           showPlayServicesUpdateDialog: true,
         });
-         
+
         // Force the account picker ONLY on Android to avoid breaking the iOS sheet!
         await GoogleSignin.signOut();
       }
       const userInfo = await GoogleSignin.signIn();
       console.log("Full userInfo:", JSON.stringify(userInfo, null, 2));
-      if (userInfo.type !== "success") return; 
+      if (userInfo.type !== "success") return;
       const idToken = userInfo.data?.idToken;
       if (!idToken) {
         showToast.error("No token received from Google");
@@ -193,12 +191,19 @@ export function useOAuth({ appType, role }: OAuthOptions) {
         Alert.alert("Google Sign-In", "Google Play Services not available.");
         return;
       }
-       console.error("Google sign-in full error:", JSON.stringify({
-    code: err.code,
-    message: err.message,
-    response: err?.response?.data,
-    status: err?.response?.status,
-  }, null, 2));
+      console.error(
+        "Google sign-in full error:",
+        JSON.stringify(
+          {
+            code: err.code,
+            message: err.message,
+            response: err?.response?.data,
+            status: err?.response?.status,
+          },
+          null,
+          2,
+        ),
+      );
       const message = err?.response?.data?.message || "Google sign-in failed";
       showToast.error(message);
       if (err?.response?.status === 404) {

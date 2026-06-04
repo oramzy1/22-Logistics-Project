@@ -147,7 +147,7 @@ useEffect(() => {
         user,
         token,
         isLoading,
-        isAuthenticated: !!token,
+        isAuthenticated: isAuthenticated,
         role: user?.role ?? null,
         isBusiness: user?.role === "BUSINESS",
         isIndividual: user?.role === "INDIVIDUAL",

@@ -12,11 +12,11 @@ import { sendWelcomeEmail } from "../lib/email.service";
 import { OAuth2Client } from "google-auth-library";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { validatePassword } from "../lib/password.validator";
-import { grantNewUserPromo } from '../lib/promoMilestones';
+import { grantNewUserPromo } from "../lib/promoMilestones";
 
 const ALLOWED_GOOGLE_CLIENT_IDS = [
   process.env.GOOGLE_CLIENT_ID_USER_APP,
-  process.env.GOOGLE_CLIENT_ID_DRIVER_APP, 
+  process.env.GOOGLE_CLIENT_ID_DRIVER_APP,
 ].filter(Boolean) as string[];
 
 const generateCode = () => {
@@ -131,7 +131,7 @@ export const register = async (
     const hashedPassword = await bcrypt.hash(password, 10);
     const { code, hashed, expiry } = generateCode();
 
-   const createdUser = await prisma.user.create({
+    const createdUser = await prisma.user.create({
       data: {
         email: emailNormalized,
         password: hashedPassword,
@@ -147,11 +147,15 @@ export const register = async (
       await sendVerificationEmail(emailNormalized, code);
     } catch (emailError) {
       console.error("Verification email failed to send:", emailError);
-      // User is created, just warn — they can request resend
+      // User is created, just warn - they can request resend
     }
     try {
       await sendWelcomeEmail(emailNormalized, name, "INDIVIDUAL");
-      try { await grantNewUserPromo(createdUser.id, emailNormalized, name); } catch (e) { console.error('New user promo failed:', e); }
+      try {
+        await grantNewUserPromo(createdUser.id, emailNormalized, name);
+      } catch (e) {
+        console.error("New user promo failed:", e);
+      }
     } catch (e) {
       console.error("Welcome email failed:", e);
     }
@@ -393,7 +397,7 @@ async function verifyGoogleToken(idToken: string) {
       continue;
     }
   }
-  return null; 
+  return null;
 }
 
 export const googleAuth = async (req: Request, res: Response) => {
@@ -418,7 +422,7 @@ export const googleAuth = async (req: Request, res: Response) => {
             "This account uses email and password sign-in. Please sign in with your email instead.",
         });
       }
-      // Existing user — enforce role gate
+      // Existing user - enforce role gate
       if (appType === "driver-app" && user.role !== "DRIVER") {
         return res
           .status(403)
@@ -525,13 +529,13 @@ export const appleAuth = async (req: Request, res: Response) => {
     if (!identityToken)
       return res.status(400).json({ message: "Missing identity token" });
 
-    // Decode Apple JWT — in production verify with Apple's public keys via jwks-rsa
+    // Decode Apple JWT - in production verify with Apple's public keys via jwks-rsa
     const decoded = jwt.decode(identityToken) as any;
     if (!decoded?.email && !decoded?.sub) {
       return res.status(400).json({ message: "Invalid Apple token" });
     }
 
-    // Apple may hide real email after first sign-in — fall back to sub-based placeholder
+    // Apple may hide real email after first sign-in - fall back to sub-based placeholder
     const email: string =
       decoded.email ?? `apple_${decoded.sub}@privaterelay.appleid.com`;
     const givenName = fullName?.givenName ?? "";
@@ -761,7 +765,7 @@ export const verifyResetCode = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid or expired code." });
     }
 
-    // Valid — don't consume it yet, resetPassword still needs it
+    // Valid - don't consume it yet, resetPassword still needs it
     res.json({ message: "Code verified." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

@@ -38,7 +38,7 @@ export async function checkTripDelays() {
     try {
       await notifyAdmins(
         "⚠️ Trip Delay Alert",
-        `Driver ${booking.driver?.name ?? "Unknown"} has not started booking ${booking.trackingId} — ${delayMinutes} min late. Customer: ${booking.customer?.name}. Driver phone: ${booking.driver?.phone ?? "N/A"}`,
+        `Driver ${booking.driver?.name ?? "Unknown"} has not started booking ${booking.trackingId} - ${delayMinutes} min late. Customer: ${booking.customer?.name}. Driver phone: ${booking.driver?.phone ?? "N/A"}`,
         "TRIP_DELAY",
         booking.id,
       );
@@ -56,18 +56,18 @@ export async function checkTripDelays() {
       console.error("Trip delay notification failed:", e);
     }
     const adminUsers = await prisma.user.findMany({
-  where: { role: 'ADMIN', isActive: true },
-  select: { email: true },
-});
-for (const admin of adminUsers) {
-  sendTripDelayEmail(
-    admin.email,
-    booking.driver?.name ?? 'Unknown',
-    booking.trackingId ?? booking.id,
-    delayMinutes,
-    booking.driver?.phone ?? 'N/A',
-    booking.customer?.name ?? 'Unknown',
-  );
-}
+      where: { role: "ADMIN", isActive: true },
+      select: { email: true },
+    });
+    for (const admin of adminUsers) {
+      sendTripDelayEmail(
+        admin.email,
+        booking.driver?.name ?? "Unknown",
+        booking.trackingId ?? booking.id,
+        delayMinutes,
+        booking.driver?.phone ?? "N/A",
+        booking.customer?.name ?? "Unknown",
+      );
+    }
   }
 }

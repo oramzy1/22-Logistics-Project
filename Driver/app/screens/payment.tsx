@@ -78,7 +78,7 @@ export default function PaymentScreen() {
     }
   };
 
-  // Called when WebView navigates — detect Paystack callback
+  // Called when WebView navigates - detect Paystack callback
   // const handleNavigationChange = async (navState: { url: string }) => {
   //   const { url } = navState;
 
@@ -125,7 +125,7 @@ export default function PaymentScreen() {
       return;
     }
 
-    // Your callback URL — payment flow completed (success OR failure)
+    // Your callback URL - payment flow completed (success OR failure)
     // Extract the status Paystack appends as a query param
     if (url.includes("/api/payments/callback")) {
       setShowWebView(false);
@@ -134,13 +134,22 @@ export default function PaymentScreen() {
         // Verify the extension payment before going back to live
         router.replace({
           pathname: "/screens/extension-success",
-          params: { bookingId, packageType, scheduledAt, pickupAddress, dropoffAddress, totalAmount, reference, addOns },
+          params: {
+            bookingId,
+            packageType,
+            scheduledAt,
+            pickupAddress,
+            dropoffAddress,
+            totalAmount,
+            reference,
+            addOns,
+          },
         });
         return;
       }
 
       // Paystack appends ?trxref=...&reference=... to callback
-      // We don't verify here — webhook already handles DB update.
+      // We don't verify here - webhook already handles DB update.
       // We just optimistically route to success and let the screen
       // do a single delayed verify to confirm.
       router.replace({

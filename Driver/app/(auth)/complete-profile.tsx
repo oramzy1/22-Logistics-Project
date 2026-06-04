@@ -95,7 +95,7 @@ export default function CompleteDriverProfileScreen() {
           </View>
           <Text style={s.title}>Upload your Driver's License</Text>
           <Text style={s.subtitle}>
-            22Logistics provides the vehicle — we just need your valid license
+            22Logistics provides the vehicle - we just need your valid license
             to verify you as a driver. Your account will be activated after
             admin review.
           </Text>
@@ -147,7 +147,7 @@ export default function CompleteDriverProfileScreen() {
           <View style={s.infoCard}>
             <Text style={s.infoTitle}>What happens next?</Text>
             <Text style={s.infoItem}>
-              ① Admin reviews your license — usually within 24 hours
+              ① Admin reviews your license - usually within 24 hours
             </Text>
             <Text style={s.infoItem}>
               ② You receive a notification when approved
@@ -171,7 +171,7 @@ export default function CompleteDriverProfileScreen() {
           </TouchableOpacity>
 
           {/* <TouchableOpacity style={s.skipBtn} onPress={() => router.replace("/(tabs)")}>
-            <Text style={s.skipText}>Skip for now — I'll do this later</Text>
+            <Text style={s.skipText}>Skip for now - I'll do this later</Text>
           </TouchableOpacity> */}
         </ScrollView>
       </KeyboardAvoidingView>

@@ -35,31 +35,31 @@ import { api } from "@/lib/api";
 import { AdminNotification } from "@/components/dashboard/NotificationsSheet";
 
 const TYPE_MAP: Record<string, AdminNotification["type"]> = {
-  NEW_BOOKING:       "new_booking",
+  NEW_BOOKING: "new_booking",
   LICENSE_SUBMITTED: "license_submitted",
-  DRIVER_ONLINE:     "driver_online",
-  NEW_USER:          "new_user",
-  PAYMENT_RECEIVED:  "payment",
+  DRIVER_ONLINE: "driver_online",
+  NEW_USER: "new_user",
+  PAYMENT_RECEIVED: "payment",
 };
 
 const LINK_MAP: Record<AdminNotification["type"], string> = {
-  new_booking:       "/bookings",
+  new_booking: "/bookings",
   license_submitted: "/drivers",
-  driver_online:     "/drivers",
-  new_user:          "/users",
-  payment:           "/payment",
+  driver_online: "/drivers",
+  new_user: "/users",
+  payment: "/payment",
 };
 
 function toAdminNotif(n: any): AdminNotification {
   const type = TYPE_MAP[n.type] ?? "new_booking";
   return {
-    id:        n.id,
+    id: n.id,
     type,
-    title:     n.title,
-    body:      n.message,
-    link:      LINK_MAP[type] ?? "/",
-    linkId:    n.bookingId ?? undefined,
-    read:      n.read,
+    title: n.title,
+    body: n.message,
+    link: LINK_MAP[type] ?? "/",
+    linkId: n.bookingId ?? undefined,
+    read: n.read,
     createdAt: new Date(n.createdAt),
   };
 }
@@ -69,22 +69,24 @@ export function useAdminNotifications() {
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["admin-notifications"],
-    queryFn:  () => api.get<any[]>("/notifications"),
+    queryFn: () => api.get<any[]>("/notifications"),
     refetchInterval: 30_000,
     select: (data) => data.map(toAdminNotif),
   });
 
   const markReadMut = useMutation({
     mutationFn: (id: string) => api.patch(`/notifications/${id}/read`, {}),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ["admin-notifications"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] }),
   });
 
   const markAllReadMut = useMutation({
     mutationFn: () => api.patch("/notifications/read-all", {}),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ["admin-notifications"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] }),
   });
 
-  // Socket handlers still call push() — it just triggers a re-fetch now
+  // Socket handlers still call push() - it just triggers a re-fetch now
   const push = useCallback(
     (_n: Omit<AdminNotification, "id" | "read" | "createdAt">) => {
       qc.invalidateQueries({ queryKey: ["admin-notifications"] });
@@ -95,8 +97,8 @@ export function useAdminNotifications() {
   return {
     notifications,
     push,
-    markRead:     (id: string) => markReadMut.mutate(id),
-    markAllRead:  () => markAllReadMut.mutate(),
-    unreadCount:  notifications.filter((n) => !n.read).length,
+    markRead: (id: string) => markReadMut.mutate(id),
+    markAllRead: () => markAllReadMut.mutate(),
+    unreadCount: notifications.filter((n) => !n.read).length,
   };
 }

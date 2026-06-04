@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, TextInput, AppStateStatus, AppState } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  AppStateStatus,
+  AppState,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
@@ -21,85 +28,93 @@ export default function VerifyScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const inputs = useRef<TextInput[]>([]);
-const RESEND_COOLDOWN = 90;
-const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN);
-const [canResend, setCanResend] = useState(false);
-const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-const endTimeRef = useRef<number>(0); // stores the absolute end timestamp
-const appStateRef = useRef(AppState.currentState);
+  const RESEND_COOLDOWN = 90;
+  const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN);
+  const [canResend, setCanResend] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endTimeRef = useRef<number>(0); // stores the absolute end timestamp
+  const appStateRef = useRef(AppState.currentState);
 
-const startTimer = () => {
-  if (timerRef.current) clearInterval(timerRef.current);
-  
-  // Store when the timer should END as an absolute timestamp
-  endTimeRef.current = Date.now() + RESEND_COOLDOWN * 1000;
-  setSecondsLeft(RESEND_COOLDOWN);
-  setCanResend(false);
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
 
-  timerRef.current = setInterval(() => {
-    const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
-    if (remaining <= 0) {
-      clearInterval(timerRef.current!);
-      setSecondsLeft(0);
-      setCanResend(true);
-    } else {
-      setSecondsLeft(remaining);
-    }
-  }, 1000);
-};
+    // Store when the timer should END as an absolute timestamp
+    endTimeRef.current = Date.now() + RESEND_COOLDOWN * 1000;
+    setSecondsLeft(RESEND_COOLDOWN);
+    setCanResend(false);
 
-// Handle app coming back from background — recalculate from wall clock
-useEffect(() => {
-  const subscription = AppState.addEventListener("change", (nextState: AppStateStatus) => {
-    if (
-      appStateRef.current.match(/inactive|background/) &&
-      nextState === "active"
-    ) {
-      // App just came to foreground — resync timer from real clock
-      if (endTimeRef.current > 0) {
-        const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
-        if (remaining <= 0) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          setSecondsLeft(0);
-          setCanResend(true);
-        } else {
-          setSecondsLeft(remaining);
-          // Restart the interval cleanly
-          if (timerRef.current) clearInterval(timerRef.current);
-          timerRef.current = setInterval(() => {
-            const rem = Math.round((endTimeRef.current - Date.now()) / 1000);
-            if (rem <= 0) {
-              clearInterval(timerRef.current!);
+    timerRef.current = setInterval(() => {
+      const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
+      if (remaining <= 0) {
+        clearInterval(timerRef.current!);
+        setSecondsLeft(0);
+        setCanResend(true);
+      } else {
+        setSecondsLeft(remaining);
+      }
+    }, 1000);
+  };
+
+  // Handle app coming back from background - recalculate from wall clock
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      "change",
+      (nextState: AppStateStatus) => {
+        if (
+          appStateRef.current.match(/inactive|background/) &&
+          nextState === "active"
+        ) {
+          // App just came to foreground - resync timer from real clock
+          if (endTimeRef.current > 0) {
+            const remaining = Math.round(
+              (endTimeRef.current - Date.now()) / 1000,
+            );
+            if (remaining <= 0) {
+              if (timerRef.current) clearInterval(timerRef.current);
               setSecondsLeft(0);
               setCanResend(true);
             } else {
-              setSecondsLeft(rem);
+              setSecondsLeft(remaining);
+              // Restart the interval cleanly
+              if (timerRef.current) clearInterval(timerRef.current);
+              timerRef.current = setInterval(() => {
+                const rem = Math.round(
+                  (endTimeRef.current - Date.now()) / 1000,
+                );
+                if (rem <= 0) {
+                  clearInterval(timerRef.current!);
+                  setSecondsLeft(0);
+                  setCanResend(true);
+                } else {
+                  setSecondsLeft(rem);
+                }
+              }, 1000);
             }
-          }, 1000);
+          }
         }
-      }
-    }
-    appStateRef.current = nextState;
-  });
+        appStateRef.current = nextState;
+      },
+    );
 
-  return () => subscription.remove();
-}, []);
+    return () => subscription.remove();
+  }, []);
 
-// Start timer on mount
-useEffect(() => {
-  startTimer();
-  return () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
-}, []);
+  // Start timer on mount
+  useEffect(() => {
+    startTimer();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const formatTime = (s: number) => {
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${m}:${sec}`;
-};
+    const m = Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0");
+    const sec = (s % 60).toString().padStart(2, "0");
+    return `${m}:${sec}`;
+  };
 
-  
   // Animation values
   const shakeOffset = useSharedValue(0);
   const errorColorProgress = useSharedValue(0);
@@ -185,16 +200,16 @@ useEffect(() => {
     return { borderColor };
   });
 
- const handleResend = async () => {
-  if (!canResend) return;
-  try {
-    await AuthService.resendVerification(email);
-    startTimer();
-    showToast.success("Code resent", "Check your email");
-  } catch (err) {
-    console.log("Resend failed:", err);
-  }
-};
+  const handleResend = async () => {
+    if (!canResend) return;
+    try {
+      await AuthService.resendVerification(email);
+      startTimer();
+      showToast.success("Code resent", "Check your email");
+    } catch (err) {
+      console.log("Resend failed:", err);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -205,14 +220,18 @@ useEffect(() => {
           Enter the 6-digit code sent to {email}
         </Text>
 
-       <View style={styles.timerBadge}>
-  <Text style={styles.timerText}>
-    {canResend
-      ? "Code expired. "
-      : <>This code will expire in <Text style={styles.timerBold}>{formatTime(secondsLeft)}</Text></>
-    }
-  </Text>
-</View>
+        <View style={styles.timerBadge}>
+          <Text style={styles.timerText}>
+            {canResend ? (
+              "Code expired. "
+            ) : (
+              <>
+                This code will expire in{" "}
+                <Text style={styles.timerBold}>{formatTime(secondsLeft)}</Text>
+              </>
+            )}
+          </Text>
+        </View>
         <Animated.View style={[styles.codeContainer, animatedGroupStyle]}>
           {[0, 1, 2, 3, 4, 5].map((index) => (
             <Animated.View
@@ -231,12 +250,16 @@ useEffect(() => {
             </Animated.View>
           ))}
         </Animated.View>
-       <Text style={styles.resendPrompt}>Didn't receive code?</Text>
-<TouchableOpacity onPress={handleResend} disabled={!canResend}>
-  <Text style={[styles.resendLink, !canResend && styles.resendDisabled]}>
-    {canResend ? "Resend code" : `Resend available in ${formatTime(secondsLeft)}`}
-  </Text>
-</TouchableOpacity>
+        <Text style={styles.resendPrompt}>Didn't receive code?</Text>
+        <TouchableOpacity onPress={handleResend} disabled={!canResend}>
+          <Text
+            style={[styles.resendLink, !canResend && styles.resendDisabled]}
+          >
+            {canResend
+              ? "Resend code"
+              : `Resend available in ${formatTime(secondsLeft)}`}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.verifyBtn, isLoading && { opacity: 0.7 }]}

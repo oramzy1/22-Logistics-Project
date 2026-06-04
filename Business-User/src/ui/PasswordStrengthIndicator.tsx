@@ -1,11 +1,7 @@
 // src/ui/PasswordStrengthIndicator.tsx
 
 import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { Check, X } from "lucide-react-native";
 import { Text } from "../../components/AppText";
 import { useAppTheme } from "./useAppTheme";
@@ -77,16 +73,15 @@ const CriteriaPill = ({ label, met }: PasswordCriteria) => {
   });
 
   return (
-    <Animated.View
-      style={[
-        styles.pill,
-        { borderColor, backgroundColor },
-      ]}
-    >
+    <Animated.View style={[styles.pill, { borderColor, backgroundColor }]}>
       {met ? (
         <Check size={11} color="#16A34A" style={{ marginRight: 4 }} />
       ) : (
-        <X size={11} color={isDark ? "#6B7280" : "#9CA3AF"} style={{ marginRight: 4 }} />
+        <X
+          size={11}
+          color={isDark ? "#6B7280" : "#9CA3AF"}
+          style={{ marginRight: 4 }}
+        />
       )}
       <Text
         style={[
@@ -100,7 +95,11 @@ const CriteriaPill = ({ label, met }: PasswordCriteria) => {
   );
 };
 
-export function PasswordStrengthIndicator({ password, visible, backgroundColor='#FFF'}: Props) {
+export function PasswordStrengthIndicator({
+  password,
+  visible,
+  backgroundColor = "#FFF",
+}: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-8)).current;
 
@@ -155,11 +154,11 @@ export function PasswordStrengthIndicator({ password, visible, backgroundColor='
 
 const styles = StyleSheet.create({
   container: {
-    // Overlay — positioned absolutely by the parent wrapper
+    // Overlay - positioned absolutely by the parent wrapper
     position: "absolute",
     left: 0,
     right: 0,
-    top: "100%",  
+    top: "100%",
     zIndex: 100,
     paddingTop: 8,
   },

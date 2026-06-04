@@ -19,7 +19,7 @@ export function LanguagePickerItem() {
 
   return (
     <>
-      {/* The list row — same look as other ListItems */}
+      {/* The list row - same look as other ListItems */}
       <TouchableOpacity
         style={s.row}
         onPress={() => setOpen(true)}
@@ -51,37 +51,37 @@ export function LanguagePickerItem() {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-             {LANGUAGES.map((lang) => (
-  <TouchableOpacity
-    key={lang.code}
-    style={[
-      s.langRow,
-      i18n.language === lang.code && s.langRowActive, // ← was LANGUAGES ===
-    ]}
-    onPress={async () => {
-      await changeLanguage(lang.code as LangCode);
-      setOpen(false);
-    }}
-    activeOpacity={0.75}
-  >
-    <View>
-      <Text
-        style={[
-          s.langNative,
-          i18n.language === lang.code && { color: '#0B1B2B' }, // ← was LANGUAGES ===
-        ]}
-      >
-        {lang.nativeLabel}
-      </Text>
-      {lang.nativeLabel !== lang.label && (
-        <Text style={s.langEnglish}>{lang.label}</Text>
-      )}
-    </View>
-    {i18n.language === lang.code && ( // ← was LANGUAGES ===
-      <Check size={18} color="#0B1B2B" />
-    )}
-  </TouchableOpacity>
-))}
+              {LANGUAGES.map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    s.langRow,
+                    i18n.language === lang.code && s.langRowActive, // ← was LANGUAGES ===
+                  ]}
+                  onPress={async () => {
+                    await changeLanguage(lang.code as LangCode);
+                    setOpen(false);
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <View>
+                    <Text
+                      style={[
+                        s.langNative,
+                        i18n.language === lang.code && { color: "#0B1B2B" }, // ← was LANGUAGES ===
+                      ]}
+                    >
+                      {lang.nativeLabel}
+                    </Text>
+                    {lang.nativeLabel !== lang.label && (
+                      <Text style={s.langEnglish}>{lang.label}</Text>
+                    )}
+                  </View>
+                  {i18n.language === lang.code && ( // ← was LANGUAGES ===
+                    <Check size={18} color="#0B1B2B" />
+                  )}
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
         </View>

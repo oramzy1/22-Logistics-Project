@@ -8,11 +8,11 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Light mode — main bg #E7E7E7, sidebar #061A33 */
-    --background: 0 0% 90.6%;            /* #E7E7E7 */
-    --foreground: 213 73% 11%;           /* #061A33 ish text */
+    /* Light mode - main bg #E7E7E7, sidebar #061A33 */
+    --background: 0 0% 90.6%; /* #E7E7E7 */
+    --foreground: 213 73% 11%; /* #061A33 ish text */
 
-    --surface: 0 0% 100%;                /* white cards */
+    --surface: 0 0% 100%; /* white cards */
     --surface-foreground: 213 73% 11%;
 
     --card: 0 0% 100%;
@@ -21,10 +21,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 213 73% 11%;
 
-    --primary: 213 79% 12%;              /* #061A33 */
+    --primary: 213 79% 12%; /* #061A33 */
     --primary-foreground: 0 0% 98%;
 
-    --chart:213 79% 12%;
+    --chart: 213 79% 12%;
     --chart-foreground: 0 0% 98%;
 
     --secondary: 0 0% 96%;
@@ -33,7 +33,7 @@ All colors MUST be HSL.
     --muted: 0 0% 94%;
     --muted-foreground: 215 16% 40%;
 
-    --accent: 199 89% 48%;               /* sky blue accent for charts */
+    --accent: 199 89% 48%; /* sky blue accent for charts */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -52,11 +52,11 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     /* Sidebar tokens */
-    --sidebar-background: 213 79% 12%;          /* #061A33 */
+    --sidebar-background: 213 79% 12%; /* #061A33 */
     --sidebar-foreground: 210 30% 85%;
     --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 213 60% 18%;              /* hover */
+    --sidebar-accent: 213 60% 18%; /* hover */
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 213 50% 20%;
     --sidebar-ring: 199 89% 48%;
@@ -67,8 +67,8 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark mode — main #121212, sidebar #1e1e1e */
-    --background: 0 0% 7%;               /* #121212 */
+    /* Dark mode - main #121212, sidebar #1e1e1e */
+    --background: 0 0% 7%; /* #121212 */
     --foreground: 0 0% 92%;
 
     --surface: 0 0% 10%;
@@ -85,10 +85,9 @@ All colors MUST be HSL.
 
     --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 92%;
-    
+
     --chart: 213 79% 12%;
     --chart-foreground: 0 0% 98%;
-
 
     --muted: 0 0% 16%;
     --muted-foreground: 0 0% 65%;
@@ -109,7 +108,7 @@ All colors MUST be HSL.
     --input: 0 0% 18%;
     --ring: 199 89% 48%;
 
-    --sidebar-background: 0 0% 12%;       /* #1e1e1e */
+    --sidebar-background: 0 0% 12%; /* #1e1e1e */
     --sidebar-foreground: 0 0% 80%;
     --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -130,6 +129,13 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+  .modal-input {
+    @apply h-9 w-full px-3 rounded-md border border-border bg-background text-sm;
   }
 }

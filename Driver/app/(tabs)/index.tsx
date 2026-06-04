@@ -64,7 +64,7 @@ export default function HomeTabScreen() {
 
   useBookingSocket({
     onNewRideRequest: (data) => {
-      // New booking available — add to requests if not already there
+      // New booking available - add to requests if not already there
       const incoming = data.booking ?? data;
       setRequests((prev) => {
         if (prev.find((r) => r.id === incoming.id)) return prev;
@@ -72,7 +72,7 @@ export default function HomeTabScreen() {
       });
     },
     onRideRemoved: (bookingId) => {
-      // Another driver accepted — remove from this driver's list
+      // Another driver accepted - remove from this driver's list
       setRequests((prev) => prev.filter((r) => r.id !== bookingId));
     },
   });
@@ -127,7 +127,7 @@ export default function HomeTabScreen() {
     }, []),
   );
 
-  const toggleStatus = async (value: boolean) => { 
+  const toggleStatus = async (value: boolean) => {
     if (value && !profileComplete) {
       Alert.alert(
         "Profile Incomplete",
@@ -143,19 +143,26 @@ export default function HomeTabScreen() {
         driverProfile: { ...user?.driverProfile, onlineStatus: newStatus },
       });
     } catch (err: any) {
-      console.error("Status full error:", JSON.stringify({
-    code: err.code,
-    message: err.message,
-    response: err?.response?.data,
-    status: err?.response?.status,
-  }, null, 2));
+      console.error(
+        "Status full error:",
+        JSON.stringify(
+          {
+            code: err.code,
+            message: err.message,
+            response: err?.response?.data,
+            status: err?.response?.status,
+          },
+          null,
+          2,
+        ),
+      );
       Alert.alert("Error", "Could not update status");
     }
   };
 
   const respondToRide = async (id: string, action: "ACCEPTED" | "DECLINED") => {
     if (action === "DECLINED") {
-      // Just hide locally — no API call needed, other drivers still see it
+      // Just hide locally - no API call needed, other drivers still see it
       setRequests((prev) => prev.filter((r) => r.id !== id));
       return;
     }
@@ -209,7 +216,8 @@ export default function HomeTabScreen() {
           <View
             style={[
               styles.statusBox,
-              isOnline ? styles.onlineBox : styles.offlineBox, { backgroundColor: themeColors.card1}
+              isOnline ? styles.onlineBox : styles.offlineBox,
+              { backgroundColor: themeColors.card1 },
             ]}
           >
             <View style={styles.statusHeaderRow}>
@@ -327,19 +335,35 @@ export default function HomeTabScreen() {
                         day: "numeric",
                         year: "numeric",
                       })
-                    : "—";
+                    : "-";
                   const scheduledTime = req.scheduledAt
                     ? new Date(req.scheduledAt).toLocaleTimeString("en-NG", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                    : "—";
+                    : "-";
                   const isBusinessType = req.rideType === "BUSINESS";
 
                   return (
-                    <View key={req.id} style={[styles.rideCard, {backgroundColor: themeColors.card, borderColor: themeColors.border}]}>
+                    <View
+                      key={req.id}
+                      style={[
+                        styles.rideCard,
+                        {
+                          backgroundColor: themeColors.card,
+                          borderColor: themeColors.border,
+                        },
+                      ]}
+                    >
                       {/* Orange header */}
-                      <View style={[styles.rideCardHeader, isDark ? {backgroundColor: '#2c2c2c'} : { backgroundColor: "#F97316"}]}>
+                      <View
+                        style={[
+                          styles.rideCardHeader,
+                          isDark
+                            ? { backgroundColor: "#2c2c2c" }
+                            : { backgroundColor: "#F97316" },
+                        ]}
+                      >
                         <View style={styles.rideCardHeaderLeft}>
                           <Bell
                             size={14}
@@ -437,8 +461,15 @@ export default function HomeTabScreen() {
                         </View>
 
                         {/* Scheduled date + duration */}
-                        <View style={[styles.rideFooterRow, isDark ? { backgroundColor: '#2c2c2c'} : { backgroundColor: '#F6F6F6'}]}>
-                          <View >
+                        <View
+                          style={[
+                            styles.rideFooterRow,
+                            isDark
+                              ? { backgroundColor: "#2c2c2c" }
+                              : { backgroundColor: "#F6F6F6" },
+                          ]}
+                        >
+                          <View>
                             <Text style={styles.rideMetaLabel}>
                               SCHEDULED DATE
                             </Text>
@@ -454,7 +485,7 @@ export default function HomeTabScreen() {
                               ESTIMATED DURATION
                             </Text>
                             <Text style={styles.rideFooterVal}>
-                              {req.packageType ?? "—"}
+                              {req.packageType ?? "-"}
                             </Text>
                             <Text style={styles.rideFooterSub}>Round Trip</Text>
                           </View>
@@ -594,13 +625,13 @@ export default function HomeTabScreen() {
                       day: "numeric",
                       year: "numeric",
                     })
-                  : "—";
+                  : "-";
                 const tripTime = trip.scheduledAt
                   ? new Date(trip.scheduledAt).toLocaleTimeString("en-NG", {
                       hour: "2-digit",
                       minute: "2-digit",
                     })
-                  : "—";
+                  : "-";
 
                 return (
                   <View key={trip.id} style={styles.historyCard}>
@@ -648,7 +679,7 @@ export default function HomeTabScreen() {
                       <View style={{ alignItems: "flex-end" }}>
                         <Text style={styles.locLabel}>HOURS</Text>
                         <Text style={styles.locMeta}>
-                          {trip.packageType?.replace(" Hours", "") ?? "—"}
+                          {trip.packageType?.replace(" Hours", "") ?? "-"}
                         </Text>
                       </View>
                     </View>
@@ -684,7 +715,7 @@ export default function HomeTabScreen() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.locLabel}>ESTIMATED DURATION</Text>
                         <Text style={styles.footerVal}>
-                          {trip.packageType ?? "—"}
+                          {trip.packageType ?? "-"}
                         </Text>
                         <Text style={styles.footerSub}>Round Trip</Text>
                       </View>
@@ -700,312 +731,317 @@ export default function HomeTabScreen() {
   );
 }
 
-const createStyles = ( themeColors: any) => StyleSheet.create({
-  // origin: { backgroundColor: colors.navy },
-  root: { height: "100%" },
-  top: { paddingBottom: spacing.md },
-  // content: { padding: spacing.lg, paddingBottom: 40 },
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    // origin: { backgroundColor: colors.navy },
+    root: { height: "100%" },
+    top: { paddingBottom: spacing.md },
+    // content: { padding: spacing.lg, paddingBottom: 40 },
 
-  content: {
-    backgroundColor: "#FFF",
-    flexGrow: 1,
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
+    content: {
+      backgroundColor: "#FFF",
+      flexGrow: 1,
+      padding: 20,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+    },
 
-  statusBox: { borderRadius: 12, padding: 20, marginBottom: 25 },
-  onlineBox: { backgroundColor: "#1D4ED8" }, // Blue
-  offlineBox: { backgroundColor: "#1E3A8A" }, // Darker
-  statusHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  statusLabelRow: { flexDirection: "row", alignItems: "center" },
-  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  statusTitle: { color: "#FFF", fontWeight: "600", fontSize: 16 },
-  statusSubtitle: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 5,
-  },
-  statusDesc: { color: "#E5E7EB", fontSize: 12 },
-  section: { marginBottom: 25 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#3B82F6",
-    marginBottom: 15,
-  },
+    statusBox: { borderRadius: 12, padding: 20, marginBottom: 25 },
+    onlineBox: { backgroundColor: "#1D4ED8" }, // Blue
+    offlineBox: { backgroundColor: "#1E3A8A" }, // Darker
+    statusHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 15,
+    },
+    statusLabelRow: { flexDirection: "row", alignItems: "center" },
+    dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+    statusTitle: { color: "#FFF", fontWeight: "600", fontSize: 16 },
+    statusSubtitle: {
+      color: "#FFF",
+      fontSize: 14,
+      fontWeight: "700",
+      marginBottom: 5,
+    },
+    statusDesc: { color: "#E5E7EB", fontSize: 12 },
+    section: { marginBottom: 25 },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: "#3B82F6",
+      marginBottom: 15,
+    },
 
-  requestCard: {
-    // backgroundColor: "#FFF",
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginBottom: 15,
-  },
-  reqHeader: {
-    backgroundColor: "#F97316",
-    padding: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  reqHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 14, flex: 1 },
-  timerBadge: {
-    backgroundColor: "rgba(0,0,0,0.2)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  timerText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
-  reqBody: { padding: 15 },
-  rideId: { fontSize: 12, color: "#6B7280", marginBottom: 15 },
-  locationRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  locationText: { marginLeft: 10, fontSize: 14, color: "#374151", flex: 1 },
-  actionRow: { flexDirection: "row", gap: 10, marginTop: 20 },
-  btnReject: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingVertical: 12,
-  },
-  rejectText: { color: "#EF4444", fontWeight: "600" },
-  btnAccept: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    backgroundColor: "#E4C77B",
-    paddingVertical: 12,
-  },
-  acceptText: { color: "#3E2723", fontWeight: "600" },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  statCard: {
-    width: "48%",
-    backgroundColor: themeColors.card,
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: themeColors.text,
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  statLabel: { fontSize: 12, color: "#6B7280" },
-  // History card
-  historyCard: {
-    backgroundColor: themeColors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  historyIdRow: { flexDirection: "row", alignItems: "center", flex: 1 },
-  historyId: { fontSize: 12, fontWeight: "700", color: themeColors.text },
-  historyMeta: { fontSize: 11, color: "#6B7280" },
-  statusBadge: { fontSize: 12, fontWeight: "700" },
-  historyLocRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  locDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    marginRight: 10,
-    marginTop: 4,
-  },
-  locLabel: {
-    fontSize: 10,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 2,
-  },
-  locValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
-  locMeta: { fontSize: 13, fontWeight: "700", color: themeColors.text },
-  historyFooter: {
-    flexDirection: "row",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    marginTop: 4,
-  },
-  footerVal: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: themeColors.text,
-    marginBottom: 2,
-  },
-  footerSub: { fontSize: 11, color: "#6B7280" },
+    requestCard: {
+      // backgroundColor: "#FFF",
+      borderRadius: 12,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+      marginBottom: 15,
+    },
+    reqHeader: {
+      backgroundColor: "#F97316",
+      padding: 15,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    reqHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 14, flex: 1 },
+    timerBadge: {
+      backgroundColor: "rgba(0,0,0,0.2)",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    timerText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
+    reqBody: { padding: 15 },
+    rideId: { fontSize: 12, color: "#6B7280", marginBottom: 15 },
+    locationRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    locationText: { marginLeft: 10, fontSize: 14, color: "#374151", flex: 1 },
+    actionRow: { flexDirection: "row", gap: 10, marginTop: 20 },
+    btnReject: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+      paddingVertical: 12,
+    },
+    rejectText: { color: "#EF4444", fontWeight: "600" },
+    btnAccept: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 8,
+      backgroundColor: "#E4C77B",
+      paddingVertical: 12,
+    },
+    acceptText: { color: "#3E2723", fontWeight: "600" },
+    statsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+    },
+    statCard: {
+      width: "48%",
+      backgroundColor: themeColors.card,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: 12,
+      padding: 15,
+      marginBottom: 15,
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: themeColors.text,
+      marginTop: 10,
+      marginBottom: 5,
+    },
+    statLabel: { fontSize: 12, color: "#6B7280" },
+    // History card
+    historyCard: {
+      backgroundColor: themeColors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      padding: 16,
+      marginBottom: 14,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    historyHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14,
+    },
+    historyIdRow: { flexDirection: "row", alignItems: "center", flex: 1 },
+    historyId: { fontSize: 12, fontWeight: "700", color: themeColors.text },
+    historyMeta: { fontSize: 11, color: "#6B7280" },
+    statusBadge: { fontSize: 12, fontWeight: "700" },
+    historyLocRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    locDot: {
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      marginRight: 10,
+      marginTop: 4,
+    },
+    locLabel: {
+      fontSize: 10,
+      color: "#9CA3AF",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      marginBottom: 2,
+    },
+    locValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
+    locMeta: { fontSize: 13, fontWeight: "700", color: themeColors.text },
+    historyFooter: {
+      flexDirection: "row",
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: "#F3F4F6",
+      marginTop: 4,
+    },
+    footerVal: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    footerSub: { fontSize: 11, color: "#6B7280" },
 
-  // Empty state (replaces the inline styles)
-  rideCard: {
-    width: 300,
-    // backgroundColor: "#FFF",
-    marginBottom: 10,
-    borderRadius: 14,
-    overflow: "hidden",
-    borderWidth: 1,
-    // borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  rideCardHeader: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  rideCardHeaderLeft: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-  },
-  rideCardHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
-  rideCardHeaderSub: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 10,
-    marginTop: 2,
-  },
-  rideTimerBadge: {
-    backgroundColor: "rgba(0,0,0,0.25)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginLeft: 8,
-  },
-  rideTimerText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
+    // Empty state (replaces the inline styles)
+    rideCard: {
+      width: 300,
+      // backgroundColor: "#FFF",
+      marginBottom: 10,
+      borderRadius: 14,
+      overflow: "hidden",
+      borderWidth: 1,
+      // borderColor: "#E5E7EB",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.07,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    rideCardHeader: {
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+    },
+    rideCardHeaderLeft: {
+      flex: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+    },
+    rideCardHeaderText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+    rideCardHeaderSub: {
+      color: "rgba(255,255,255,0.85)",
+      fontSize: 10,
+      marginTop: 2,
+    },
+    rideTimerBadge: {
+      backgroundColor: "rgba(0,0,0,0.25)",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 20,
+      marginLeft: 8,
+    },
+    rideTimerText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
 
-  rideCardBody: { padding: 14 },
+    rideCardBody: { padding: 14 },
 
-  rideMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: 12,
-    marginBottom: 12,
-    width: "100%",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  // rideMetaCol: { flex: 1 },
-  rideMetaLabel: {
-    fontSize: 9,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  rideMetaValue: { fontSize: 12, fontWeight: "700", color: themeColors.text },
-  rideTypeBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  rideTypeBadgeText: { fontSize: 10, fontWeight: "700" },
+    rideMetaRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingBottom: 12,
+      marginBottom: 12,
+      width: "100%",
+      borderBottomWidth: 1,
+      borderBottomColor: "#F3F4F6",
+    },
+    // rideMetaCol: { flex: 1 },
+    rideMetaLabel: {
+      fontSize: 9,
+      color: "#9CA3AF",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      marginBottom: 4,
+    },
+    rideMetaValue: { fontSize: 12, fontWeight: "700", color: themeColors.text },
+    rideTypeBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 6,
+      alignSelf: "flex-start",
+    },
+    rideTypeBadgeText: { fontSize: 10, fontWeight: "700" },
 
-  rideLocRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  rideLocDot: {
-    width: 17,
-    height: 17,
-    padding: 2,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-    marginTop: 4,
-  },
-  rideLocLabel: {
-    fontSize: 9,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 2,
-  },
-  rideLocValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
+    rideLocRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 10,
+    },
+    rideLocDot: {
+      width: 17,
+      height: 17,
+      padding: 2,
+      borderRadius: 50,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 8,
+      marginTop: 4,
+    },
+    rideLocLabel: {
+      fontSize: 9,
+      color: "#9CA3AF",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      marginBottom: 2,
+    },
+    rideLocValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
 
-  rideFooterRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 5,
-    marginTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    borderRadius: 3,
-    marginBottom: 14,
-  },
-  // rideFooterCol: { flex: 1 },
-  rideFooterVal: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: themeColors.text,
-    marginBottom: 2,
-  },
-  rideFooterSub: { fontSize: 10, color: "#6B7280" },
+    rideFooterRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      padding: 5,
+      marginTop: 4,
+      borderTopWidth: 1,
+      borderTopColor: "#F3F4F6",
+      borderRadius: 3,
+      marginBottom: 14,
+    },
+    // rideFooterCol: { flex: 1 },
+    rideFooterVal: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    rideFooterSub: { fontSize: 10, color: "#6B7280" },
 
-  rideActionRow: { flexDirection: "row", gap: 10 },
-  rideBtnReject: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 11,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  rideBtnRejectText: { color: "#EF4444", fontWeight: "600", fontSize: 13 },
-  rideBtnAccept: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 11,
-    borderRadius: 8,
-    backgroundColor: "#E4C77B",
-  },
-  rideBtnAcceptText: { color: "#3E2723", fontWeight: "700", fontSize: 13 },
-});
+    rideActionRow: { flexDirection: "row", gap: 10 },
+    rideBtnReject: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 11,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    },
+    rideBtnRejectText: { color: "#EF4444", fontWeight: "600", fontSize: 13 },
+    rideBtnAccept: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 11,
+      borderRadius: 8,
+      backgroundColor: "#E4C77B",
+    },
+    rideBtnAcceptText: { color: "#3E2723", fontWeight: "700", fontSize: 13 },
+  });

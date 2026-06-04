@@ -97,7 +97,7 @@ export default function CompleteBusinessProfileScreen() {
     }
     const fullPhone = `${countryCode}${adminPhone.replace(/^0+/, "")}`;
     const fullPhone1 = `${countryCode1}${companyPhone.replace(/^0+/, "")}`;
-    // Final step — submit
+    // Final step - submit
     if (!cacNumber) return setError("Please enter your CAC number.");
     setIsLoading(true);
     try {
@@ -186,7 +186,7 @@ export default function CompleteBusinessProfileScreen() {
             </View>
           </View>
 
-          {/* Step 0 — Company Info */}
+          {/* Step 0 - Company Info */}
           {currentStep === 0 && (
             <View>
               {[
@@ -242,7 +242,7 @@ export default function CompleteBusinessProfileScreen() {
                 Full number:{" "}
                 {companyPhone
                   ? `${countryCode1}${companyPhone.replace(/^0+/, "")}`
-                  : "—"}
+                  : "-"}
               </Text>
               {!!error && <Text style={s.errorText}>{error}</Text>}
               <TouchableOpacity style={s.btn} onPress={handleNext}>
@@ -251,13 +251,13 @@ export default function CompleteBusinessProfileScreen() {
             </View>
           )}
 
-          {/* Step 1 — Admin Details */}
+          {/* Step 1 - Admin Details */}
           {currentStep === 1 && (
             <View>
               <Text style={s.label}>Admin Name</Text>
               <View style={[s.inputContainer, s.readonlyContainer]}>
                 <User size={18} color="#9CA3AF" style={s.inputIcon} />
-                <Text style={s.readonlyText}>{user?.name ?? "—"}</Text>
+                <Text style={s.readonlyText}>{user?.name ?? "-"}</Text>
                 <View style={s.prefillBadge}>
                   <Text style={s.prefillBadgeText}>From account</Text>
                 </View>
@@ -265,7 +265,7 @@ export default function CompleteBusinessProfileScreen() {
               <Text style={s.label}>Admin Email</Text>
               <View style={[s.inputContainer, s.readonlyContainer]}>
                 <Mail size={18} color="#9CA3AF" style={s.inputIcon} />
-                <Text style={s.readonlyText}>{user?.email ?? "—"}</Text>
+                <Text style={s.readonlyText}>{user?.email ?? "-"}</Text>
                 <View style={s.prefillBadge}>
                   <Text style={s.prefillBadgeText}>From account</Text>
                 </View>
@@ -292,7 +292,7 @@ export default function CompleteBusinessProfileScreen() {
                 Full number:{" "}
                 {adminPhone
                   ? `${countryCode}${adminPhone.replace(/^0+/, "")}`
-                  : "—"}
+                  : "-"}
               </Text>
               {[
                 { label: "Schedule for self only", value: "self" },
@@ -326,12 +326,12 @@ export default function CompleteBusinessProfileScreen() {
             </View>
           )}
 
-          {/* Step 2 — Business Setup */}
+          {/* Step 2 - Business Setup */}
           {currentStep === 2 && (
             <View>
               <Text style={s.labelLg}>Upload Company Logo</Text>
               <Text style={s.sublabel}>
-                Optional — personalizes your account
+                Optional - personalizes your account
               </Text>
               <TouchableOpacity style={s.uploadArea} onPress={handlePickLogo}>
                 {logoUri ? (

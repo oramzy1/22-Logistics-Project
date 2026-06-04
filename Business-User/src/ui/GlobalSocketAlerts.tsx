@@ -73,22 +73,19 @@
 //   return null;
 // }
 
-
-
-
 // Business-User/src/ui/GlobalSocketAlerts.tsx
 
-import { useBookingSocket } from '@/hooks/useBookingSocket';
-import { useBookings } from '@/context/BookingContext';
-import { useAuth } from '@/context/AuthContext';
-import { socketService } from '@/api/socket.service';
-import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { Alert, AppState, AppStateStatus } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useBookingSocket } from "@/hooks/useBookingSocket";
+import { useBookings } from "@/context/BookingContext";
+import { useAuth } from "@/context/AuthContext";
+import { socketService } from "@/api/socket.service";
+import { router } from "expo-router";
+import { useEffect, useRef } from "react";
+import { Alert, AppState, AppStateStatus } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Key used to persist the pending rating across app close/reopen
-const PENDING_RATING_KEY = 'pendingDriverRating';
+const PENDING_RATING_KEY = "pendingDriverRating";
 
 type PendingRating = {
   bookingId: string;
@@ -107,25 +104,29 @@ async function clearPendingRating() {
 async function loadPendingRating(): Promise<PendingRating | null> {
   const raw = await AsyncStorage.getItem(PENDING_RATING_KEY);
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 function showRatingPrompt(data: PendingRating) {
   Alert.alert(
-    'Trip Completed!',
-    'Your trip has ended. Would you like to rate your driver?',
+    "Trip Completed!",
+    "Your trip has ended. Would you like to rate your driver?",
     [
       {
-        text: 'Skip',
-        style: 'cancel',
+        text: "Skip",
+        style: "cancel",
         onPress: clearPendingRating,
       },
       {
-        text: 'Rate Driver ⭐',
+        text: "Rate Driver ⭐",
         onPress: () => {
           clearPendingRating();
           router.push({
-            pathname: '/screens/rate-driver',
+            pathname: "/screens/rate-driver",
             params: {
               bookingId: data.bookingId,
               driverName: data.driverName,
@@ -134,7 +135,7 @@ function showRatingPrompt(data: PendingRating) {
           });
         },
       },
-    ]
+    ],
   );
 }
 
@@ -165,10 +166,10 @@ export function GlobalSocketAlerts() {
     checkPending(); // On mount (covers login after app was closed)
 
     // Also check every time the app comes back to foreground
-    const sub = AppState.addEventListener('change', (nextState) => {
+    const sub = AppState.addEventListener("change", (nextState) => {
       if (
         appState.current.match(/inactive|background/) &&
-        nextState === 'active'
+        nextState === "active"
       ) {
         checkPending();
       }
@@ -184,50 +185,47 @@ export function GlobalSocketAlerts() {
       // Always keep BookingContext state in sync
       patchBooking(updatedBooking);
 
-      // Deduplicate — don't show the same alert twice
+      // Deduplicate - don't show the same alert twice
       const alertKey = `${updatedBooking.id}-${updatedBooking.status}`;
       if (shownAlerts.current.has(alertKey)) return;
       shownAlerts.current.add(alertKey);
 
       switch (updatedBooking.status) {
-
-        case 'ACCEPTED':
+        case "ACCEPTED":
           Alert.alert(
-            'Driver On The Way!',
-            `${updatedBooking.driver?.name ?? 'Your driver'} has accepted your booking and is heading to you.`,
+            "Driver On The Way!",
+            `${updatedBooking.driver?.name ?? "Your driver"} has accepted your booking and is heading to you.`,
             [
-              { text: 'View Live', onPress: () => router.push('/(tabs)/live') },
-              { text: 'OK' },
-            ]
+              { text: "View Live", onPress: () => router.push("/(tabs)/live") },
+              { text: "OK" },
+            ],
           );
           break;
 
-        case 'IN_PROGRESS':
+        case "IN_PROGRESS":
           Alert.alert(
-            'Driver Arrived!',
-            'Your driver is at the pickup location and has started the trip.',
+            "Driver Arrived!",
+            "Your driver is at the pickup location and has started the trip.",
             [
-              { text: 'View Live', onPress: () => router.push('/(tabs)/live') },
-              { text: 'OK' },
-            ]
+              { text: "View Live", onPress: () => router.push("/(tabs)/live") },
+              { text: "OK" },
+            ],
           );
           break;
 
-        case 'CANCELLED':
-          Alert.alert(
-            'Booking Cancelled',
-            'Your booking has been cancelled.',
-            [{ text: 'OK' }]
-          );
+        case "CANCELLED":
+          Alert.alert("Booking Cancelled", "Your booking has been cancelled.", [
+            { text: "OK" },
+          ]);
           break;
 
-        case 'COMPLETED': {
+        case "COMPLETED": {
           const ratingData: PendingRating = {
             bookingId: updatedBooking.id,
-            driverName: updatedBooking.driver?.name ?? 'Your Driver',
-            driverAvatar: updatedBooking.driver?.avatarUrl ?? '',
+            driverName: updatedBooking.driver?.name ?? "Your Driver",
+            driverAvatar: updatedBooking.driver?.avatarUrl ?? "",
           };
-          // Persist first — so if user closes the app it shows on reopen
+          // Persist first - so if user closes the app it shows on reopen
           savePendingRating(ratingData).then(() => {
             showRatingPrompt(ratingData);
           });
@@ -240,5 +238,5 @@ export function GlobalSocketAlerts() {
     },
   });
 
-  return null; // Renders nothing — pure side-effect component
+  return null; // Renders nothing - pure side-effect component
 }

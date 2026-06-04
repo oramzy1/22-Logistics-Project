@@ -41,11 +41,14 @@ export function exportPDF(
   <p class="sub">Generated ${new Date().toLocaleString()}</p>
   <table>
     <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? "—"}</td>`).join("")}</tr>`).join("")}</tbody>
+    <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? "-"}</td>`).join("")}</tr>`).join("")}</tbody>
   </table></body></html>`;
 
   const win = window.open("", "_blank", "width=1100,height=750");
-  if (!win) { alert("Allow popups to export PDF."); return; }
+  if (!win) {
+    alert("Allow popups to export PDF.");
+    return;
+  }
   win.document.write(html);
   win.document.close();
   win.addEventListener("load", () => setTimeout(() => win.print(), 300));

@@ -46,9 +46,10 @@ const STEPS: WalkthroughStep[] = [
   {
     id: "welcome",
     title: "Welcome to 22-Logistics",
-    description: "Your command center for managing the entire logistics operation.",
+    description:
+      "Your command center for managing the entire logistics operation.",
     detail:
-      "This quick tour walks you through every section of the admin panel — from real-time trip tracking to revenue analytics. It only takes 2 minutes.",
+      "This quick tour walks you through every section of the admin panel - from real-time trip tracking to revenue analytics. It only takes 2 minutes.",
     icon: <Sparkles size={28} />,
     position: "center",
     badge: "Admin Panel",
@@ -80,7 +81,8 @@ const STEPS: WalkthroughStep[] = [
   {
     id: "bookings",
     title: "Booking Management",
-    description: "Full lifecycle visibility over every booking on the platform.",
+    description:
+      "Full lifecycle visibility over every booking on the platform.",
     detail:
       "Browse, search, and filter all bookings by status, ride type, date range, or free-text (booking ID or customer name). Cancel any active booking directly from the action menu. Click 'View Details' to open a rich side-sheet with pickup/drop-off, driver assignment, payment status, and timeline. Export the current view as CSV or PDF with one click.",
     icon: <CalendarCheck size={28} />,
@@ -100,7 +102,7 @@ const STEPS: WalkthroughStep[] = [
     title: "Drivers Management",
     description: "Onboard, verify, and monitor every driver on the fleet.",
     detail:
-      "See all drivers with their online status, rating, total trips, and license status. Click the eye icon to open a full detail sheet — view vehicle info, license image, and approve or reject a pending license. Deactivate or permanently delete a driver account. If a driver is online and available, assign them to an awaiting ride directly from the sheet.",
+      "See all drivers with their online status, rating, total trips, and license status. Click the eye icon to open a full detail sheet - view vehicle info, license image, and approve or reject a pending license. Deactivate or permanently delete a driver account. If a driver is online and available, assign them to an awaiting ride directly from the sheet.",
     icon: <Truck size={28} />,
     selector: 'a[href="/drivers"]',
     position: "sidebar",
@@ -136,7 +138,7 @@ const STEPS: WalkthroughStep[] = [
     title: "Users Management",
     description: "Manage Business and Individual user accounts separately.",
     detail:
-      "Toggling the Business / Individual tab scopes the entire table to that role. Search, filter by status or date range, and act on any user — view their full detail sheet (bookings history, profile, documents), upgrade them to Admin, deactivate, or delete their account. The export button downloads the current filtered list as CSV.",
+      "Toggling the Business / Individual tab scopes the entire table to that role. Search, filter by status or date range, and act on any user - view their full detail sheet (bookings history, profile, documents), upgrade them to Admin, deactivate, or delete their account. The export button downloads the current filtered list as CSV.",
     icon: <Users size={28} />,
     selector: 'a[href="/users"]',
     position: "sidebar",
@@ -152,7 +154,7 @@ const STEPS: WalkthroughStep[] = [
   {
     id: "payment",
     title: "Payments & Billing",
-    description: "Track all revenue streams — daily, monthly, and all-time.",
+    description: "Track all revenue streams - daily, monthly, and all-time.",
     detail:
       "Three revenue cards at the top show Today's Revenue, This Month, and This Year, pulled live from the API. Below, Business vs Individual payment breakdowns show total amounts and transaction counts. The transaction table is the full booking ledger filterable by customer, date, payment status, and ride type.",
     icon: <CreditCard size={28} />,
@@ -172,7 +174,7 @@ const STEPS: WalkthroughStep[] = [
     title: "Support",
     description: "A full helpdesk built into the admin panel.",
     detail:
-      "Support tickets created by users appear here in real time via WebSocket. Select a ticket to open a live chat panel — messages sync instantly with the user's app. Change ticket status (Open → In Progress → Resolved → Closed) and priority (Low / Medium / High) from the header dropdowns. Stats at the top track open tickets, in-progress, resolved today, and average response time.",
+      "Support tickets created by users appear here in real time via WebSocket. Select a ticket to open a live chat panel - messages sync instantly with the user's app. Change ticket status (Open → In Progress → Resolved → Closed) and priority (Low / Medium / High) from the header dropdowns. Stats at the top track open tickets, in-progress, resolved today, and average response time.",
     icon: <HeadphonesIcon size={28} />,
     selector: 'a[href="/support"]',
     position: "sidebar",
@@ -190,7 +192,7 @@ const STEPS: WalkthroughStep[] = [
     title: "Settings",
     description: "Configure pricing, notifications, and security preferences.",
     detail:
-      "The Trip & Pricing section lets you set rates for 3h, 6h, 10h, Airport, Multi-day, and all extension tiers — changes save to the database via the Save Changes button. Notification toggles control which alert types appear in the admin panel (stored in localStorage). The Security section exposes session timeout and 2FA options.",
+      "The Trip & Pricing section lets you set rates for 3h, 6h, 10h, Airport, Multi-day, and all extension tiers - changes save to the database via the Save Changes button. Notification toggles control which alert types appear in the admin panel (stored in localStorage). The Security section exposes session timeout and 2FA options.",
     icon: <Settings size={28} />,
     selector: 'a[href="/settings"]',
     position: "sidebar",
@@ -206,16 +208,17 @@ const STEPS: WalkthroughStep[] = [
   {
     id: "complete",
     title: "You're all set!",
-    description: "You now know everything the 22-Logistics admin panel has to offer.",
+    description:
+      "You now know everything the 22-Logistics admin panel has to offer.",
     detail:
-      "This tour is saved — it won't show again automatically. You can replay it anytime from the Settings page or the help menu. If you need assistance, the Support section is always available to escalate issues to the platform team.",
+      "This tour is saved - it won't show again automatically. You can replay it anytime from the Settings page or the help menu. If you need assistance, the Support section is always available to escalate issues to the platform team.",
     icon: <CheckCircle2 size={28} />,
     position: "center",
     badge: "Complete",
     features: [
       "Replay this tour anytime from Settings",
       "Use the Support tab to reach the platform team",
-      "All data updates in real time — no manual refresh needed",
+      "All data updates in real time - no manual refresh needed",
     ],
     color: "#10B981",
   },
@@ -258,15 +261,62 @@ function SpotlightOverlay({
   return (
     <>
       {/* dark quadrants */}
-      <div style={{ position: "fixed", inset: 0, zIndex: 9998, pointerEvents: "none" }}>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9998,
+          pointerEvents: "none",
+        }}
+      >
         {/* top */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: sTop, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(1px)" }} />
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: sTop,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(1px)",
+          }}
+        />
         {/* bottom */}
-        <div style={{ position: "absolute", top: sTop + sHeight, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(1px)" }} />
+        <div
+          style={{
+            position: "absolute",
+            top: sTop + sHeight,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(1px)",
+          }}
+        />
         {/* left */}
-        <div style={{ position: "absolute", top: sTop, left: 0, width: sLeft, height: sHeight, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(1px)" }} />
+        <div
+          style={{
+            position: "absolute",
+            top: sTop,
+            left: 0,
+            width: sLeft,
+            height: sHeight,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(1px)",
+          }}
+        />
         {/* right */}
-        <div style={{ position: "absolute", top: sTop, left: sLeft + sWidth, right: 0, height: sHeight, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(1px)" }} />
+        <div
+          style={{
+            position: "absolute",
+            top: sTop,
+            left: sLeft + sWidth,
+            right: 0,
+            height: sHeight,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(1px)",
+          }}
+        />
         {/* glow ring */}
         <div
           style={{
@@ -350,11 +400,14 @@ function WalkthroughCard({
       };
     }
 
-    // Sidebar items — place card to the right of sidebar (sidebar is 240px wide)
+    // Sidebar items - place card to the right of sidebar (sidebar is 240px wide)
     const SIDEBAR_W = 240;
     return {
       position: "fixed",
-      top: Math.max(80, Math.min(targetRect.top - 20, window.innerHeight - 520)),
+      top: Math.max(
+        80,
+        Math.min(targetRect.top - 20, window.innerHeight - 520),
+      ),
       left: SIDEBAR_W + 24,
       width: 440,
       maxWidth: `calc(100vw - ${SIDEBAR_W + 48}px)`,
@@ -384,7 +437,14 @@ function WalkthroughCard({
 
       <div style={{ padding: "28px 28px 24px" }}>
         {/* Header row */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* Icon bubble */}
             <div
@@ -457,8 +517,14 @@ function WalkthroughCard({
                 flexShrink: 0,
               }}
               title="Skip tour"
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.7)")}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.3)")}
+              onMouseEnter={(e) =>
+                ((e.target as HTMLElement).style.color =
+                  "rgba(255,255,255,0.7)")
+              }
+              onMouseLeave={(e) =>
+                ((e.target as HTMLElement).style.color =
+                  "rgba(255,255,255,0.3)")
+              }
             >
               <X size={18} />
             </button>
@@ -511,7 +577,10 @@ function WalkthroughCard({
                   alignItems: "flex-start",
                   gap: 10,
                   padding: "5px 0",
-                  borderBottom: i < step.features!.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                  borderBottom:
+                    i < step.features!.length - 1
+                      ? "1px solid rgba(255,255,255,0.05)"
+                      : "none",
                 }}
               >
                 <div
@@ -540,8 +609,18 @@ function WalkthroughCard({
         )}
 
         {/* Footer */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <ProgressDots total={totalSteps} current={stepIndex} color={step.color} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <ProgressDots
+            total={totalSteps}
+            current={stepIndex}
+            color={step.color}
+          />
 
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             {!isFirst && (
@@ -563,12 +642,16 @@ function WalkthroughCard({
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.1)";
-                  (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.9)";
+                  (e.currentTarget as HTMLElement).style.background =
+                    "rgba(255,255,255,0.1)";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "rgba(255,255,255,0.9)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)";
-                  (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)";
+                  (e.currentTarget as HTMLElement).style.background =
+                    "rgba(255,255,255,0.05)";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "rgba(255,255,255,0.6)";
                 }}
               >
                 <ChevronLeft size={15} />
@@ -595,12 +678,16 @@ function WalkthroughCard({
                 transition: "all 0.2s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${step.color}55`;
+                (e.currentTarget as HTMLElement).style.transform =
+                  "translateY(-1px)";
+                (e.currentTarget as HTMLElement).style.boxShadow =
+                  `0 8px 24px ${step.color}55`;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${step.color}44`;
+                (e.currentTarget as HTMLElement).style.transform =
+                  "translateY(0)";
+                (e.currentTarget as HTMLElement).style.boxShadow =
+                  `0 4px 16px ${step.color}44`;
               }}
             >
               {isFirst ? (
@@ -853,10 +940,12 @@ export function WalkthroughTrigger({
           transition: "all 0.2s",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.background = "rgba(228,168,48,0.15)";
+          (e.currentTarget as HTMLElement).style.background =
+            "rgba(228,168,48,0.15)";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.background = "rgba(228,168,48,0.08)";
+          (e.currentTarget as HTMLElement).style.background =
+            "rgba(228,168,48,0.08)";
         }}
       >
         <BookOpen size={15} />

@@ -1,8 +1,8 @@
 // Business-User/hooks/useBookingSocket.ts
 
-import { useEffect, useRef } from 'react';
-import { socketService } from '@/api/socket.service';
-import { useAuth } from '@/context/AuthContext';
+import { useEffect, useRef } from "react";
+import { socketService } from "@/api/socket.service";
+import { useAuth } from "@/context/AuthContext";
 
 type BookingSocketOptions = {
   onBookingUpdated?: (booking: any) => void;
@@ -20,22 +20,28 @@ export function useBookingSocket(options: BookingSocketOptions) {
 
     socketService.connect(user.id);
 
-    // Subscribe — each returns an unsubscribe fn
+    // Subscribe - each returns an unsubscribe fn
     const unsubs: (() => void)[] = [];
 
     if (optionsRef.current.onBookingUpdated) {
       unsubs.push(
-        socketService.onBookingUpdated((b) => optionsRef.current.onBookingUpdated?.(b))
+        socketService.onBookingUpdated((b) =>
+          optionsRef.current.onBookingUpdated?.(b),
+        ),
       );
     }
     if (optionsRef.current.onRideRemoved) {
       unsubs.push(
-        socketService.onRideRemoved((id) => optionsRef.current.onRideRemoved?.(id))
+        socketService.onRideRemoved((id) =>
+          optionsRef.current.onRideRemoved?.(id),
+        ),
       );
     }
     if (optionsRef.current.onNewRideRequest) {
       unsubs.push(
-        socketService.onRideRequest((d) => optionsRef.current.onNewRideRequest?.(d))
+        socketService.onRideRequest((d) =>
+          optionsRef.current.onNewRideRequest?.(d),
+        ),
       );
     }
 

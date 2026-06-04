@@ -134,7 +134,7 @@ export function CallScreen({
           </View>
         )}
 
-        {/* Audio call — show avatar/name */}
+        {/* Audio call - show avatar/name */}
         {!isVideo && (
           <View style={styles.audioContainer}>
             <View style={styles.avatarCircle}>

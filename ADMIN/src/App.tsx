@@ -18,6 +18,7 @@ import{ AuthProvider } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import Login from "./pages/Login.tsx";
 import { useEffect, useState } from "react";
+import Promotions from "./pages/Promotions.tsx";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/live-trips" element={<LiveTrips />} />
               <Route path="/users" element={<Users />} />
               <Route path="/payment" element={<Payment />} />
+              <Route path="/promotions" element={<Promotions />} />
               <Route path="/support" element={<Support />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

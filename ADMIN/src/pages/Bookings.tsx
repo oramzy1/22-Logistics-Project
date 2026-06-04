@@ -253,9 +253,9 @@ const Bookings = () => {
                     <td className="py-3 font-mono text-xs">
                       {b.trackingId ?? b.id.slice(0, 8)}
                     </td>
-                    <td className="py-3">{b.customer?.name ?? "—"}</td>
+                    <td className="py-3">{b.customer?.name ?? "-"}</td>
                     <td className="py-3 text-muted-foreground">{b.rideType}</td>
-                    <td className="py-3">{b.packageType ?? "—"}</td>
+                    <td className="py-3">{b.packageType ?? "-"}</td>
                     <td className="py-3">₦{b.totalAmount?.toLocaleString()}</td>
                     <td className="py-3 text-muted-foreground text-xs">
                       {new Date(b.createdAt).toLocaleString()}

@@ -1,4 +1,4 @@
-// admin/src/pages/LiveTrips.tsx — full replacement logic:
+// admin/src/pages/LiveTrips.tsx - full replacement logic:
 import { useState, useEffect } from "react";
 import { MapPin, Gauge, Navigation, Phone, MessageSquare } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -59,11 +59,11 @@ const LiveTrips = () => {
         ...(inProgress?.bookings ?? []),
       ];
       setTrips(list);
-     setActive((prev: any) => {
-      if (!prev) return list[0] ?? null;                        
-      const refreshed = list.find((t) => t.id === prev.id);
-      return refreshed ?? prev;                                 
-    });
+      setActive((prev: any) => {
+        if (!prev) return list[0] ?? null;
+        const refreshed = list.find((t) => t.id === prev.id);
+        return refreshed ?? prev;
+      });
     } catch (err) {
       console.error("Failed to fetch live trips:", err);
     } finally {
@@ -113,13 +113,13 @@ const LiveTrips = () => {
         month: "long",
         day: "numeric",
       })
-    : "—";
+    : "-";
   const formattedTime = active?.scheduledAt
     ? new Date(active.scheduledAt).toLocaleTimeString("en-NG", {
         hour: "2-digit",
         minute: "2-digit",
       })
-    : "—";
+    : "-";
 
   return (
     <div>
@@ -190,7 +190,7 @@ const LiveTrips = () => {
                       <div>
                         <p className="text-muted-foreground">Driver's ID</p>
                         <p className="font-medium text-sm">
-                          {t.trackingId ?? "—"}
+                          {t.trackingId ?? "-"}
                         </p>
                       </div>
                       <div>
@@ -347,7 +347,7 @@ const LiveTrips = () => {
                     <div>
                       <p className="text-muted-foreground">Name</p>
                       <p className="font-medium">
-                        {active.driver?.name ?? "—"}
+                        {active.driver?.name ?? "-"}
                       </p>
                     </div>
                     <div>
@@ -362,19 +362,19 @@ const LiveTrips = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Tracking ID</p>
-                      <p className="font-medium">{active.trackingId ?? "—"}</p>
+                      <p className="font-medium">{active.trackingId ?? "-"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Plate Number</p>
                       <p className="font-medium">
-                        {active.driver?.driverProfile?.plateNumber ?? "—"}
+                        {active.driver?.driverProfile?.plateNumber ?? "-"}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Vehicle</p>
                       <p className="font-medium">
-                        {active.driver?.driverProfile?.vehicleColor ?? "—"}{" "}
-                        {active.driver?.driverProfile?.brandModel ?? "—"}
+                        {active.driver?.driverProfile?.vehicleColor ?? "-"}{" "}
+                        {active.driver?.driverProfile?.brandModel ?? "-"}
                       </p>
                     </div>
                     <div>
@@ -409,7 +409,7 @@ const LiveTrips = () => {
                     <div>
                       <p className="text-muted-foreground">Name</p>
                       <p className="font-medium">
-                        {active.customer?.name ?? "—"}
+                        {active.customer?.name ?? "-"}
                       </p>
                     </div>
                     <div>
@@ -422,18 +422,18 @@ const LiveTrips = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Customer ID</p>
-                      <p className="font-medium">{active.trackingId ?? "—"}</p>
+                      <p className="font-medium">{active.trackingId ?? "-"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Email</p>
                       <p className="font-medium">
-                        {active.customer?.email ?? "—"}
+                        {active.customer?.email ?? "-"}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Phone</p>
                       <p className="font-medium">
-                        {active.customer?.phone ?? "—"}
+                        {active.customer?.phone ?? "-"}
                       </p>
                     </div>
                     <div className="flex gap-2 mt-1">
@@ -515,99 +515,112 @@ const LiveTrips = () => {
                 </div>
               )} */}
               {tab === 3 && (
-  <div className="space-y-4">
-    {/* Driver header */}
-    <div className="flex items-center gap-3 text-xs">
-      <Avatar className="h-10 w-10 shrink-0">
-        <AvatarImage src={active.driver?.avatarUrl} />
-        <AvatarFallback>{active.driver?.name?.charAt(0)}</AvatarFallback>
-      </Avatar>
-      <div>
-        <p className="font-semibold">{active.driver?.name}</p>
-        <p className="text-muted-foreground">Driver</p>
-      </div>
-    </div>
+                <div className="space-y-4">
+                  {/* Driver header */}
+                  <div className="flex items-center gap-3 text-xs">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage src={active.driver?.avatarUrl} />
+                      <AvatarFallback>
+                        {active.driver?.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold">{active.driver?.name}</p>
+                      <p className="text-muted-foreground">Driver</p>
+                    </div>
+                  </div>
 
-    {/* Horizontal stepper */}
-    {(() => {
-      const steps = [
-        {
-          label: "Trip accepted",
-          done: ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(active.status),
-        },
-        {
-          label: "En Route",
-          done: ["IN_PROGRESS", "COMPLETED"].includes(active.status),
-        },
-        {
-          label: "Arrived Pickup",
-          done: ["IN_PROGRESS", "COMPLETED"].includes(active.status),
-        },
-        {
-          label: "Trip in Progress",
-          done: active.status === "IN_PROGRESS" || active.status === "COMPLETED",
-        },
-        {
-          label: "Completed",
-          done: active.status === "COMPLETED",
-        },
-      ];
+                  {/* Horizontal stepper */}
+                  {(() => {
+                    const steps = [
+                      {
+                        label: "Trip accepted",
+                        done: ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(
+                          active.status,
+                        ),
+                      },
+                      {
+                        label: "En Route",
+                        done: ["IN_PROGRESS", "COMPLETED"].includes(
+                          active.status,
+                        ),
+                      },
+                      {
+                        label: "Arrived Pickup",
+                        done: ["IN_PROGRESS", "COMPLETED"].includes(
+                          active.status,
+                        ),
+                      },
+                      {
+                        label: "Trip in Progress",
+                        done:
+                          active.status === "IN_PROGRESS" ||
+                          active.status === "COMPLETED",
+                      },
+                      {
+                        label: "Completed",
+                        done: active.status === "COMPLETED",
+                      },
+                    ];
 
-      return (
-        <div className="flex items-start justify-between w-full px-2 py-3">
-          {steps.map((step, i) => (
-            <div key={step.label} className="flex flex-col items-center flex-1 relative">
-              {/* Dashed line LEFT — skip for first item */}
-              {i !== 0 && (
-                <div
-                  className={cn(
-                    "absolute top-[18px] right-1/2 w-full border-t-2 border-dashed",
-                    steps[i - 1].done && step.done
-                      ? "border-accent"
-                      : "border-muted-foreground/30",
-                  )}
-                  style={{ left: "-50%", right: "50%" }}
-                />
+                    return (
+                      <div className="flex items-start justify-between w-full px-2 py-3">
+                        {steps.map((step, i) => (
+                          <div
+                            key={step.label}
+                            className="flex flex-col items-center flex-1 relative"
+                          >
+                            {/* Dashed line LEFT - skip for first item */}
+                            {i !== 0 && (
+                              <div
+                                className={cn(
+                                  "absolute top-[18px] right-1/2 w-full border-t-2 border-dashed",
+                                  steps[i - 1].done && step.done
+                                    ? "border-accent"
+                                    : "border-muted-foreground/30",
+                                )}
+                                style={{ left: "-50%", right: "50%" }}
+                              />
+                            )}
+
+                            {/* Car icon inside a small circle */}
+                            <div
+                              className={cn(
+                                "relative z-10 flex items-center justify-center w-9 h-9 rounded-full border-2 bg-background",
+                                step.done
+                                  ? "border-accent text-accent"
+                                  : "border-muted-foreground/30 text-muted-foreground/40",
+                              )}
+                            >
+                              {/* Inline SVG car (top-down) */}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-4 h-4"
+                              >
+                                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                              </svg>
+                            </div>
+
+                            {/* Label */}
+                            <p
+                              className={cn(
+                                "text-[10px] text-center mt-1.5 leading-tight max-w-[60px]",
+                                step.done
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground/50",
+                              )}
+                            >
+                              {step.label}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
-
-              {/* Car icon inside a small circle */}
-              <div
-                className={cn(
-                  "relative z-10 flex items-center justify-center w-9 h-9 rounded-full border-2 bg-background",
-                  step.done
-                    ? "border-accent text-accent"
-                    : "border-muted-foreground/30 text-muted-foreground/40",
-                )}
-              >
-                {/* Inline SVG car (top-down) */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-4 h-4"
-                >
-                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
-                </svg>
-              </div>
-
-              {/* Label */}
-              <p
-                className={cn(
-                  "text-[10px] text-center mt-1.5 leading-tight max-w-[60px]",
-                  step.done
-                    ? "text-foreground font-medium"
-                    : "text-muted-foreground/50",
-                )}
-              >
-                {step.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      );
-    })()}
-  </div>
-)}
             </div>
           </div>
         ) : (

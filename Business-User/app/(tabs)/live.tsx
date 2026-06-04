@@ -179,7 +179,7 @@ export default function LiveTabScreen() {
         );
       }
 
-      // Trip completed by driver — clear live tab
+      // Trip completed by driver - clear live tab
       if (updatedBooking.status === "COMPLETED") {
         Alert.alert("Trip Completed", "Your trip has been completed!", [
           {
@@ -255,7 +255,7 @@ export default function LiveTabScreen() {
     return <LiveSkeleton />;
   }
 
-  // Empty state — no active bookings
+  // Empty state - no active bookings
   if (bookingsWithDrivers.length === 0 && !showEndFlow) {
     return (
       <SafeAreaView
@@ -282,7 +282,7 @@ export default function LiveTabScreen() {
     );
   }
 
-  // Multiple active bookings — show a picker list
+  // Multiple active bookings - show a picker list
   if (bookingsWithDrivers.length >= 2 && !bookingId) {
     return (
       <SafeAreaView
@@ -384,7 +384,7 @@ export default function LiveTabScreen() {
 
   // Helper for the two time boxes
   const timeUsedLabel = (() => {
-    if (!activeBooking) return "—";
+    if (!activeBooking) return "-";
     const start = new Date(activeBooking.scheduledAt);
     const elapsedMs = Date.now() - start.getTime();
     const h = Math.floor(elapsedMs / 3600000);
@@ -422,7 +422,7 @@ export default function LiveTabScreen() {
               if (showDriverDetails) {
                 setShowDriverDetails(false);
               } else if (bookingId && activeBookings.length >= 2) {
-                // Go back to the list — clear the bookingId param
+                // Go back to the list - clear the bookingId param
                 router.replace("/(tabs)/live");
               } else {
                 router.back();
@@ -540,7 +540,7 @@ export default function LiveTabScreen() {
                           {activeBooking.status === "IN_PROGRESS" ||
                           activeBooking.status === "COMPLETED"
                             ? timeUsedLabel
-                            : "—"}
+                            : "-"}
                         </Text>
                       </View>
                       <View style={styles.qdTimeBox}>

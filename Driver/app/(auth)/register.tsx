@@ -39,11 +39,7 @@ import { SocialButton } from "@/src/ui/SocialButtons";
 import { PhoneInput } from "@/src/ui/PhoneInput";
 import { PasswordStrengthIndicator } from "@/src/ui/PasswordStrengthIndicator";
 
-const STEPS = [
-  "Personal Info",
-  "License Upload",
-  "Password Set Up",
-];
+const STEPS = ["Personal Info", "License Upload", "Password Set Up"];
 
 export default function RegisterDriverScreen() {
   const router = useRouter();
@@ -70,7 +66,6 @@ export default function RegisterDriverScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const hasLaunched = AsyncStorage.getItem("hasLaunched");
-
 
   // Progress Line Animation
   // Assuming 3 gaps, currentStep goes 0, 1, 2, 3
@@ -111,11 +106,12 @@ export default function RegisterDriverScreen() {
 
     if (currentStep === 1) {
       if (!licenseUri || !driverLicenseNumber) {
-        setError("Please fill all fields and submit license for full verification");
+        setError(
+          "Please fill all fields and submit license for full verification",
+        );
         return;
       }
     }
-
 
     // Move to next step if not final step
     if (currentStep < 2) {
@@ -140,8 +136,11 @@ export default function RegisterDriverScreen() {
       formData.append("phone", fullPhone);
       formData.append("licenseNumber", driverLicenseNumber);
 
-     if (licenseUri) {
-        const safeUri = Platform.OS === 'ios' ? licenseUri.replace('file://', '') : licenseUri;
+      if (licenseUri) {
+        const safeUri =
+          Platform.OS === "ios"
+            ? licenseUri.replace("file://", "")
+            : licenseUri;
         formData.append("logo", {
           uri: safeUri,
           type: "image/jpeg",
@@ -150,19 +149,22 @@ export default function RegisterDriverScreen() {
       }
 
       const data = await AuthService.registerDriver(formData);
-       if (!hasLaunched){
-       await AsyncStorage.setItem("hasLaunched", "true");
-     };
+      if (!hasLaunched) {
+        await AsyncStorage.setItem("hasLaunched", "true");
+      }
       router.push({
         pathname: "/(auth)/verify",
         params: { email: data.email },
       });
     } catch (err: any) {
-       console.error('Reg error:', JSON.stringify({
-      status: err?.response?.status,
-      data: err?.response?.data,
-      message: err?.message,
-    }));
+      console.error(
+        "Reg error:",
+        JSON.stringify({
+          status: err?.response?.status,
+          data: err?.response?.data,
+          message: err?.message,
+        }),
+      );
       setError(
         err?.response?.data?.message ||
           "Registration failed. Please try again.",
@@ -217,7 +219,7 @@ export default function RegisterDriverScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={["top"]} style={styles.container}>
       <View style={styles.headerBar}></View>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -272,19 +274,21 @@ export default function RegisterDriverScreen() {
                     placeholderTextColor="#9CA3AF"
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    
                   />
                 </View>
 
                 <Text style={styles.label}>Phone Number</Text>
-                             <PhoneInput value={phone} onChangeText={setPhone}  onCountryChange={setCountryCode}  placeholder="Phone Number" />
+                <PhoneInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  onCountryChange={setCountryCode}
+                  placeholder="Phone Number"
+                />
 
-                 <Text style={styles.phoneHint}>
-                                Full number:{" "}
-                                {phone
-                                  ? `${countryCode}${phone.replace(/^0+/, "")}`
-                                  : "—"}
-                              </Text>
+                <Text style={styles.phoneHint}>
+                  Full number:{" "}
+                  {phone ? `${countryCode}${phone.replace(/^0+/, "")}` : "-"}
+                </Text>
 
                 <Text style={styles.errorText}>{error}</Text>
 
@@ -294,24 +298,28 @@ export default function RegisterDriverScreen() {
                 >
                   <Text style={styles.submitBtnText}>Next</Text>
                 </TouchableOpacity>
-                
+
                 <View style={styles.dividerContainer}>
                   <View style={styles.line} />
                   <Text style={styles.dividerText}>Or continue with</Text>
                   <View style={styles.line} />
                 </View>
-                <SocialButton type="google" appType="driver-app" role="DRIVER" />
-                <SocialButton type="apple" appType="driver-app" role="DRIVER" /> 
+                <SocialButton
+                  type="google"
+                  appType="driver-app"
+                  role="DRIVER"
+                />
+                <SocialButton type="apple" appType="driver-app" role="DRIVER" />
 
-                 <TouchableOpacity
-            style={styles.footerLink}
-            onPress={() => router.push("/(auth)/sign-in")}
-          >
-            <Text style={styles.footerText}>
-              Already Have An Account?{" "}
-              <Text style={styles.signUpText}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.footerLink}
+                  onPress={() => router.push("/(auth)/sign-in")}
+                >
+                  <Text style={styles.footerText}>
+                    Already Have An Account?{" "}
+                    <Text style={styles.signUpText}>Sign In</Text>
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -320,7 +328,8 @@ export default function RegisterDriverScreen() {
               <View>
                 <Text style={styles.labelLg}>Upload your Driver's License</Text>
                 <Text style={styles.sublabel}>
-                  22Logistics provides the vehicle - we just need your valid driver's license to get you on the road.
+                  22Logistics provides the vehicle - we just need your valid
+                  driver's license to get you on the road.
                 </Text>
 
                 <TouchableOpacity
@@ -385,64 +394,66 @@ export default function RegisterDriverScreen() {
             {currentStep === 2 && (
               <View>
                 <Text style={styles.label}>Password</Text>
-                 <View>
-              <View style={styles.inputContainer}>
-                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
-                  placeholderTextColor="#9CA3AF"
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <Eye size={18} color="#9CA3AF" />
-                  ) : (
-                    <EyeOff size={18} color="#9CA3AF" />
-                  )}
-                </TouchableOpacity>
-                <PasswordStrengthIndicator
-                  password={password}
-                  visible={passwordFocused && password.length > 0}
-                  backgroundColor="#FFF"
-                />
-              </View>
-            </View>
+                <View>
+                  <View style={styles.inputContainer}>
+                    <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Password"
+                      secureTextEntry={!showPassword}
+                      placeholderTextColor="#9CA3AF"
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(false)}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <Eye size={18} color="#9CA3AF" />
+                      ) : (
+                        <EyeOff size={18} color="#9CA3AF" />
+                      )}
+                    </TouchableOpacity>
+                    <PasswordStrengthIndicator
+                      password={password}
+                      visible={passwordFocused && password.length > 0}
+                      backgroundColor="#FFF"
+                    />
+                  </View>
+                </View>
 
-            {/* Confirm Password */}
-            <View
-              style={[
-                passwordFocused && password.length > 0 && { marginTop: 65 },
-              ]}
-            >
-              <Text style={styles.label}>Confirm Password</Text>
-              <View style={styles.inputContainer}>
-                <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Password"
-                  secureTextEntry={!showConfirmPassword}
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                {/* Confirm Password */}
+                <View
+                  style={[
+                    passwordFocused && password.length > 0 && { marginTop: 65 },
+                  ]}
                 >
-                  {showConfirmPassword ? (
-                    <Eye size={18} color="#9CA3AF" />
-                  ) : (
-                    <EyeOff size={18} color="#9CA3AF" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
+                  <Text style={styles.label}>Confirm Password</Text>
+                  <View style={styles.inputContainer}>
+                    <Lock size={18} color="#9CA3AF" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      placeholder="Password"
+                      secureTextEntry={!showConfirmPassword}
+                      placeholderTextColor="#9CA3AF"
+                    />
+                    <TouchableOpacity
+                      onPress={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <Eye size={18} color="#9CA3AF" />
+                      ) : (
+                        <EyeOff size={18} color="#9CA3AF" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
                 {/* Terms */}
                 <View style={styles.termsContainer}>
                   <TouchableOpacity
@@ -459,20 +470,18 @@ export default function RegisterDriverScreen() {
                     <Text style={styles.linkText}>Terms & Condition</Text>
                   </Text>
                 </View>
-                  {currentStep === 2 && error ? (
-                    <Text style={styles.errorText}>{error}</Text>
-                  ) : null}
+                {currentStep === 2 && error ? (
+                  <Text style={styles.errorText}>{error}</Text>
+                ) : null}
                 <View style={[styles.rowButtons, { marginTop: 20 }]}>
-                 {
-                  !isLoading && (
-                     <TouchableOpacity
-                    style={styles.outlineBtn}
-                    onPress={handlePrev}
-                  >
-                    <Text style={styles.outlineBtnText}>Previous</Text>
-                  </TouchableOpacity>
-                  )
-                 }
+                  {!isLoading && (
+                    <TouchableOpacity
+                      style={styles.outlineBtn}
+                      onPress={handlePrev}
+                    >
+                      <Text style={styles.outlineBtnText}>Previous</Text>
+                    </TouchableOpacity>
+                  )}
 
                   <TouchableOpacity
                     style={styles.filledBtn}
@@ -745,12 +754,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
   },
-   phoneHint: {
-  fontSize: 11,
-  color: '#9CA3AF',
-  marginTop: 5,
-  marginLeft: 2,
-},
+  phoneHint: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 5,
+    marginLeft: 2,
+  },
   footerLink: { alignItems: "center", marginBottom: 20 },
   footerText: { color: "#4B5563", fontSize: 14, fontWeight: "500" },
   signUpText: {

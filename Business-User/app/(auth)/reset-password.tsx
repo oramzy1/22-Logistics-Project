@@ -1,4 +1,4 @@
-// app/(auth)/reset-password.tsx — full replacement
+// app/(auth)/reset-password.tsx - full replacement
 
 import { AuthService } from "@/api/auth.service";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -39,7 +39,7 @@ export default function ResetPasswordScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Step 1 — request reset code
+  // Step 1 - request reset code
   const handleRequestCode = async () => {
     setError("");
     if (!email.trim()) return setError("Please enter your email address.");
@@ -57,7 +57,7 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  // Step 2 — just advance to password entry (code verified on submit)
+  // Step 2 - just advance to password entry (code verified on submit)
   const handleCodeContinue = async () => {
     setError("");
     if (code.trim().length !== 6)
@@ -78,7 +78,7 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  // Step 3 — submit new password
+  // Step 3 - submit new password
   const handleResetPassword = async () => {
     setError("");
     if (!isPasswordValid(password)) {
@@ -116,7 +116,7 @@ export default function ResetPasswordScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {/* STEP 1 — Email */}
+          {/* STEP 1 - Email */}
           {step === "email" && (
             <>
               <Text style={styles.title}>Forgot Password?</Text>
@@ -155,7 +155,7 @@ export default function ResetPasswordScreen() {
             </>
           )}
 
-          {/* STEP 2 — Enter code */}
+          {/* STEP 2 - Enter code */}
           {step === "code" && (
             <>
               <Text style={styles.title}>Enter Reset Code</Text>
@@ -205,7 +205,7 @@ export default function ResetPasswordScreen() {
             </>
           )}
 
-          {/* STEP 3 — New password */}
+          {/* STEP 3 - New password */}
           {step === "newPassword" && (
             <>
               <Text style={styles.title}>Set New Password</Text>
@@ -236,7 +236,7 @@ export default function ResetPasswordScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Strength indicator — in-flow, shifts content down gracefully */}
+              {/* Strength indicator - in-flow, shifts content down gracefully */}
               <PasswordStrengthIndicator
                 password={password}
                 visible={pwFocused && password.length > 0}
@@ -292,7 +292,7 @@ export default function ResetPasswordScreen() {
             </>
           )}
 
-          {/* STEP 4 — Success */}
+          {/* STEP 4 - Success */}
           {step === "done" && (
             <View style={styles.successContainer}>
               <View style={styles.successIcon}>

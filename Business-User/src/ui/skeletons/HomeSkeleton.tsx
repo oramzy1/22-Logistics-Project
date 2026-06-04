@@ -1,8 +1,8 @@
-import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { SkeletonBox, SkeletonSpacer } from './SkeletonBase';
-import { colors, radius, spacing } from '@/src/ui/theme';
+import React from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { SkeletonBox, SkeletonSpacer } from "./SkeletonBase";
+import { colors, radius, spacing } from "@/src/ui/theme";
 
 function PackageCardSkeleton() {
   return (
@@ -18,7 +18,7 @@ function PackageCardSkeleton() {
 
 export function HomeSkeleton() {
   return (
-    <SafeAreaView edges={['top']} style={styles.origin}>
+    <SafeAreaView edges={["top"]} style={styles.origin}>
       <View style={styles.root}>
         {/* Header */}
         <View style={styles.top}>
@@ -31,7 +31,7 @@ export function HomeSkeleton() {
               <SkeletonBox width={100} height={12} radius={4} />
             </View>
             {/* Right icons */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: 10 }}>
               <SkeletonBox width={36} height={36} radius={18} />
               <SkeletonBox width={36} height={36} radius={18} />
             </View>
@@ -79,11 +79,13 @@ export function HomeSkeleton() {
           <SkeletonBox width={160} height={16} radius={6} />
           <SkeletonSpacer height={12} />
 
-          {/* Package grid — 5 cards, matching "47%" width layout */}
+          {/* Package grid - 5 cards, matching "47%" width layout */}
           <View style={styles.grid}>
-            {Array(5).fill(0).map((_, i) => (
-              <PackageCardSkeleton key={i} />
-            ))}
+            {Array(5)
+              .fill(0)
+              .map((_, i) => (
+                <PackageCardSkeleton key={i} />
+              ))}
           </View>
         </ScrollView>
       </View>
@@ -93,42 +95,49 @@ export function HomeSkeleton() {
 
 const styles = StyleSheet.create({
   origin: { flex: 1, backgroundColor: colors.navy },
-  root: { backgroundColor: colors.background, height: '100%' },
+  root: { backgroundColor: colors.background, height: "100%" },
   top: { backgroundColor: colors.navy, paddingBottom: spacing.md },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingVertical: 12,
   },
   content: { padding: spacing.lg, paddingBottom: 40 },
-  offerBanner: { position: 'relative', borderRadius: radius.xl, overflow: 'hidden' },
+  offerBanner: {
+    position: "relative",
+    borderRadius: radius.xl,
+    overflow: "hidden",
+  },
   offerContent: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     padding: spacing.lg,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   dots: {
     marginTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
   },
   pkg: {
-    width: '47%',
+    width: "47%",
     minHeight: 120,
     borderRadius: radius.xl,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: "#F1F5F9",
     padding: spacing.lg,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });

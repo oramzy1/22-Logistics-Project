@@ -1,9 +1,9 @@
-import React from 'react';
-import { View } from 'react-native';
-import { FormInput } from './FormInput';
-import { DropdownInput } from './DropdownInput';
-import { RIVERS_LGAS } from '../utils/nigeriaLocations';
-import { useAppTheme } from './useAppTheme';
+import React from "react";
+import { View } from "react-native";
+import { FormInput } from "./FormInput";
+import { DropdownInput } from "./DropdownInput";
+import { RIVERS_LGAS } from "../utils/nigeriaLocations";
+import { useAppTheme } from "./useAppTheme";
 
 interface LocationInputProps {
   label: string;
@@ -16,8 +16,13 @@ interface LocationInputProps {
 }
 
 export const LocationInput: React.FC<LocationInputProps> = ({
-  label, placeholder = 'Enter street / area name',
-  leftIcon, street, lga, onStreetChange, onLGASelect,
+  label,
+  placeholder = "Enter street / area name",
+  leftIcon,
+  street,
+  lga,
+  onStreetChange,
+  onLGASelect,
 }) => (
   <View>
     <FormInput
@@ -27,7 +32,7 @@ export const LocationInput: React.FC<LocationInputProps> = ({
       onChangeText={onStreetChange}
       leftIcon={leftIcon}
     />
-    {/* Sits visually below the address input — no label so it reads as part of the same field */}
+    {/* Sits visually below the address input - no label so it reads as part of the same field */}
     <DropdownInput
       placeholder="Select LGA (Rivers State)"
       options={RIVERS_LGAS}

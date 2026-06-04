@@ -9,9 +9,7 @@ import React, {
   useState,
 } from "react";
 import { socketService } from "@/api/socket.service";
-import {
-  GoogleSignin,
-} from "@react-native-google-signin/google-signin";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 type Role = "INDIVIDUAL" | "BUSINESS" | "DRIVER" | "ADMIN" | null;
 
@@ -81,7 +79,7 @@ export function AuthProvider({
           if (parsedUser.role === "DRIVER" && parsedUser.driverProfile?.id) {
             socketService.connect(parsedUser.id, parsedUser.driverProfile.id);
           } else if (parsedUser.role === "DRIVER") {
-            // driverProfile.id missing from old stored session — refresh from API
+            // driverProfile.id missing from old stored session - refresh from API
             // (this only runs once; after refresh the new user is stored with id)
             try {
               const { UserService } = await import("../api/user.service");
@@ -92,7 +90,7 @@ export function AuthProvider({
                 socketService.connect(freshUser.id, freshUser.driverProfile.id);
               }
             } catch (_) {
-              // If refresh fails, fall through — driver just won't receive requests until next login
+              // If refresh fails, fall through - driver just won't receive requests until next login
             }
           }
           console.log(
@@ -128,12 +126,12 @@ export function AuthProvider({
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
     try {
-    const hasUser = GoogleSignin.hasPreviousSignIn();
+      const hasUser = GoogleSignin.hasPreviousSignIn();
 
-    if (hasUser) {
-      await GoogleSignin.signOut();
-    }
-  } catch (_) {}
+      if (hasUser) {
+        await GoogleSignin.signOut();
+      }
+    } catch (_) {}
     socketService.disconnect();
     setToken(null);
     setUser(null);
@@ -175,21 +173,21 @@ export function AuthProvider({
   }, []);
 
   useEffect(() => {
-  if (user?.role !== "DRIVER") return;
+    if (user?.role !== "DRIVER") return;
 
-  const unsubscribe = socketService.onLicenseVerified(
-    ({ status }: { status: string }) => {
-      updateUser({
-        driverProfile: {
-          ...user?.driverProfile,
-          licenseStatus: status,
-        },
-      });
-    }
-  );
+    const unsubscribe = socketService.onLicenseVerified(
+      ({ status }: { status: string }) => {
+        updateUser({
+          driverProfile: {
+            ...user?.driverProfile,
+            licenseStatus: status,
+          },
+        });
+      },
+    );
 
-  return unsubscribe;
-}, [user?.role, user?.driverProfile, updateUser]);
+    return unsubscribe;
+  }, [user?.role, user?.driverProfile, updateUser]);
 
   return (
     <AuthContext.Provider

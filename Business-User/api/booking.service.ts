@@ -15,6 +15,7 @@ export type BookingPayload = {
   packageType: string;
   duration?: string;
   notes?: string;
+  promoCode?: string;
   paymentMethod?: "card" | "bank_transfer";
   totalAmount: number;
 };

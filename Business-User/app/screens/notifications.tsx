@@ -79,7 +79,6 @@ export default function NotificationsScreen() {
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
 
-
   const load = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     else setLoading(true);
@@ -257,7 +256,7 @@ export default function NotificationsScreen() {
   );
 }
 
-// Keep all existing styles — no changes needed there.
+// Keep all existing styles - no changes needed there.
 const createStyles = (themeColors: any) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: themeColors.background },
@@ -278,7 +277,11 @@ const createStyles = (themeColors: any) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    headerTitle: { fontSize: 16, fontWeight: "600", color: themeColors.textPrimary },
+    headerTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: themeColors.textPrimary,
+    },
     markReadBtn: { flexDirection: "row", alignItems: "center" },
     markReadText: { fontSize: 12, fontWeight: "600", color: "#EF4444" },
     tabsContainer: {
@@ -291,7 +294,11 @@ const createStyles = (themeColors: any) =>
     tabText: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
     activeTabText: { color: themeColors.text, fontWeight: "700" },
     content: { padding: 20, paddingBottom: 60 },
-    summaryText: { fontSize: 14, color: themeColors.textSecondary, marginBottom: 24 },
+    summaryText: {
+      fontSize: 14,
+      color: themeColors.textSecondary,
+      marginBottom: 24,
+    },
     summaryHighlight: { color: "#3B82F6", fontWeight: "bold" },
     sectionTitle: {
       fontSize: 16,

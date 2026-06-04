@@ -56,7 +56,7 @@ function getIconConfig(type: string): { icon: React.ReactNode; bg: string } {
         bg: "#FFFBEB",
       };
     case "LICENSE_STATUS":
-      // Body text tells us APPROVED or REJECTED — check both
+      // Body text tells us APPROVED or REJECTED - check both
       return {
         icon: <ShieldCheck size={18} color="#10B981" />,
         bg: "#ECFDF5",
@@ -88,14 +88,21 @@ function resolveType(item: AppNotification): string {
 // ── Driver-friendly label map ──────────────────────────────────
 function getLabel(type: string): string {
   switch (type) {
-    case "DRIVER_ASSIGNED":    return "New Booking Assigned";
-    case "TRIP_STARTED":       return "Trip In Progress";
+    case "DRIVER_ASSIGNED":
+      return "New Booking Assigned";
+    case "TRIP_STARTED":
+      return "Trip In Progress";
     case "BOOKING_COMPLETED":
-    case "TRIP_COMPLETED":     return "Trip Completed";
-    case "BOOKING_CANCELLED":  return "Booking Cancelled";
-    case "LICENSE_STATUS":     return "License Approved";
-    case "LICENSE_REJECTED":   return "License Rejected";
-    default:                   return "Notification";
+    case "TRIP_COMPLETED":
+      return "Trip Completed";
+    case "BOOKING_CANCELLED":
+      return "Booking Cancelled";
+    case "LICENSE_STATUS":
+      return "License Approved";
+    case "LICENSE_REJECTED":
+      return "License Rejected";
+    default:
+      return "Notification";
   }
 }
 
@@ -154,7 +161,7 @@ export default function DriverNotificationsScreen() {
   const handleMarkRead = async (id: string) => {
     await NotificationService.markAsRead(id);
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
   };
 
@@ -170,7 +177,10 @@ export default function DriverNotificationsScreen() {
     return (
       <SafeAreaView style={styles.root}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+          >
             <ChevronLeft color="#D1D5DB" size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
@@ -235,7 +245,10 @@ export default function DriverNotificationsScreen() {
           <ChevronLeft color="#D1D5DB" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity style={styles.markReadBtn} onPress={handleMarkAllRead}>
+        <TouchableOpacity
+          style={styles.markReadBtn}
+          onPress={handleMarkAllRead}
+        >
           <CheckCheck color="#EF4444" size={16} style={{ marginRight: 4 }} />
           <Text style={styles.markReadText}>Mark all read</Text>
         </TouchableOpacity>
@@ -331,7 +344,11 @@ const createStyles = (themeColors: any) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    headerTitle: { fontSize: 16, fontWeight: "600", color: themeColors.textPrimary },
+    headerTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: themeColors.textPrimary,
+    },
     markReadBtn: { flexDirection: "row", alignItems: "center" },
     markReadText: { fontSize: 12, fontWeight: "600", color: "#EF4444" },
 
@@ -346,7 +363,11 @@ const createStyles = (themeColors: any) =>
     activeTabText: { color: themeColors.text, fontWeight: "700" },
 
     content: { padding: 20, paddingBottom: 60 },
-    summaryText: { fontSize: 14, color: themeColors.textSecondary, marginBottom: 24 },
+    summaryText: {
+      fontSize: 14,
+      color: themeColors.textSecondary,
+      marginBottom: 24,
+    },
     summaryHighlight: { color: "#3B82F6", fontWeight: "bold" },
     sectionTitle: {
       fontSize: 16,
@@ -363,7 +384,7 @@ const createStyles = (themeColors: any) =>
       borderRadius: 12,
       backgroundColor: themeColors.card,
     },
-    // Subtle highlight for unread items — different from user app's dot-only approach
+    // Subtle highlight for unread items - different from user app's dot-only approach
     notificationItemUnread: {
       borderLeftWidth: 3,
       borderLeftColor: "#E4C77B",

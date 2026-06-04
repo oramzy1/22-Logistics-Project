@@ -309,7 +309,7 @@ export const getMyRideRequests = async (req: AuthRequest, res: Response) => {
 //       });
 
 //       if (activeTrip) {
-//         // Don't block — just warn. Frontend shows the prompt.
+//         // Don't block - just warn. Frontend shows the prompt.
 //         // Let driver confirm via a separate flag if needed.
 //         // For now we include the warning in the response.
 //         console.warn(`Driver ${profile.id} accepted ride while on active trip`);
@@ -405,8 +405,8 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
       const result = await prisma.booking.updateMany({
         where: {
           id: requestId,
-          status: "AWAITING_DRIVER", // guard — atomic check+update in one query
-          driverId: null, // double guard — not yet assigned
+          status: "AWAITING_DRIVER", // guard - atomic check+update in one query
+          driverId: null, // double guard - not yet assigned
         },
         data: {
           driverId: profile.userId,
@@ -675,7 +675,7 @@ export const assignDriverToBooking = async (
         .status(400)
         .json({ message: "Booking is not awaiting a driver" });
 
-    // Directly assign — no ride request needed when admin assigns
+    // Directly assign - no ride request needed when admin assigns
     const updated = await prisma.booking.update({
       where: { id: bookingId },
       data: {

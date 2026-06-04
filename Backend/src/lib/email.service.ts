@@ -1,5 +1,5 @@
 // // Backend/src/lib/email.service.ts
-// // Uses Brevo REST API (HTTPS port 443) instead of SMTP (port 587 — blocked on Render free tier)
+// // Uses Brevo REST API (HTTPS port 443) instead of SMTP (port 587 - blocked on Render free tier)
 // import axios from 'axios';
 
 // const API_KEY = process.env.BREVO_API_KEY;
@@ -7,7 +7,7 @@
 // const SENDER_NAME = '22Logistics';
 
 // async function sendEmail(to: string, subject: string, htmlContent: string) {
-//   // Fire-and-forget — response is never blocked
+//   // Fire-and-forget - response is never blocked
 //   axios
 //     .post(
 //       'https://api.brevo.com/v3/smtp/email',
@@ -68,16 +68,16 @@
 //   );
 // };
 
-
-
 // Backend/src/lib/email.service.ts
-// Uses Brevo REST API (HTTPS port 443) instead of SMTP (port 587 — blocked on Render free tier)
-import axios from 'axios';
+// Uses Brevo REST API (HTTPS port 443) instead of SMTP (port 587 - blocked on Render free tier)
+import axios from "axios";
 
 const API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL;
-const SENDER_NAME = '22Logistics';
-const LOGO_URL = process.env.LOGO_URL ?? 'https://res.cloudinary.com/df7l33e7p/image/upload/v1776926722/22LogisticsLogo_ojwyzz.png';
+const SENDER_NAME = "22Logistics";
+const LOGO_URL =
+  process.env.LOGO_URL ??
+  "https://res.cloudinary.com/df7l33e7p/image/upload/v1776926722/22LogisticsLogo_ojwyzz.png";
 
 const emailHeader = () => `
   <div style="text-align:center;background:#0B1B2B;padding:24px;border-radius:12px;margin-bottom:24px">
@@ -94,10 +94,10 @@ const emailHeader = () => `
 `;
 
 async function sendEmail(to: string, subject: string, htmlContent: string) {
-  // Fire-and-forget — response is never blocked
+  // Fire-and-forget - response is never blocked
   axios
     .post(
-      'https://api.brevo.com/v3/smtp/email',
+      "https://api.brevo.com/v3/smtp/email",
       {
         sender: { name: SENDER_NAME, email: SENDER_EMAIL },
         to: [{ email: to }],
@@ -106,16 +106,19 @@ async function sendEmail(to: string, subject: string, htmlContent: string) {
       },
       {
         headers: {
-          'api-key': API_KEY,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "api-key": API_KEY,
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
         timeout: 15000,
-      }
+      },
     )
     .then(() => console.log(`✅ Email sent to ${to}`))
     .catch((err) =>
-      console.error(`❌ Email failed for ${to}:`, err.response?.data ?? err.message)
+      console.error(
+        `❌ Email failed for ${to}:`,
+        err.response?.data ?? err.message,
+      ),
     );
 }
 
@@ -123,7 +126,7 @@ export const sendVerificationEmail = async (email: string, code: string) => {
   console.log(`\n📧 VERIFICATION CODE for ${email}: ${code}\n`);
   sendEmail(
     email,
-    'Your 22Logistics Verification Code',
+    "Your 22Logistics Verification Code",
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
     ${emailHeader()}
@@ -134,7 +137,7 @@ export const sendVerificationEmail = async (email: string, code: string) => {
       </div>
       <p style="color:#9CA3AF;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
     </div>
-    `
+    `,
   );
 };
 
@@ -142,7 +145,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
   console.log(`\n📧 RESET CODE for ${email}: ${code}\n`);
   sendEmail(
     email,
-    'Reset your 22Logistics password',
+    "Reset your 22Logistics password",
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
     ${emailHeader()}
@@ -153,21 +156,24 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
       </div>
       <p style="color:#9CA3AF;font-size:13px">If you didn't request this, ignore this email.</p>
     </div>
-    `
+    `,
   );
 };
 
+export const sendWelcomeEmail = async (
+  email: string,
+  name: string,
+  role: string,
+) => {
+  const isDriver = role === "DRIVER";
+  const isBusiness = role === "BUSINESS";
 
-export const sendWelcomeEmail = async (email: string, name: string, role: string) => {
-  const isDriver = role === 'DRIVER';
-  const isBusiness = role === 'BUSINESS';
- 
   const roleMsg = isDriver
     ? "Complete your profile and upload your driver's license to start receiving ride requests."
     : isBusiness
-    ? 'Set up your business profile and start booking rides for your team.'
-    : 'Book your first ride and experience seamless logistics.';
- 
+      ? "Set up your business profile and start booking rides for your team."
+      : "Book your first ride and experience seamless logistics.";
+
   sendEmail(
     email,
     `Welcome to 22Logistics, ${name}!`,
@@ -183,13 +189,13 @@ export const sendWelcomeEmail = async (email: string, name: string, role: string
         <p style="color:#6B7280;font-size:13px;margin:0">📞 +1238095832217 &nbsp;|&nbsp; ✉️ hello@22logistics.com</p>
       </div>
       <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:24px">
-        © 22Logistics — Moving you forward.
+        © 22Logistics - Moving you forward.
       </p>
     </div>
-    `
+    `,
   );
 };
- 
+
 // ── NEW: Trip Completion Email ───────────────────────────────────
 export const sendTripCompletionEmail = async (
   email: string,
@@ -198,14 +204,14 @@ export const sendTripCompletionEmail = async (
   driverName: string,
   bookingId: string,
   totalAmount: number,
-  appBaseUrl: string = process.env.APP_BASE_URL ?? 'https://22logistics.com'
+  appBaseUrl: string = process.env.APP_BASE_URL ?? "https://22logistics.com",
 ) => {
   // Deep link / web link that opens the rating flow
   const rateUrl = `${appBaseUrl}/rate?bookingId=${bookingId}`;
- 
+
   sendEmail(
     email,
-    'Your 22Logistics trip is complete!',
+    "Your 22Logistics trip is complete!",
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -231,9 +237,13 @@ export const sendTripCompletionEmail = async (
  
       <p style="color:#374151;font-size:14px;margin-bottom:12px">How was your experience? Rate your driver:</p>
       <div style="text-align:center;margin:16px 0 24px">
-        ${[1,2,3,4,5].map(n => `
+        ${[1, 2, 3, 4, 5]
+          .map(
+            (n) => `
           <a href="${rateUrl}&rating=${n}" style="display:inline-block;margin:0 4px;text-decoration:none;font-size:28px">⭐</a>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
       <div style="text-align:center">
         <a href="${rateUrl}" style="background:#E4C77B;color:#3E2723;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;display:inline-block">
@@ -241,28 +251,28 @@ export const sendTripCompletionEmail = async (
         </a>
       </div>
       <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:28px">
-        © 22Logistics — Moving you forward.
+        © 22Logistics - Moving you forward.
       </p>
     </div>
-    `
+    `,
   );
 };
- 
+
 // ── NEW: Support Request Email (sent to support team) ───────────
 export const sendSupportRequestEmail = async (
   userEmail: string,
   userName: string,
   subject: string,
   description: string,
-  screenshotUrl?: string
+  screenshotUrl?: string,
 ) => {
-  const supportInbox = process.env.SUPPORT_EMAIL ?? 'hello@22logistics.com';
+  const supportInbox = process.env.SUPPORT_EMAIL ?? "hello@22logistics.com";
 
   // These can run in parallel
   await Promise.all([
     sendEmail(
       supportInbox,
-      `[Support] ${subject} — from ${userName}`,
+      `[Support] ${subject} - from ${userName}`,
       `
       <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -272,13 +282,13 @@ export const sendSupportRequestEmail = async (
           <tr><td style="color:#6B7280;padding:6px 0;font-size:13px">Subject</td><td style="color:#111;font-weight:600">${subject}</td></tr>
         </table>
         <div style="background:#F9F6F0;border-radius:10px;padding:16px;color:#374151;font-size:14px;line-height:1.6;white-space:pre-wrap">${description}</div>
-        ${screenshotUrl ? `<p style="margin-top:16px"><a href="${screenshotUrl}" style="color:#3B82F6">View Attached Screenshot</a></p>` : ''}
+        ${screenshotUrl ? `<p style="margin-top:16px"><a href="${screenshotUrl}" style="color:#3B82F6">View Attached Screenshot</a></p>` : ""}
       </div>
-      `
+      `,
     ),
     sendEmail(
       userEmail,
-      'We received your message — 22Logistics Support',
+      "We received your message - 22Logistics Support",
       `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
         <h2 style="color:#0B1B2B">We got your message, ${userName}!</h2>
@@ -288,7 +298,7 @@ export const sendSupportRequestEmail = async (
         </div>
         <p style="color:#9CA3AF;font-size:12px">📞 +1238095832217 &nbsp;|&nbsp; ✉️ hello@22logistics.com</p>
       </div>
-      `
+      `,
     ),
   ]);
 };
@@ -303,7 +313,7 @@ export const sendTripDelayEmail = async (
 ) => {
   sendEmail(
     adminEmail,
-    `⚠️ Trip Delay Alert — ${trackingId}`,
+    `⚠️ Trip Delay Alert - ${trackingId}`,
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -320,7 +330,7 @@ export const sendTripDelayEmail = async (
       </div>
       <p style="color:#374151;font-size:14px">Please contact the driver immediately to confirm their status.</p>
     </div>
-    `
+    `,
   );
 };
 
@@ -331,15 +341,22 @@ export const sendPromoEmail = async (
   code: string,
   description: string,
   discountValue: number,
-  discountType: 'PERCENTAGE' | 'FIXED',
+  discountType: "PERCENTAGE" | "FIXED",
   expiresAt: Date,
 ) => {
-  const discountLabel = discountType === 'PERCENTAGE' ? `${discountValue}%` : `₦${discountValue.toLocaleString()}`;
-  const expiry = expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const discountLabel =
+    discountType === "PERCENTAGE"
+      ? `${discountValue}%`
+      : `₦${discountValue.toLocaleString()}`;
+  const expiry = expiresAt.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   sendEmail(
     email,
-    `🎉 You've earned a promo — ${discountLabel} off your next ride!`,
+    `🎉 You've earned a promo - ${discountLabel} off your next ride!`,
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -351,7 +368,7 @@ export const sendPromoEmail = async (
         <p style="color:#9CA3AF;font-size:12px;margin:8px 0 0">Expires ${expiry}</p>
       </div>
       <p style="color:#374151;font-size:14px">Apply this code at checkout to redeem your discount.</p>
-      <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:24px">© 22Logistics — Moving you forward.</p>
+      <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:24px">© 22Logistics - Moving you forward.</p>
     </div>
     `,
   );
@@ -371,7 +388,7 @@ export const sendAdminNewBookingEmail = async (
 ) => {
   sendEmail(
     adminEmail,
-    `📦 New Booking — ${trackingId}`,
+    `📦 New Booking - ${trackingId}`,
     `
     <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -382,7 +399,7 @@ export const sendAdminNewBookingEmail = async (
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Package</td><td style="color:#111;font-weight:600">${packageType}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Type</td><td style="color:#111;font-weight:600">${rideType}</td></tr>
-          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Scheduled</td><td style="color:#111;font-weight:600">${new Date(scheduledAt).toLocaleString('en-GB')}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Scheduled</td><td style="color:#111;font-weight:600">${new Date(scheduledAt).toLocaleString("en-GB")}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Pickup</td><td style="color:#111">${pickupAddress}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Dropoff</td><td style="color:#111">${dropoffAddress}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Amount</td><td style="color:#0B1B2B;font-weight:700;font-size:15px">₦${totalAmount.toLocaleString()}</td></tr>
@@ -403,16 +420,16 @@ export const sendAdminBookingStatusEmail = async (
   driverName?: string,
 ) => {
   const statusColors: Record<string, string> = {
-    ACCEPTED:    '#10B981',
-    IN_PROGRESS: '#3B82F6',
-    COMPLETED:   '#6366F1',
-    CANCELLED:   '#EF4444',
+    ACCEPTED: "#10B981",
+    IN_PROGRESS: "#3B82F6",
+    COMPLETED: "#6366F1",
+    CANCELLED: "#EF4444",
   };
-  const color = statusColors[newStatus] ?? '#6B7280';
+  const color = statusColors[newStatus] ?? "#6B7280";
 
   sendEmail(
     adminEmail,
-    `🔔 Booking ${trackingId} — Status: ${newStatus}`,
+    `🔔 Booking ${trackingId} - Status: ${newStatus}`,
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -422,10 +439,64 @@ export const sendAdminBookingStatusEmail = async (
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0;width:120px">Tracking ID</td><td style="color:#111;font-weight:600">${trackingId}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">New Status</td><td style="font-weight:700;color:${color}">${newStatus}</td></tr>
-          ${driverName ? `<tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>` : ''}
+          ${driverName ? `<tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>` : ""}
         </table>
       </div>
       <p style="color:#9CA3AF;font-size:12px;text-align:center">© 22Logistics Admin Alerts</p>
+    </div>
+    `,
+  );
+};
+
+export const sendExtensionEmail = async (
+  email: string,
+  name: string,
+  role: 'customer' | 'driver' | 'admin',
+  customerName: string,
+  trackingId: string,
+  hours: number,
+  amount: number,
+  driverName?: string,
+) => {
+  const isDriver = role === 'driver';
+  const isAdmin  = role === 'admin';
+
+  const subject = isAdmin
+    ? `🔄 Trip Extension Payment - ${trackingId}`
+    : isDriver
+      ? `Trip Extended — ${trackingId}`
+      : `Your trip has been extended — ${trackingId}`;
+
+  const heading = isAdmin
+    ? 'Trip Extension Received'
+    : isDriver
+      ? 'Trip Extended by Customer'
+      : 'Trip Extension Confirmed ✅';
+
+  const intro = isAdmin
+    ? `A customer has paid for a trip extension.`
+    : isDriver
+      ? `<strong>${customerName}</strong> has extended their trip. Please continue service for the additional time.`
+      : `Hi <strong>${name}</strong>, your trip extension has been confirmed.`;
+
+  sendEmail(
+    email,
+    subject,
+    `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
+      <h2 style="color:#0B1B2B">${heading}</h2>
+      <p style="color:#374151">${intro}</p>
+      <div style="background:#F9F6F0;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #E4C77B">
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0;width:140px">Booking ID</td><td style="color:#111;font-weight:600">${trackingId}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
+          ${driverName ? `<tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>` : ''}
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Extension</td><td style="color:#111;font-weight:600">+${hours} hour${hours > 1 ? 's' : ''}</td></tr>
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Amount Paid</td><td style="color:#0B1B2B;font-weight:700;font-size:15px">₦${amount.toLocaleString()}</td></tr>
+        </table>
+      </div>
+      <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:24px">© 22Logistics - Moving you forward.</p>
     </div>
     `,
   );

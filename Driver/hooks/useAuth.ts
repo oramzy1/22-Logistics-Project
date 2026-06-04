@@ -10,12 +10,11 @@
 
 // WebBrowser.maybeCompleteAuthSession();
 
-// const iosId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID 
+// const iosId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
 // const androidId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '552515162391-ekrt13fnht06vo0cmm4f1nbr5puqtkdd.apps.googleusercontent.com'
 // const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID
 
 // console.log('ios:', iosId, 'android:', androidId, 'web:', clientId)
-
 
 // export function useOAuth(appType: 'user-app' | 'driver-app') {
 //   const { setAuthData, refreshUser } = useAuth();
@@ -92,29 +91,28 @@
 //   return { signInWithGoogle, signInWithApple };
 // }
 
-
-
-
-
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { AuthService } from '@/api/auth.service';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'expo-router';
-import { showToast } from '@/app/utils/toast';
-import { Alert, Platform } from 'react-native';
-import { useLoading } from '@/context/LoadingContext';
+import {
+  GoogleSignin,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { AuthService } from "@/api/auth.service";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "expo-router";
+import { showToast } from "@/app/utils/toast";
+import { Alert, Platform } from "react-native";
+import { useLoading } from "@/context/LoadingContext";
 
 GoogleSignin.configure({
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   offlineAccess: false,
-  scopes: ['profile', 'email'],
+  scopes: ["profile", "email"],
 });
 
 interface OAuthOptions {
-  appType: 'user-app' | 'driver-app';
-  role?: 'INDIVIDUAL' | 'BUSINESS' | 'DRIVER';
+  appType: "user-app" | "driver-app";
+  role?: "INDIVIDUAL" | "BUSINESS" | "DRIVER";
 }
 
 export function useOAuth({ appType, role }: OAuthOptions) {
@@ -123,72 +121,78 @@ export function useOAuth({ appType, role }: OAuthOptions) {
   const router = useRouter();
 
   // If a role was explicitly passed, we're on a registration screen
-  const mode: 'signin' | 'register' = role ? 'register' : 'signin';
+  const mode: "signin" | "register" = role ? "register" : "signin";
 
   const handleOAuthSuccess = async (
     token: string,
     user: any,
-    flags: { needsLicenseUpload: boolean; needsBusinessProfile: boolean }
+    flags: { needsLicenseUpload: boolean; needsBusinessProfile: boolean },
   ) => {
     await setAuthData(token, user);
     await refreshUser();
 
-     if (flags.needsLicenseUpload && appType === 'driver-app') {
-    // ← was: appType === 'user-app' — completely wrong, never matched
-    router.replace('/(auth)/complete-profile');
-  } else {
-    router.replace('/(tabs)');
-  }
+    if (flags.needsLicenseUpload && appType === "driver-app") {
+      // ← was: appType === 'user-app' - completely wrong, never matched
+      router.replace("/(auth)/complete-profile");
+    } else {
+      router.replace("/(tabs)");
+    }
   };
 
   const signInWithGoogle = async () => {
-     showLoading("Please Wait...");
-     try {
+    showLoading("Please Wait...");
+    try {
       if (Platform.OS === "android") {
-         await GoogleSignin.hasPlayServices({
-           showPlayServicesUpdateDialog: true,
-         });
-         
-         // Force the account picker ONLY on Android to avoid breaking the iOS sheet!
-         await GoogleSignin.signOut();
-       }
-       const userInfo = await GoogleSignin.signIn();
-       console.log("Full userInfo:", JSON.stringify(userInfo, null, 2));
-       if (userInfo.type !== "success") return; 
-       const idToken = userInfo.data?.idToken;
-       if (!idToken) {
-         showToast.error("No token received from Google");
-         return;
-       }
-      const data = await AuthService.googleAuth({ idToken, appType, role, mode });
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
+
+        // Force the account picker ONLY on Android to avoid breaking the iOS sheet!
+        await GoogleSignin.signOut();
+      }
+      const userInfo = await GoogleSignin.signIn();
+      console.log("Full userInfo:", JSON.stringify(userInfo, null, 2));
+      if (userInfo.type !== "success") return;
+      const idToken = userInfo.data?.idToken;
+      if (!idToken) {
+        showToast.error("No token received from Google");
+        return;
+      }
+      const data = await AuthService.googleAuth({
+        idToken,
+        appType,
+        role,
+        mode,
+      });
       showToast.success(
         mode === "register" ? "Account created!" : "Login Successful",
         mode === "register" ? "Welcome Aboard" : "Welcome back!",
-      );;
+      );
       await handleOAuthSuccess(data.token, data.user, {
-        needsLicenseUpload:   data.needsLicenseUpload   ?? false,
+        needsLicenseUpload: data.needsLicenseUpload ?? false,
         needsBusinessProfile: data.needsBusinessProfile ?? false,
       });
     } catch (err: any) {
       if (err.code === statusCodes.SIGN_IN_CANCELLED) return;
       if (err.code === statusCodes.IN_PROGRESS) return;
       if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Google Sign-In', 'Google Play Services not available.'); return;
+        Alert.alert("Google Sign-In", "Google Play Services not available.");
+        return;
       }
-      
-      const message = err?.response?.data?.message || 'Google sign-in failed';
+
+      const message = err?.response?.data?.message || "Google sign-in failed";
       showToast.error(message);
-      if (err?.response?.status === 404){
-        router.replace('/(auth)/register')
+      if (err?.response?.status === 404) {
+        router.replace("/(auth)/register");
       }
-    }finally{
+    } finally {
       hideLoading();
     }
   };
 
   const signInWithApple = async () => {
-    showLoading('Please Wait...');
-    if (Platform.OS !== 'ios') return;
+    showLoading("Please Wait...");
+    if (Platform.OS !== "ios") return;
     try {
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -196,7 +200,10 @@ export function useOAuth({ appType, role }: OAuthOptions) {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      if (!credential.identityToken) { showToast.error('No token received from Apple'); return; }
+      if (!credential.identityToken) {
+        showToast.error("No token received from Apple");
+        return;
+      }
 
       const data = await AuthService.appleAuth({
         identityToken: credential.identityToken,
@@ -210,17 +217,17 @@ export function useOAuth({ appType, role }: OAuthOptions) {
         mode === "register" ? "Login Succesful" : "Welcome back!",
       );
       await handleOAuthSuccess(data.token, data.user, {
-        needsLicenseUpload:   data.needsLicenseUpload   ?? false,
+        needsLicenseUpload: data.needsLicenseUpload ?? false,
         needsBusinessProfile: data.needsBusinessProfile ?? false,
       });
     } catch (err: any) {
-      if (err.code === 'ERR_CANCELED') return;
-      const message = err?.response?.data?.message || 'Apple sign-in failed';
+      if (err.code === "ERR_CANCELED") return;
+      const message = err?.response?.data?.message || "Apple sign-in failed";
       showToast.error(message);
-       if (err?.response?.status === 404){
-        router.replace('/(auth)/register')
+      if (err?.response?.status === 404) {
+        router.replace("/(auth)/register");
       }
-    }finally{
+    } finally {
       hideLoading();
     }
   };

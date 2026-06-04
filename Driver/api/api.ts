@@ -4,12 +4,11 @@ import { useRouter } from "expo-router";
 
 const router = useRouter();
 
-
 const API_URL =
   process.env.API_URL || "https://two2-logistics-project.onrender.com/api";
 
 const apiClient = axios.create({
-  baseURL: API_URL, 
+  baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -30,23 +29,24 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error?.response?.status === 401) {
       // Dynamic import avoids circular dependency
-      const { clearAuthData } = await import('../context/AuthContext').then(
-        m => {
+      const { clearAuthData } = await import("../context/AuthContext").then(
+        (m) => {
           // We can't call hooks outside components, so use AsyncStorage directly
-          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          const AsyncStorage =
+            require("@react-native-async-storage/async-storage").default;
           return {
             clearAuthData: async () => {
-              await AsyncStorage.multiRemove(['token', 'user']);
-            }
+              await AsyncStorage.multiRemove(["token", "user"]);
+            },
           };
-        }
+        },
       );
       await clearAuthData();
-      // Navigate to sign-in — works from anywhere
-      router.replace('/(auth)/sign-in');
+      // Navigate to sign-in - works from anywhere
+      router.replace("/(auth)/sign-in");
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

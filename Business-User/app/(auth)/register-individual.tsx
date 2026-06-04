@@ -146,7 +146,7 @@ export default function RegisterIndividualScreen() {
             />
             <Text style={styles.phoneHint}>
               Full number:{" "}
-              {phone ? `${countryCode}${phone.replace(/^0+/, "")}` : "—"}
+              {phone ? `${countryCode}${phone.replace(/^0+/, "")}` : "-"}
             </Text>
 
             {/* Password */}

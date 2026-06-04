@@ -167,8 +167,8 @@ type OAuthActionModalProps = {
   visible: boolean;
   mode: OAuthModalMode;
   onClose: () => void;
-  onActionVerified: (otp: string) => void; // for "action" mode — passes OTP back to caller
-  onEmailChangeComplete: () => void; // for "emailChange" mode — triggers logout
+  onActionVerified: (otp: string) => void; // for "action" mode - passes OTP back to caller
+  onEmailChangeComplete: () => void; // for "emailChange" mode - triggers logout
 };
 
 const OAuthActionModal = ({
@@ -217,27 +217,29 @@ const OAuthActionModal = ({
     }
   };
 
-const handleOtpContinue = async () => {
-  if (otp.length !== 6) return;
+  const handleOtpContinue = async () => {
+    if (otp.length !== 6) return;
 
-  if (mode === "action") {
-    onActionVerified(otp);
-    onClose();
-  } else {
-    // Verify OTP with backend BEFORE allowing user to set new credentials
-    showLoading("Verifying code...");
-    try {
-      await UserService.verifyActionOtp(otp);
-      setStep("newCredentials"); // only advances on success
-    } catch (err: any) {
-      showToast.error(err?.response?.data?.message || "Invalid or expired code.");
-      // Clear the OTP field so they must re-enter
-      setOtp("");
-    } finally {
-      hideLoading();
+    if (mode === "action") {
+      onActionVerified(otp);
+      onClose();
+    } else {
+      // Verify OTP with backend BEFORE allowing user to set new credentials
+      showLoading("Verifying code...");
+      try {
+        await UserService.verifyActionOtp(otp);
+        setStep("newCredentials"); // only advances on success
+      } catch (err: any) {
+        showToast.error(
+          err?.response?.data?.message || "Invalid or expired code.",
+        );
+        // Clear the OTP field so they must re-enter
+        setOtp("");
+      } finally {
+        hideLoading();
+      }
     }
-  }
-};
+  };
 
   const handleSubmitEmailChange = async () => {
     if (newPassword !== confirmPassword) {
@@ -357,31 +359,36 @@ const handleOtpContinue = async () => {
                 autoCapitalize="none"
               />
               <View>
-              <Text style={styles.modalLabel}>New Password</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="Create a password"
-                secureTextEntry
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
-              <PasswordStrengthIndicator
-              password={newPassword}
-              visible={passwordFocused && newPassword.length > 0}
-              backgroundColor='transparent'
-              />
+                <Text style={styles.modalLabel}>New Password</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="Create a password"
+                  secureTextEntry
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <PasswordStrengthIndicator
+                  password={newPassword}
+                  visible={passwordFocused && newPassword.length > 0}
+                  backgroundColor="transparent"
+                />
               </View>
-              <View style={[passwordFocused && newPassword.length > 0 && {marginTop: 65}]}>
-                  <Text style={styles.modalLabel}>Confirm Password</Text>
-              <TextInput
-                style={[styles.modalInput, { marginBottom: 4 }]}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm password"
-                secureTextEntry
-              />
+              <View
+                style={[
+                  passwordFocused &&
+                    newPassword.length > 0 && { marginTop: 65 },
+                ]}
+              >
+                <Text style={styles.modalLabel}>Confirm Password</Text>
+                <TextInput
+                  style={[styles.modalInput, { marginBottom: 4 }]}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm password"
+                  secureTextEntry
+                />
               </View>
               <PrimaryButton
                 title="Send Verification to New Email"
@@ -470,7 +477,7 @@ export default function AccountTabScreen() {
   }>({ visible: false, mode: "action" });
   const [passwordFocused, setPasswordFocused] = useState(false);
 
-  // Reusable interceptor — wrap any sensitive action with this
+  // Reusable interceptor - wrap any sensitive action with this
   const withPasswordSetup = (action: () => Promise<void>) => async () => {
     try {
       await action();
@@ -554,7 +561,7 @@ export default function AccountTabScreen() {
                 },
               });
             } else {
-              // existing email/hybrid flow — prompt for password in modal
+              // existing email/hybrid flow - prompt for password in modal
               setModalValues((v) => ({ ...v, deletePassword: "" }));
               setActiveModal("deactivateAccount"); // add this modal type
             }
@@ -687,9 +694,9 @@ export default function AccountTabScreen() {
               <Edit3 size={10} color="#fff" />
             </View>
           </TouchableOpacity>
-          <Text style={styles.name}>{user?.name ?? "—"}</Text>
+          <Text style={styles.name}>{user?.name ?? "-"}</Text>
           <Text style={styles.contact}>{user?.phone ?? "No phone added"}</Text>
-          <Text style={styles.email}>{user?.email ?? "—"}</Text>
+          <Text style={styles.email}>{user?.email ?? "-"}</Text>
           <TouchableOpacity
             style={styles.editProfileBtn}
             onPress={handleEditProfile}
@@ -1048,35 +1055,42 @@ export default function AccountTabScreen() {
                   />
                   <View>
                     <Text style={styles.modalLabel}>New Password</Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    value={modalValues.newPassword}
-                    onChangeText={(t) =>
-                      setModalValues((v) => ({ ...v, newPassword: t }))
-                    }
-                    placeholder="New password"
-                    secureTextEntry
-                    onFocus={() => setPasswordFocused(true)}
-                    onBlur={() => setPasswordFocused(false)}
-                  />
-                  <PasswordStrengthIndicator
-                  password={modalValues.newPassword}
-                  visible={passwordFocused && modalValues.newPassword.length > 0}  
-                  backgroundColor="transparent"                
-                  />
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalValues.newPassword}
+                      onChangeText={(t) =>
+                        setModalValues((v) => ({ ...v, newPassword: t }))
+                      }
+                      placeholder="New password"
+                      secureTextEntry
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(false)}
+                    />
+                    <PasswordStrengthIndicator
+                      password={modalValues.newPassword}
+                      visible={
+                        passwordFocused && modalValues.newPassword.length > 0
+                      }
+                      backgroundColor="transparent"
+                    />
                   </View>
-                <View style={[passwordFocused && modalValues.newPassword.length > 0 && {marginTop: 65}]}>
+                  <View
+                    style={[
+                      passwordFocused &&
+                        modalValues.newPassword.length > 0 && { marginTop: 65 },
+                    ]}
+                  >
                     <Text style={styles.modalLabel}>Confirm New Password</Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    value={modalValues.confirmPassword}
-                    onChangeText={(t) =>
-                      setModalValues((v) => ({ ...v, confirmPassword: t }))
-                    }
-                    placeholder="Confirm new password"
-                    secureTextEntry
-                  />
-                </View>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalValues.confirmPassword}
+                      onChangeText={(t) =>
+                        setModalValues((v) => ({ ...v, confirmPassword: t }))
+                      }
+                      placeholder="Confirm new password"
+                      secureTextEntry
+                    />
+                  </View>
                   <View style={styles.modalButtons}>
                     <TouchableOpacity
                       style={styles.modalCancelBtn}
@@ -1156,7 +1170,10 @@ export default function AccountTabScreen() {
                           );
                           setActiveModal(null);
                           await clearAuthData();
-                          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
+                          setTimeout(
+                            () => router.replace("/(auth)/sign-in"),
+                            0,
+                          );
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Deletion failed",
@@ -1215,7 +1232,10 @@ export default function AccountTabScreen() {
                           );
                           setActiveModal(null);
                           await clearAuthData();
-                          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
+                          setTimeout(
+                            () => router.replace("/(auth)/sign-in"),
+                            0,
+                          );
                         } catch (err: any) {
                           showToast.error(
                             err?.response?.data?.message || "Failed",
@@ -1248,7 +1268,7 @@ export default function AccountTabScreen() {
         }}
         onEmailChangeComplete={async () => {
           await clearAuthData();
-         setTimeout(() => router.replace("/(auth)/sign-in"), 0);
+          setTimeout(() => router.replace("/(auth)/sign-in"), 0);
         }}
       />
     </SafeAreaView>

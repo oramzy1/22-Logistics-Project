@@ -36,14 +36,15 @@ import { generateTimeSlots } from "@/src/utils/timeSlots";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/src/ui/useAppTheme";
-import { usePrices, formatPrice} from '@/hooks/usePrices'
+import { usePrices, formatPrice } from "@/hooks/usePrices";
+import apiClient from "@/api/api";
+import { showToast } from "../utils/toast";
 
 type RidePackage = {
   id: "3h" | "6h" | "10h" | "multi" | "airport";
   title: string;
   price?: string;
 };
-
 
 export default function ScheduleTabScreen() {
   const { selectedPackage, setSelectedPackage } = useSchedule();
@@ -75,24 +76,85 @@ export default function ScheduleTabScreen() {
   const [outOfLGATarget, setOutOfLGATarget] = useState<
     "pickup" | "dropoff" | null
   >(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoResult, setPromoResult] = useState<{
+    discountAmount: number;
+    finalAmount: number;
+    description: string;
+  } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const validatePromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    try {
+      const res = await apiClient.post("/bookings/validate-promo", {
+        code: promoCode.toUpperCase(),
+        bookingAmount: total,
+      });
+      setPromoResult(res.data);
+      showToast.success("Promo code applied! " + res.data.description);
+    } catch (err: any) {
+      setPromoResult(null);
+      showToast.error("Invalid promo" + err?.response?.data?.message);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
   useEffect(() => {
-  console.log("pickupTime changed:", pickupTime?.getHours(), pickupTime?.getMinutes());
-}, [pickupTime]);
+    console.log(
+      "pickupTime changed:",
+      pickupTime?.getHours(),
+      pickupTime?.getMinutes(),
+    );
+  }, [pickupTime]);
+
+useEffect(() => {
+  setPickupStreet("");
+  setPickupLGA("");
+  setDropoffStreet("");
+  setDropoffLGA("");
+  setInterstateLocation(null);
+  setTimeSlot("");
+  setPromoCode("");
+  setPromoResult(null);
+  setPickupDate(null);        // add this
+  setPickupTime(null);        // add this
+  setExtras({                 // add this
+    babySeat: false,
+    extraLuggage: false,
+    wifi: true,
+    coldWater: true,
+    airportRide: false,
+  });
+}, [selectedPackage]);
 
   const { createBooking } = useBookings();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
   const router = useRouter();
   const PACKAGES = [
-  { id: "3h" as const,      title: "3-Hours",          price: `₦${prices.price_3_hours.toLocaleString()}` },
-  { id: "6h" as const,      title: "6-Hours",          price: `₦${prices.price_6_hours.toLocaleString()}` },
-  { id: "10h" as const,     title: "10-Hours",         price: `₦${prices.price_10_hours.toLocaleString()}` },
-  { id: "multi" as const,   title: "Multi-day",        price: undefined },
-  { id: "airport" as const, title: "Airport Schedule", price: undefined },
-];
+    {
+      id: "3h" as const,
+      title: "3-Hours",
+      price: `₦${prices.price_3_hours.toLocaleString()}`,
+    },
+    {
+      id: "6h" as const,
+      title: "6-Hours",
+      price: `₦${prices.price_6_hours.toLocaleString()}`,
+    },
+    {
+      id: "10h" as const,
+      title: "10-Hours",
+      price: `₦${prices.price_10_hours.toLocaleString()}`,
+    },
+    { id: "multi" as const, title: "Multi-day", price: undefined },
+    { id: "airport" as const, title: "Airport Schedule", price: undefined },
+  ];
 
   const pkg = selectedPackage;
-  
 
   const getInterstatePrice = (value: string) => {
     if (!value) return 0;
@@ -101,7 +163,7 @@ export default function ScheduleTabScreen() {
     return match ? parseInt(match[1].replace(/,/g, ""), 10) : 0;
   };
 
-  // Computed — concatenates into the string the backend already expects, no schema change
+  // Computed - concatenates into the string the backend already expects, no schema change
   const pickupLocation = [
     pickupStreet.trim(),
     pickupLGA && `${pickupLGA} LGA`,
@@ -124,35 +186,53 @@ export default function ScheduleTabScreen() {
     if (!PH_LGAS.includes(lga)) setOutOfLGATarget(which); // trigger modal
   };
 
-// Replace the total useMemo base price lookup:
-const total = useMemo(() => {
-  const base =
-    pkg === "3h"      ? prices.price_3_hours :
-    pkg === "6h"      ? prices.price_6_hours :
-    pkg === "10h"     ? prices.price_10_hours :
-    pkg === "airport" ? prices.price_airport :
-    /* multi/airport */ prices.price_multiday;
+  // Replace the total useMemo base price lookup:
+  const total = useMemo(() => {
+    const base =
+      pkg === "3h"
+        ? prices.price_3_hours
+        : pkg === "6h"
+          ? prices.price_6_hours
+          : pkg === "10h"
+            ? prices.price_10_hours
+            : pkg === "airport"
+              ? prices.price_airport
+              : /* multi/airport */ prices.price_multiday;
 
-  const add = (k: keyof typeof extras, amount: number) =>
-    extrasEnabled && extras[k] ? amount : 0;
+    const add = (k: keyof typeof extras, amount: number) =>
+      extrasEnabled && extras[k] ? amount : 0;
 
-  const interstatePrice = interstateLocation?.price || 0;
-  const outOfLGAFee =
-    (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
-    (!interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA) ? OUT_OF_LGA_FEE : 0);
+    const interstatePrice = interstateLocation?.price || 0;
+    const outOfLGAFee =
+      (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
+      (!interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA)
+        ? OUT_OF_LGA_FEE
+        : 0);
 
-  return (
-    base + interstatePrice + outOfLGAFee +
-    add("babySeat", 2000) +
-    add("extraLuggage", 2000) +
-    add("wifi", 4000) +
-    add("coldWater", 2000) +
-    add("airportRide", 2000)
-  );
-}, [extras, extrasEnabled, pkg, interstateLocation, pickupLGA, dropoffLGA, prices]);
+    return (
+      base +
+      interstatePrice +
+      outOfLGAFee +
+      add("babySeat", 2000) +
+      add("extraLuggage", 2000) +
+      add("wifi", 4000) +
+      add("coldWater", 2000) +
+      add("airportRide", 2000)
+    );
+  }, [
+    extras,
+    extrasEnabled,
+    pkg,
+    interstateLocation,
+    pickupLGA,
+    dropoffLGA,
+    prices,
+  ]);
 
   const totalLabel = `₦${total.toLocaleString()}`;
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
+
+  const effectiveTotal = promoResult ? promoResult.finalAmount : total;
 
   const handleSchedule = async () => {
     // if (!pickupLocation.trim()) {
@@ -197,7 +277,7 @@ const total = useMemo(() => {
       return Alert.alert("Missing field", "Please select a pick-up time.");
     }
 
-    // ✅ No more scheduleDate string check — scheduleDateTime covers it
+    // ✅ No more scheduleDate string check - scheduleDateTime covers it
     const combinedPickup = new Date(
       pickupDate.getFullYear(),
       pickupDate.getMonth(),
@@ -251,7 +331,8 @@ const total = useMemo(() => {
         scheduledAt: combinedPickup.toISOString(),
         pickupAt: combinedPickup.toISOString(),
         packageType: packageTypeMap[pkg],
-        totalAmount: total,
+        totalAmount: effectiveTotal,
+        promoCode: promoResult ? promoCode.toUpperCase() : undefined,
         notes:
           [
             interstateLocation
@@ -423,7 +504,7 @@ const total = useMemo(() => {
             leftIcon={<MapPinned size={18} color="#9CA3AF" />}
           /> */}
 
-          {/* Pickup — always Rivers State LGA */}
+          {/* Pickup - always Rivers State LGA */}
           <LocationInput
             label={`${isAirportSchedule ? "Airport " : ""}Pick-up Location`}
             placeholder="Enter street / area name"
@@ -434,7 +515,7 @@ const total = useMemo(() => {
             onLGASelect={(lga) => handleLGASelect("pickup", lga)}
           />
 
-          {/* Dropoff — LGA picker only when staying within Rivers State */}
+          {/* Dropoff - LGA picker only when staying within Rivers State */}
           {interstateLocation ? (
             <FormInput
               label={`${isAirportSchedule ? "Airport " : ""}Drop-off Location`}
@@ -503,6 +584,30 @@ const total = useMemo(() => {
               disabled={!extrasEnabled}
             />
           </View>
+          <Text style={styles.h2}>Promo Code</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <FormInput
+              style={{ flex: 1 }}
+              placeholder="Enter promo code"
+              value={promoCode}
+              onChangeText={(t) => {
+                setPromoCode(t.toUpperCase());
+                setPromoResult(null);
+              }}
+            />
+            <PrimaryButton
+              title={promoLoading ? "..." : "Apply"}
+              onPress={validatePromo}
+              style={{ width: 80 }}
+              disabled={promoLoading}
+            />
+          </View>
+          {promoResult && (
+            <Text style={{ color: "#16a34a", fontSize: 12, marginTop: 4 }}>
+              ✓ {promoResult.description} — saving ₦
+              {promoResult.discountAmount.toLocaleString()}
+            </Text>
+          )}
           <Text style={styles.h2}>Total Amount accumulated</Text>
           <View style={styles.totalBox}>
             <Text style={styles.totalText}>{totalLabel}</Text>
@@ -534,77 +639,77 @@ const total = useMemo(() => {
   );
 }
 
-const createStyles = (themeColors: any) => StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: themeColors.navy,
-  },
-  sheet: {
-    flex: 1,
-    backgroundColor: themeColors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: "hidden",
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: 32,
-  },
-  h1: {
-    ...text.h1,
-    color: themeColors.text
-  },
-  h2: {
-    ...text.h2,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    color: themeColors.text
-  },
-  packRow: {
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-  },
-  label: {
-    ...text.label,
-    marginBottom: 8,
-    color: themeColors.textSecondary
-  },
-  input: {
-    height: 52,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 14,
-    fontSize: 14,
-    color: colors.text,
-    backgroundColor: themeColors.background,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: spacing.lg,
-  },
-  extrasWrap: {
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    borderRadius: radius.lg,
-    padding: 10,
-    marginTop: spacing.sm,
-
-  },
-  totalBox: {
-    height: 56,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    justifyContent: "center",
-    paddingHorizontal: 14,
-    backgroundColor: themeColors.background,
-  },
-  totalText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: themeColors.text,
-  },
-});
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: themeColors.navy,
+    },
+    sheet: {
+      flex: 1,
+      backgroundColor: themeColors.background,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      overflow: "hidden",
+    },
+    content: {
+      padding: spacing.lg,
+      paddingBottom: 32,
+    },
+    h1: {
+      ...text.h1,
+      color: themeColors.text,
+    },
+    h2: {
+      ...text.h2,
+      marginTop: spacing.lg,
+      marginBottom: spacing.sm,
+      color: themeColors.text,
+    },
+    packRow: {
+      paddingVertical: spacing.md,
+      gap: spacing.md,
+    },
+    label: {
+      ...text.label,
+      marginBottom: 8,
+      color: themeColors.textSecondary,
+    },
+    input: {
+      height: 52,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      fontSize: 14,
+      color: colors.text,
+      backgroundColor: themeColors.background,
+    },
+    rowBetween: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: spacing.lg,
+    },
+    extrasWrap: {
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: radius.lg,
+      padding: 10,
+      marginTop: spacing.sm,
+    },
+    totalBox: {
+      height: 56,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      justifyContent: "center",
+      paddingHorizontal: 14,
+      backgroundColor: themeColors.background,
+    },
+    totalText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: themeColors.text,
+    },
+  });

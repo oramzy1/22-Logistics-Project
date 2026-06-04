@@ -30,7 +30,6 @@ import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
 import { useLocation } from "react-router-dom";
 import { exportCSV } from "@/lib/export";
 
-
 const Users = () => {
   const [tab, setTab] = useState<"BUSINESS" | "INDIVIDUAL">("BUSINESS");
   const location = useLocation();
@@ -53,14 +52,27 @@ const Users = () => {
   const activeCount = users.filter((u: any) => u.isActive).length;
   const inactiveCount = users.filter((u: any) => !u.isActive).length;
   useEffect(() => {
-  const id = location.state?.highlightId;
-  if (id) { setSelectedUserId(id); window.history.replaceState({}, ""); }
-}, [location.state?.highlightId]);
+    const id = location.state?.highlightId;
+    if (id) {
+      setSelectedUserId(id);
+      window.history.replaceState({}, "");
+    }
+  }, [location.state?.highlightId]);
 
-const handleExport = () =>
-  exportCSV(`users_${tab.toLowerCase()}`, ["Name","Email","Phone","Role","Bookings","Status","Joined"],
-    users.map((u: any) => [u.name, u.email, u.phone, u.role, u._count?.bookingsAsCustomer ?? 0, u.isActive ? "Active" : "Deactivated", new Date(u.createdAt).toLocaleDateString()]));
-
+  const handleExport = () =>
+    exportCSV(
+      `users_${tab.toLowerCase()}`,
+      ["Name", "Email", "Phone", "Role", "Bookings", "Status", "Joined"],
+      users.map((u: any) => [
+        u.name,
+        u.email,
+        u.phone,
+        u.role,
+        u._count?.bookingsAsCustomer ?? 0,
+        u.isActive ? "Active" : "Deactivated",
+        new Date(u.createdAt).toLocaleDateString(),
+      ]),
+    );
 
   return (
     <div>
@@ -109,8 +121,15 @@ const handleExport = () =>
             }
           />
           <DateRangeFilter
-  onChange={(from, to) => setParams(p => ({ ...p, dateFrom: from, dateTo: to, page: '1' }))}
-/>
+            onChange={(from, to) =>
+              setParams((p) => ({
+                ...p,
+                dateFrom: from,
+                dateTo: to,
+                page: "1",
+              }))
+            }
+          />
           <select
             className="h-9 px-3 rounded-md border border-border bg-background text-sm"
             onChange={(e) =>
@@ -139,7 +158,12 @@ const handleExport = () =>
             {/* <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-warning" /> Suspended (0)</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-destructive" /> Deactivated (1)</span> */}
           </div>
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={handleExport}
+          >
             <Download className="h-4 w-4" /> Export
           </Button>
         </div>
@@ -195,17 +219,19 @@ const handleExport = () =>
                           />
                           <AvatarFallback>{u.name?.[0] ?? "?"}</AvatarFallback>
                         </Avatar>
-                        <div className={`${u.isActive ? "" : "line-through text-muted-foreground"}`}>
+                        <div
+                          className={`${u.isActive ? "" : "line-through text-muted-foreground"}`}
+                        >
                           <p className="font-medium">{u.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {u.phone ?? "—"}
+                            {u.phone ?? "-"}
                           </p>
                         </div>
                       </div>
                     </td>
                     {tab === "BUSINESS" && (
                       <td className="py-3 text-muted-foreground">
-                        {u.businessProfile?.companyName ?? "—"}
+                        {u.businessProfile?.companyName ?? "-"}
                       </td>
                     )}
                     <td className="py-3 text-muted-foreground text-xs">
@@ -278,7 +304,7 @@ const handleExport = () =>
                               Reactivate
                             </DropdownMenuItem>
                           )}
-                          
+
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() =>

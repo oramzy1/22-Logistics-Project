@@ -34,14 +34,14 @@ export const getDriverRatingStats = async (req: AuthRequest, res: Response) => {
 
     // 2. Use Prisma's groupBy to fetch exactly how many 5, 4, 3, 2, and 1 star ratings exist
     const grouped = await prisma.driverReview.groupBy({
-      by: ['rating'],
+      by: ["rating"],
       where: { driverId: id },
       _count: { id: true },
     });
 
     // Default breakdown structure
     const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    
+
     // Map the grouped SQL result to the JS Object
     grouped.forEach((g) => {
       if (g.rating >= 1 && g.rating <= 5) {
@@ -52,19 +52,23 @@ export const getDriverRatingStats = async (req: AuthRequest, res: Response) => {
     res.json({
       totalRatings,
       averageRating,
-      breakdown
+      breakdown,
     });
   } catch (error) {
     console.error("Failed to fetch rating stats:", error);
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
-
-type VerifyResult = 
-  | { ok: true } 
-  | { ok: false; status: number; message: string; requiresPasswordSetup: boolean; useOtp?: boolean};
-
+type VerifyResult =
+  | { ok: true }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+      requiresPasswordSetup: boolean;
+      useOtp?: boolean;
+    };
 
 async function verifyUserCredential(
   user: {
@@ -74,23 +78,34 @@ async function verifyUserCredential(
     actionOtp: string | null;
     actionOtpExpiry: Date | null;
   },
-  credential: string
+  credential: string,
 ): Promise<VerifyResult> {
   if (user.authProvider === "email" || user.authProvider === "hybrid") {
     if (!user.password) {
-      return { ok: false, status: 400, message: "No password set", requiresPasswordSetup: false };
+      return {
+        ok: false,
+        status: 400,
+        message: "No password set",
+        requiresPasswordSetup: false,
+      };
     }
     const match = await bcrypt.compare(credential, user.password);
     if (!match) {
-      return { ok: false, status: 400, message: "Incorrect password", requiresPasswordSetup: false };
+      return {
+        ok: false,
+        status: 400,
+        message: "Incorrect password",
+        requiresPasswordSetup: false,
+      };
     }
     return { ok: true };
   }
 
-  // Pure OAuth user — verify via otp
-   if (!user.actionOtp || !user.actionOtpExpiry) {
+  // Pure OAuth user - verify via otp
+  if (!user.actionOtp || !user.actionOtpExpiry) {
     return {
-      ok: false, status: 403,
+      ok: false,
+      status: 403,
       message: "Please request a verification code to proceed.",
       requiresPasswordSetup: false,
       useOtp: true,
@@ -98,7 +113,8 @@ async function verifyUserCredential(
   }
   if (new Date() > user.actionOtpExpiry) {
     return {
-      ok: false, status: 403,
+      ok: false,
+      status: 403,
       message: "Verification code expired. Please request a new one.",
       requiresPasswordSetup: false,
       useOtp: true,
@@ -107,7 +123,8 @@ async function verifyUserCredential(
   const hashed = crypto.createHash("sha256").update(credential).digest("hex");
   if (hashed !== user.actionOtp) {
     return {
-      ok: false, status: 400,
+      ok: false,
+      status: 400,
       message: "Invalid verification code.",
       requiresPasswordSetup: false,
       useOtp: true,
@@ -121,8 +138,6 @@ async function verifyUserCredential(
   });
   return { ok: true };
 }
-
-
 
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
@@ -183,10 +198,13 @@ export const updateEmail = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { 
-        id: true, password: true, authProvider: true, 
-        actionOtp: true, actionOtpExpiry: true 
-      }
+      select: {
+        id: true,
+        password: true,
+        authProvider: true,
+        actionOtp: true,
+        actionOtpExpiry: true,
+      },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -198,10 +216,11 @@ export const updateEmail = async (req: AuthRequest, res: Response) => {
     }
 
     const check = await verifyUserCredential(user, password);
-    if (!check.ok) return res.status(check.status).json({ 
-      message: check.message, 
-      requiresPasswordSetup: check.requiresPasswordSetup 
-    });
+    if (!check.ok)
+      return res.status(check.status).json({
+        message: check.message,
+        requiresPasswordSetup: check.requiresPasswordSetup,
+      });
 
     const existing = await prisma.user.findUnique({
       where: { email: newEmail },
@@ -241,32 +260,40 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     const { currentPassword, newPassword } = req.body;
 
     const user = await prisma.user.findUnique({
-  where: { id: req.user!.id },
-  select: { id: true, password: true, authProvider: true, actionOtp: true, actionOtpExpiry: true }
-});
-if (!user) return res.status(404).json({ message: "User not found" });
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        password: true,
+        authProvider: true,
+        actionOtp: true,
+        actionOtpExpiry: true,
+      },
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // OAuth users have no password to change — direct them to email change flow
+    // OAuth users have no password to change - direct them to email change flow
     if (user.authProvider === "google" || user.authProvider === "apple") {
       return res.status(400).json({
-        message: "Your account uses social sign-in. To set a password, please use the Change Email flow.",
+        message:
+          "Your account uses social sign-in. To set a password, please use the Change Email flow.",
         requiresEmailChange: true,
       });
     }
 
-const check = await verifyUserCredential(user, currentPassword);
-if (!check.ok) return res.status(check.status).json({ 
-  message: check.message,
-  requiresPasswordSetup: check.requiresPasswordSetup
-});
+    const check = await verifyUserCredential(user, currentPassword);
+    if (!check.ok)
+      return res.status(check.status).json({
+        message: check.message,
+        requiresPasswordSetup: check.requiresPasswordSetup,
+      });
 
-const passwordCheck = validatePassword(newPassword);
-if (!passwordCheck.valid) {
-  return res.status(400).json({
-    message: "Password does not meet requirements",
-    errors: passwordCheck.errors,
-  });
-}
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        message: "Password does not meet requirements",
+        errors: passwordCheck.errors,
+      });
+    }
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: req.user!.id },
@@ -285,15 +312,22 @@ export const deactivateAccount = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, password: true, authProvider: true, actionOtp: true, actionOtpExpiry: true }
+      select: {
+        id: true,
+        password: true,
+        authProvider: true,
+        actionOtp: true,
+        actionOtpExpiry: true,
+      },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const check = await verifyUserCredential(user, credential);
-    if (!check.ok) return res.status(check.status).json({ 
-      message: check.message,
-      useOtp: (check as any).useOtp
-    });
+    if (!check.ok)
+      return res.status(check.status).json({
+        message: check.message,
+        useOtp: (check as any).useOtp,
+      });
 
     await prisma.user.update({
       where: { id: user.id },
@@ -312,7 +346,7 @@ export const deactivateAccount = async (req: AuthRequest, res: Response) => {
 //     if (!user) return res.status(404).json({ message: "User not found" });
 
 //     const check = await verifyUserCredential(user, credential);
-// if (!check.ok) return res.status(check.status).json({ 
+// if (!check.ok) return res.status(check.status).json({
 //   message: check.message,
 //   useOtp: (check as any).useOtp
 // });
@@ -339,36 +373,51 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
   try {
     const { credential } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const check = await verifyUserCredential(user, credential);
-    if (!check.ok) return res.status(check.status).json({ message: check.message, useOtp: (check as any).useOtp });
+    if (!check.ok)
+      return res
+        .status(check.status)
+        .json({ message: check.message, useOtp: (check as any).useOtp });
 
     const bookingCount = await prisma.booking.count({
       where: { OR: [{ customerId: req.user!.id }, { driverId: req.user!.id }] },
     });
 
     if (bookingCount > 0) {
-      // Soft delete — anonymize, keep booking records
+      // Soft delete - anonymize, keep booking records
       await prisma.user.update({
         where: { id: req.user!.id },
         data: {
-          isDeleted: true, deletedAt: new Date(), isActive: false,
-          name: '[Deleted User]', email: `deleted_${req.user!.id}@removed.invalid`,
-          phone: null, avatarUrl: null, password: null, pushToken: null,
-          verificationToken: null, resetToken: null, actionOtp: null,
+          isDeleted: true,
+          deletedAt: new Date(),
+          isActive: false,
+          name: "[Deleted User]",
+          email: `deleted_${req.user!.id}@removed.invalid`,
+          phone: null,
+          avatarUrl: null,
+          password: null,
+          pushToken: null,
+          verificationToken: null,
+          resetToken: null,
+          actionOtp: null,
         },
       });
     } else {
       await prisma.notification.deleteMany({ where: { userId: req.user!.id } });
-      await prisma.businessProfile.deleteMany({ where: { userId: req.user!.id } });
-      await prisma.driverProfile.deleteMany({ where: { userId: req.user!.id } });
+      await prisma.businessProfile.deleteMany({
+        where: { userId: req.user!.id },
+      });
+      await prisma.driverProfile.deleteMany({
+        where: { userId: req.user!.id },
+      });
       await prisma.user.delete({ where: { id: req.user!.id } });
     }
 
-    res.json({ message: 'Account deleted' });
+    res.json({ message: "Account deleted" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -432,23 +481,26 @@ export const savePushToken = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const requestPasswordSetupOtp = async (req: AuthRequest, res: Response) => {
+export const requestPasswordSetupOtp = async (
+  req: AuthRequest,
+  res: Response,
+) => {
   try {
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, authProvider: true, password: true }
+      select: { id: true, email: true, authProvider: true, password: true },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.authProvider === "email") {
-      return res.status(400).json({ 
-        message: "Email accounts already have a password." 
+      return res.status(400).json({
+        message: "Email accounts already have a password.",
       });
     }
 
     if (user.authProvider === "hybrid") {
-      return res.status(400).json({ 
-        message: "You have already set a password." 
+      return res.status(400).json({
+        message: "You have already set a password.",
       });
     }
 
@@ -472,10 +524,12 @@ export const setupPassword = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { 
-        id: true, authProvider: true, 
-        actionOtp: true, actionOtpExpiry: true 
-      }
+      select: {
+        id: true,
+        authProvider: true,
+        actionOtp: true,
+        actionOtpExpiry: true,
+      },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -484,13 +538,15 @@ export const setupPassword = async (req: AuthRequest, res: Response) => {
     }
 
     if (!user.actionOtp || !user.actionOtpExpiry) {
-      return res.status(400).json({ 
-        message: "No OTP requested. Please request a verification code first." 
+      return res.status(400).json({
+        message: "No OTP requested. Please request a verification code first.",
       });
     }
 
     if (new Date() > user.actionOtpExpiry) {
-      return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+      return res
+        .status(400)
+        .json({ message: "OTP has expired. Please request a new one." });
     }
 
     const hashed = crypto.createHash("sha256").update(otp).digest("hex");
@@ -504,15 +560,16 @@ export const setupPassword = async (req: AuthRequest, res: Response) => {
       where: { id: user.id },
       data: {
         password: hashedPassword,
-        authProvider: "hybrid",   // ← graduated to full account
+        authProvider: "hybrid", // ← graduated to full account
         actionOtp: null,
         actionOtpExpiry: null,
       },
     });
 
-    res.json({ 
-      message: "Password set successfully. You can now use all account features.",
-      authProvider: "hybrid"
+    res.json({
+      message:
+        "Password set successfully. You can now use all account features.",
+      authProvider: "hybrid",
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -523,7 +580,7 @@ export const requestActionOtp = async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, authProvider: true }
+      select: { id: true, email: true, authProvider: true },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -548,29 +605,37 @@ export const requestEmailChange = async (req: AuthRequest, res: Response) => {
   try {
     const { newEmail, newPassword, otp } = req.body;
     // otp = action OTP for OAuth users (already verified they control the account)
-    // For email/hybrid users this endpoint isn't needed — they use updateEmail directly
+    // For email/hybrid users this endpoint isn't needed - they use updateEmail directly
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       select: {
-        id: true, email: true, authProvider: true,
-        password: true, actionOtp: true, actionOtpExpiry: true
-      }
+        id: true,
+        email: true,
+        authProvider: true,
+        password: true,
+        actionOtp: true,
+        actionOtpExpiry: true,
+      },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Block if new email already taken
-    const existing = await prisma.user.findUnique({ where: { email: newEmail } });
-    if (existing) return res.status(400).json({ message: "Email already in use" });
+    const existing = await prisma.user.findUnique({
+      where: { email: newEmail },
+    });
+    if (existing)
+      return res.status(400).json({ message: "Email already in use" });
 
     // Verify they control the account via OTP
     const check = await verifyUserCredential(user, otp);
-    if (!check.ok) return res.status(check.status).json({
-      message: check.message,
-      useOtp: (check as any).useOtp
-    });
+    if (!check.ok)
+      return res.status(check.status).json({
+        message: check.message,
+        useOtp: (check as any).useOtp,
+      });
 
-    // Stage the pending changes — nothing commits yet
+    // Stage the pending changes - nothing commits yet
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const { code, hashed, expiry } = generateCode();
 
@@ -588,7 +653,8 @@ export const requestEmailChange = async (req: AuthRequest, res: Response) => {
     await sendVerificationEmail(newEmail, code);
 
     res.json({
-      message: "A verification code has been sent to your new email address. Please verify it to complete the change.",
+      message:
+        "A verification code has been sent to your new email address. Please verify it to complete the change.",
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -601,15 +667,19 @@ export const verifyActionOtp = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, actionOtp: true, actionOtpExpiry: true }
+      select: { id: true, actionOtp: true, actionOtpExpiry: true },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (!user.actionOtp || !user.actionOtpExpiry) {
-      return res.status(400).json({ message: "No OTP requested. Please request a new code." });
+      return res
+        .status(400)
+        .json({ message: "No OTP requested. Please request a new code." });
     }
     if (new Date() > user.actionOtpExpiry) {
-      return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+      return res
+        .status(400)
+        .json({ message: "OTP has expired. Please request a new one." });
     }
 
     const hashed = crypto.createHash("sha256").update(otp).digest("hex");
@@ -617,7 +687,7 @@ export const verifyActionOtp = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Invalid verification code." });
     }
 
-    // Don't consume it yet — it's still needed for requestEmailChange
+    // Don't consume it yet - it's still needed for requestEmailChange
     res.json({ message: "OTP verified." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -637,12 +707,18 @@ export const confirmEmailChange = async (req: AuthRequest, res: Response) => {
         pendingEmailToken: true,
         pendingEmailExpiry: true,
         authProvider: true,
-      }
+      },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user.pendingEmail || !user.pendingEmailToken || !user.pendingEmailExpiry) {
-      return res.status(400).json({ message: "No pending email change found." });
+    if (
+      !user.pendingEmail ||
+      !user.pendingEmailToken ||
+      !user.pendingEmailExpiry
+    ) {
+      return res
+        .status(400)
+        .json({ message: "No pending email change found." });
     }
 
     if (new Date() > (user.pendingEmailExpiry as Date)) {
@@ -650,11 +726,15 @@ export const confirmEmailChange = async (req: AuthRequest, res: Response) => {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          pendingEmail: null, pendingPassword: null,
-          pendingEmailToken: null, pendingEmailExpiry: null,
-        }
+          pendingEmail: null,
+          pendingPassword: null,
+          pendingEmailToken: null,
+          pendingEmailExpiry: null,
+        },
       });
-      return res.status(400).json({ message: "Verification code expired. Please start over." });
+      return res
+        .status(400)
+        .json({ message: "Verification code expired. Please start over." });
     }
 
     const hashed = crypto.createHash("sha256").update(otp).digest("hex");
@@ -662,13 +742,13 @@ export const confirmEmailChange = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Invalid verification code." });
     }
 
-    // Atomic commit — everything changes at once
+    // Atomic commit - everything changes at once
     await prisma.user.update({
       where: { id: user.id },
       data: {
         email: user.pendingEmail,
         password: user.pendingPassword,
-        authProvider: "hybrid",       // ← only NOW does provider change
+        authProvider: "hybrid", // ← only NOW does provider change
         isVerified: true,
         pendingEmail: null,
         pendingPassword: null,
@@ -679,9 +759,10 @@ export const confirmEmailChange = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Force logout — they must re-login with new credentials
+    // Force logout - they must re-login with new credentials
     res.json({
-      message: "Email changed successfully. Please sign in with your new email and password.",
+      message:
+        "Email changed successfully. Please sign in with your new email and password.",
       forceLogout: true,
     });
   } catch (error) {

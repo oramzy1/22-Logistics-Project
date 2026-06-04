@@ -23,7 +23,7 @@ export type TripExtension = {
   hours: number;
   amount: number;
   paymentRef: string;
-  paymentStatus: 'UNPAID' | 'PAID';
+  paymentStatus: "UNPAID" | "PAID";
   paystackAccessCode?: string;
   createdAt: string;
 };
@@ -31,7 +31,7 @@ export type TripExtension = {
 export type Booking = {
   id: string;
   pickupAddress: string;
-  dropoffAddress: string; 
+  dropoffAddress: string;
   scheduledAt: string;
   packageType: string;
   totalAmount: number;
@@ -71,17 +71,24 @@ type BookingContextType = {
   }>;
   cancelBooking: (id: string) => Promise<void>;
   verifyPayment: (reference: string) => Promise<void>;
-  reinitializeBooking: (bookingId: string, channel: 'card' | 'bank_transfer') => Promise<{
-  authorizationUrl: string;
-  reference: string;
-}>;
+  reinitializeBooking: (
+    bookingId: string,
+    channel: "card" | "bank_transfer",
+  ) => Promise<{
+    authorizationUrl: string;
+    reference: string;
+  }>;
 };
 
 const BookingContext = createContext<BookingContextType>(
-  {} as BookingContextType
+  {} as BookingContextType,
 );
 
-const ACTIVE_STATUSES: BookingStatus[] = ["AWAITING_DRIVER", "IN_PROGRESS", "ACCEPTED"];
+const ACTIVE_STATUSES: BookingStatus[] = [
+  "AWAITING_DRIVER",
+  "IN_PROGRESS",
+  "ACCEPTED",
+];
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -101,32 +108,42 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
- useEffect(() => {
-  const { socketService } = require('../api/socket.service');
-  
-  const unsubscribe = socketService.onBookingUpdated((updatedBooking: any) => {
-    console.log('⚡ BookingContext socket update:', updatedBooking.id, updatedBooking.status);
-    setBookings((prev) => {
-      const exists = prev.find((b) => b.id === updatedBooking.id);
-      if (exists) {
-        return prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
-      }
-      return [updatedBooking, ...prev];
+  useEffect(() => {
+    const { socketService } = require("../api/socket.service");
+
+    const unsubscribe = socketService.onBookingUpdated(
+      (updatedBooking: any) => {
+        console.log(
+          "⚡ BookingContext socket update:",
+          updatedBooking.id,
+          updatedBooking.status,
+        );
+        setBookings((prev) => {
+          const exists = prev.find((b) => b.id === updatedBooking.id);
+          if (exists) {
+            return prev.map((b) =>
+              b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b,
+            );
+          }
+          return [updatedBooking, ...prev];
+        });
+      },
+    );
+    const unsubRemoved = socketService.onRideRemoved?.((bookingId: string) => {
+      // Only remove from list if it's genuinely cancelled (not accepted by this driver)
+      setBookings((prev) =>
+        prev.filter((b) => {
+          if (b.id !== bookingId) return true; // keep unrelated bookings
+          if (b.status === "ACCEPTED") return true; // keep our own accepted booking
+          return false; // remove cancelled/taken ride
+        }),
+      );
     });
-  });
-  const unsubRemoved = socketService.onRideRemoved?.((bookingId: string) => {
-    // Only remove from list if it's genuinely cancelled (not accepted by this driver)
-    setBookings((prev) => prev.filter((b) => {
-      if (b.id !== bookingId) return true;          // keep unrelated bookings
-      if (b.status === 'ACCEPTED') return true;     // keep our own accepted booking
-      return false;                                  // remove cancelled/taken ride
-    }));
-  });
-  return () => {
-    if (unsubscribe) unsubscribe();
-    if (unsubRemoved) unsubRemoved();
-  };
-}, []);
+    return () => {
+      if (unsubscribe) unsubscribe();
+      if (unsubRemoved) unsubRemoved();
+    };
+  }, []);
 
   const createBooking = useCallback(async (payload: BookingPayload) => {
     const data = await BookingService.create(payload);
@@ -138,45 +155,48 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const cancelBooking = useCallback(async (id: string) => {
     await BookingService.cancel(id);
     setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: "CANCELLED" } : b))
+      prev.map((b) => (b.id === id ? { ...b, status: "CANCELLED" } : b)),
     );
   }, []);
 
   const verifyPayment = useCallback(async (reference: string) => {
-  try {
-    const data = await BookingService.verifyPayment(reference);
+    try {
+      const data = await BookingService.verifyPayment(reference);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === data.booking?.id ? data.booking : b)),
+      );
+    } catch (err: any) {
+      // 400 means already paid (webhook beat us to it) - not a real error
+      if (err?.response?.status !== 400) throw err;
+    }
+  }, []);
+
+  //   const patchBooking = useCallback((updated: Booking) => {
+  //   setBookings((prev) =>
+  //     prev.map((b) => (b.id === updated.id ? updated : b))
+  //   );
+  // }, []);
+
+  const patchBooking = useCallback((updated: Booking) => {
     setBookings((prev) =>
-      prev.map((b) => (b.id === data.booking?.id ? data.booking : b))
+      prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)),
     );
-  } catch (err: any) {
-    // 400 means already paid (webhook beat us to it) — not a real error
-    if (err?.response?.status !== 400) throw err;
-  }
-}, []);
+  }, []);
 
-//   const patchBooking = useCallback((updated: Booking) => {
-//   setBookings((prev) =>
-//     prev.map((b) => (b.id === updated.id ? updated : b))
-//   );
-// }, []);
-
-const patchBooking = useCallback((updated: Booking) => {
-  setBookings((prev) =>
-    prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
+  const reinitializeBooking = useCallback(
+    async (bookingId: string, channel: "card" | "bank_transfer") => {
+      const data = await BookingService.reinitialize(bookingId, channel);
+      return data; // { authorizationUrl, reference }
+    },
+    [],
   );
-}, []);
-
-  const reinitializeBooking = useCallback(async (bookingId: string, channel: 'card' | 'bank_transfer') => {
-  const data = await BookingService.reinitialize(bookingId, channel);
-  return data; // { authorizationUrl, reference }
-}, []);
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
   const activeBookings = bookings.filter((b) =>
-    ACTIVE_STATUSES.includes(b.status)
+    ACTIVE_STATUSES.includes(b.status),
   );
 
   return (

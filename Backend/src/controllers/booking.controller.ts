@@ -345,7 +345,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
     // Retry verifying with Paystack up to 5 times with backoff
     let paystackData: any = null;
     for (let attempt = 1; attempt <= 5; attempt++) {
-      paystackData = await verifyTransaction(booking.paymentRef); // no const here — assign to outer variable
+      paystackData = await verifyTransaction(booking.paymentRef); // no const here - assign to outer variable
       console.log(`Verify attempt ${attempt}:`, paystackData.status);
 
       if (paystackData.status === "success") break;

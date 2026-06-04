@@ -111,7 +111,7 @@ export default function Promotions() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TAB 1 — PROMO CODES
+// TAB 1 - PROMO CODES
 // ══════════════════════════════════════════════════════════════
 function PromoCodesTab() {
   const { data: promos = [], isLoading } = usePromos();
@@ -198,7 +198,7 @@ function PromoCodesTab() {
                   <td className="py-3 px-2">
                     <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono">{p.code}</code>
                   </td>
-                  <td className="py-3 px-2 text-muted-foreground max-w-[180px] truncate">{p.description ?? "—"}</td>
+                  <td className="py-3 px-2 text-muted-foreground max-w-[180px] truncate">{p.description ?? "-"}</td>
                   <td className="py-3 px-2">
                     <Badge color={p.discountType === "PERCENTAGE" ? "purple" : "blue"}>
                       {p.discountType === "PERCENTAGE" ? `${p.discountValue}%` : `₦${p.discountValue.toLocaleString()}`}
@@ -241,7 +241,7 @@ function PromoCodesTab() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TAB 2 — MILESTONE POLICIES
+// TAB 2 - MILESTONE POLICIES
 // ══════════════════════════════════════════════════════════════
 function MilestonePoliciesTab() {
   const { data: settings = [], isLoading } = useSettings();
@@ -271,7 +271,7 @@ function MilestonePoliciesTab() {
         <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
         <span>
           Milestone promos are auto-generated per user when they complete a booking. Each fires once per user.
-          Changes here take effect for future triggers only — existing issued codes are unaffected.
+          Changes here take effect for future triggers only - existing issued codes are unaffected.
         </span>
       </div>
 
@@ -452,7 +452,7 @@ function AutoAssignmentLog() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TAB 3 — USER MILESTONE TRACKER
+// TAB 3 - USER MILESTONE TRACKER
 // ══════════════════════════════════════════════════════════════
 function UserTrackerTab() {
   const [params, setParams] = useState({ page: "1", limit: "20" });
@@ -607,7 +607,7 @@ function CreatePromoButton() {
 
 function CreatePromoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const createPromo = useCreatePromo();
-  const { data: allUsers = [] } = useUsers({ limit: "100" });
+  const { data: allUsers = [] } = useUsers({ limit: "100", role: "INDIVIDUAL,BUSINESS" });
   const users = (allUsers as any)?.users ?? [];
 
   const [form, setForm] = useState({
@@ -809,7 +809,7 @@ function AssignPromoModal({
 }: { open: boolean; onClose: () => void; preselectedUser?: any }) {
   const { data: promos = [] } = usePromos();
   const assignPromo = useAssignPromo();
-  const { data: allUsersData } = useUsers({ limit: "100" });
+  const { data: allUsersData } = useUsers({ limit: "100", role: "INDIVIDUAL,BUSINESS" });
   const users: any[] = (allUsersData as any)?.users ?? [];
 
   const activePromos = promos.filter((p: any) => p.isActive);
@@ -884,7 +884,7 @@ function AssignPromoModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-background rounded-xl border border-border w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-xl">
+      <div className="bg-background rounded-xl border border-border w-full max-w-lg max-h-[92vh] overflow-y-auto overflow-x-hidden shadow-xl">
         <div className="p-5 border-b border-border flex items-center justify-between">
           <div>
             <h2 className="font-medium">Assign promo to users</h2>
@@ -915,10 +915,10 @@ function AssignPromoModal({
             <ModalField label="Select promo">
               <select className="modal-input" value={selectedPromoId}
                 onChange={(e) => setSelectedPromoId(e.target.value)}>
-                <option value="">— pick a code —</option>
+                <option value="">- pick a code -</option>
                 {activePromos.map((p: any) => (
                   <option key={p.id} value={p.id}>
-                    {p.code} — {p.discountType === "PERCENTAGE" ? `${p.discountValue}%` : `₦${p.discountValue.toLocaleString()}`} off
+                    {p.code} - {p.discountType === "PERCENTAGE" ? `${p.discountValue}%` : `₦${p.discountValue.toLocaleString()}`} off
                   </option>
                 ))}
               </select>

@@ -282,7 +282,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       prisma.driverProfile.count({ where: { isOnline: true } }),
       // ── FIX: no isDeleted filter on licenseStatus ──
       prisma.driverProfile.count({ where: { licenseStatus: "PENDING" } }),
-      // ── FIX: guard isDeleted with a try — fall back if column missing ──
+      // ── FIX: guard isDeleted with a try - fall back if column missing ──
       prisma.user.count({
         where: { role: { in: ["INDIVIDUAL", "BUSINESS"] } },
       }),
@@ -569,7 +569,10 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where: any = { isDeleted: false };
-    if (role) where.role = role;
+    if (role) {
+  const roles = role.includes(',') ? role.split(',') : [role];
+  where.role = { in: roles };
+}
     if (isActive !== undefined) where.isActive = isActive === "true";
     if (dateFrom || dateTo) {
       where.createdAt = {};
@@ -701,7 +704,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
       user._count.bookingsAsCustomer > 0 || user._count.bookingsAsDriver > 0;
 
     if (hasHistory) {
-      // Soft delete — anonymize PII, keep booking records intact
+      // Soft delete - anonymize PII, keep booking records intact
       await prisma.user.update({
         where: { id },
         data: {
@@ -720,7 +723,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
         },
       });
     } else {
-      // Hard delete — no booking history, safe to cascade
+      // Hard delete - no booking history, safe to cascade
       await prisma.notification.deleteMany({ where: { userId: id } });
       await prisma.driverProfile.deleteMany({ where: { userId: id } });
       await prisma.businessProfile.deleteMany({ where: { userId: id } });
@@ -762,7 +765,10 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-      if (dateTo) where.createdAt.lte = new Date(new Date(dateTo).setHours(23, 59, 59, 999));
+      if (dateTo)
+        where.createdAt.lte = new Date(
+          new Date(dateTo).setHours(23, 59, 59, 999),
+        );
     }
     if (req.query.customerId) where.customerId = req.query.customerId as string;
     if (search) {
@@ -936,7 +942,7 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Public endpoint — frontend fetches prices without auth
+// Public endpoint - frontend fetches prices without auth
 export const getPublicPrices = async (req: any, res: Response) => {
   try {
     const settings = await prisma.appSettings.findMany();
@@ -1168,7 +1174,6 @@ export const getAuditLog = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 // export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
 //   try {
 //     const { userIds, code, description, discountValue, discountType, expiresInDays = 30 } = req.body;
@@ -1202,7 +1207,7 @@ export const getAuditLog = async (req: AuthRequest, res: Response) => {
 //     });
 
 //     await Promise.all(users.map(async (u) => {
-//       await createNotification(u.id, '🎉 You have a new promo!', `${description} — Code: ${code.toUpperCase()}`, 'PROMO_GRANTED', undefined);
+//       await createNotification(u.id, '🎉 You have a new promo!', `${description} - Code: ${code.toUpperCase()}`, 'PROMO_GRANTED', undefined);
 //       await sendPromoEmail(u.email, u.name, code.toUpperCase(), description, discountValue, discountType, expiresAt);
 //     }));
 
@@ -1231,7 +1236,7 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
     } = req.body;
 
     if (!userIds?.length) {
-      return res.status(400).json({ message: 'No users specified' });
+      return res.status(400).json({ message: "No users specified" });
     }
 
     let promo: any;
@@ -1239,28 +1244,36 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
     if (promoId) {
       // ── Use existing promo ──
       promo = await prisma.promoCode.findUnique({ where: { id: promoId } });
-      if (!promo) return res.status(404).json({ message: 'Promo not found' });
-      if (!promo.isActive) return res.status(400).json({ message: 'Promo is not active' });
+      if (!promo) return res.status(404).json({ message: "Promo not found" });
+      if (!promo.isActive)
+        return res.status(400).json({ message: "Promo is not active" });
     } else {
       // ── Create new promo on the fly ──
       if (!code || discountValue === undefined) {
-        return res.status(400).json({ message: 'code and discountValue are required' });
+        return res
+          .status(400)
+          .json({ message: "code and discountValue are required" });
       }
       const upperCode = code.toUpperCase();
-      const existing = await prisma.promoCode.findUnique({ where: { code: upperCode } });
-      if (existing) return res.status(400).json({ message: 'Promo code already exists' });
+      const existing = await prisma.promoCode.findUnique({
+        where: { code: upperCode },
+      });
+      if (existing)
+        return res.status(400).json({ message: "Promo code already exists" });
 
-      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(
+        Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
+      );
 
       promo = await prisma.promoCode.create({
         data: {
           code: upperCode,
           description: description ?? null,
-          discountType: discountType ?? 'PERCENTAGE',
+          discountType: discountType ?? "PERCENTAGE",
           discountValue,
-          usageLimit: userIds.length,   // one use per targeted user
+          usageLimit: userIds.length, // one use per targeted user
           expiresAt,
-          targetType: 'USER_SPECIFIC',
+          targetType: "USER_SPECIFIC",
           targetUserIds: userIds,
           isActive: true,
           createdBy: req.user!.id,
@@ -1275,7 +1288,7 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
     });
 
     if (!users.length) {
-      return res.status(404).json({ message: 'No valid users found' });
+      return res.status(404).json({ message: "No valid users found" });
     }
 
     // ── Notify each user ──
@@ -1284,9 +1297,9 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
         if (sendPush) {
           await createNotification(
             u.id,
-            '🎉 You have a new promo!',
-            `${promo.description ?? 'Special offer'} — Code: ${promo.code}`,
-            'PROMO_GRANTED',
+            "🎉 You have a new promo!",
+            `${promo.description ?? "Special offer"} - Code: ${promo.code}`,
+            "PROMO_GRANTED",
             undefined,
           );
         }
@@ -1296,16 +1309,16 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
             u.email,
             u.name,
             promo.code,
-            promo.description ?? 'Special offer just for you',
+            promo.description ?? "Special offer just for you",
             promo.discountValue,
             promo.discountType,
             promo.expiresAt ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           );
         }
-      })
+      }),
     );
 
-    await audit(req.user!.id, 'ASSIGN_PROMO', 'SETTINGS', promo.id, {
+    await audit(req.user!.id, "ASSIGN_PROMO", "SETTINGS", promo.id, {
       userIds,
       code: promo.code,
       notifiedPush: sendPush,
@@ -1313,12 +1326,12 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json({
-      message: `Promo "${promo.code}" assigned and ${sendPush || doEmail ? 'notifications sent' : 'no notifications sent'} to ${users.length} user(s)`,
+      message: `Promo "${promo.code}" assigned and ${sendPush || doEmail ? "notifications sent" : "no notifications sent"} to ${users.length} user(s)`,
       promo,
       notifiedCount: users.length,
     });
   } catch (error) {
-    console.error('assignPromoToUsers error:', error);
-    res.status(500).json({ message: 'Server error', error });
+    console.error("assignPromoToUsers error:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };

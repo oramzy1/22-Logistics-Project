@@ -1,15 +1,24 @@
 import { useAuth } from "@/context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 export default function SplashScreen() {
   const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
+  const [minDelayDone, setMinDelayDone] = useState(false);
+
+
+    useEffect(() => {
+    const t = setTimeout(() => setMinDelayDone(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !minDelayDone) return;
 
     const navigate = async () => {
       try {
@@ -19,15 +28,15 @@ export default function SplashScreen() {
         console.log("isAuthenticated:", isAuthenticated);
         console.log("token:", token);
 
-        setTimeout(() => {
-          if (!hasLaunched) {
-            router.replace("/(auth)/onboarding");
-          } else if (!isAuthenticated) {
-            router.replace("/(auth)/sign-in");
-          } else {
-            router.replace("/(tabs)");
-          }
-        }, 3000);
+        if (!hasLaunched) {
+          router.replace("/(auth)/onboarding");
+        } else if (!isAuthenticated) {
+          router.replace("/(auth)/sign-in");
+        } else {
+          router.replace("/(tabs)");
+        }
+        // setTimeout(() => {
+        // }, 3000);
       } catch (error) {
         console.error("Navigation error:", error);
         router.replace("/(auth)/onboarding");
@@ -35,15 +44,26 @@ export default function SplashScreen() {
     };
 
     navigate();
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, minDelayDone]);
+
+  const ready = !isLoading && minDelayDone;
+
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../assets/images/22LogisticsLogo.png")}
+      <Image
+        source={require("../assets/images/22LogisticsLogo.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+      {/* Spinner fades in only if auth is taking longer than the splash */}
+      {!ready && (
+        <ActivityIndicator
+          size="small"
+          color="#E4C77B"
+          style={styles.spinner}
         />
-      </View>
+      )}
     </View>
   );
 }
@@ -55,9 +75,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoContainer: {
-    marginBottom: 16,
-    alignItems: "center",
-    justifyContent: "center",
+  logo: {
+    width: 250,
+    height: 130,
+  },
+  spinner: {
+    position: "absolute",
+    bottom: 80,
   },
 });

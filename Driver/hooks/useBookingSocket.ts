@@ -20,14 +20,14 @@
 
 //     const driverProfileId = (user as any)?.driverProfile?.id;
 
-//     // Connect — idempotent, won't reconnect if already connected
+//     // Connect - idempotent, won't reconnect if already connected
 //     if (driverProfileId) {
 //       socketService.connect(user.id, driverProfileId);
 //     } else {
 //       socketService.connect(user.id, '');
 //     }
 
-//     // Subscribe — each returns an unsubscribe fn
+//     // Subscribe - each returns an unsubscribe fn
 //     const unsubs: (() => void)[] = [];
 
 //     if (optionsRef.current.onBookingUpdated) {
@@ -50,13 +50,11 @@
 //   }, [user?.id]);
 // }
 
+// Driver/hooks/useBookingSocket.ts - full file replacement
 
-
-// Driver/hooks/useBookingSocket.ts — full file replacement
-
-import { useEffect, useRef } from 'react';
-import { socketService } from '@/api/socket.service';
-import { useAuth } from '@/context/AuthContext';
+import { useEffect, useRef } from "react";
+import { socketService } from "@/api/socket.service";
+import { useAuth } from "@/context/AuthContext";
 
 type BookingSocketOptions = {
   onBookingUpdated?: (booking: any) => void;
@@ -69,35 +67,43 @@ export function useBookingSocket(options: BookingSocketOptions) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const driverProfileId = (user as any)?.driverProfile?.id as string | undefined;
+  const driverProfileId = (user as any)?.driverProfile?.id as
+    | string
+    | undefined;
 
   useEffect(() => {
     if (!user?.id) return;
 
-    // Always pass whatever we have — the service only updates driverProfileId
+    // Always pass whatever we have - the service only updates driverProfileId
     // if a truthy value is given, so calling this with undefined is safe.
     // This also means the hook re-runs and re-joins when driverProfile loads.
-    socketService.connect(user.id, driverProfileId? driverProfileId : '');
+    socketService.connect(user.id, driverProfileId ? driverProfileId : "");
 
     const unsubs: (() => void)[] = [];
 
     if (optionsRef.current.onBookingUpdated) {
       unsubs.push(
-        socketService.onBookingUpdated((b) => optionsRef.current.onBookingUpdated?.(b))
+        socketService.onBookingUpdated((b) =>
+          optionsRef.current.onBookingUpdated?.(b),
+        ),
       );
     }
     if (optionsRef.current.onRideRemoved) {
       unsubs.push(
-        socketService.onRideRemoved((id) => optionsRef.current.onRideRemoved?.(id))
+        socketService.onRideRemoved((id) =>
+          optionsRef.current.onRideRemoved?.(id),
+        ),
       );
     }
     if (optionsRef.current.onNewRideRequest) {
       unsubs.push(
-        socketService.onRideRequest((d) => optionsRef.current.onNewRideRequest?.(d))
+        socketService.onRideRequest((d) =>
+          optionsRef.current.onNewRideRequest?.(d),
+        ),
       );
     }
 
     return () => unsubs.forEach((fn) => fn());
-  // Add driverProfileId to deps — re-run when profile loads after auth
+    // Add driverProfileId to deps - re-run when profile loads after auth
   }, [user?.id, driverProfileId]);
 }

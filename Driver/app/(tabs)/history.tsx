@@ -21,9 +21,8 @@ export default function TripHistoryScreen() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("All");
   const { colors: themeColors } = useAppTheme();
-  
-    
-    const styles = createStyles(themeColors);
+
+  const styles = createStyles(themeColors);
 
   const fetchHistory = async () => {
     try {
@@ -49,7 +48,7 @@ export default function TripHistoryScreen() {
     return true;
   });
 
-  const emptyStateConfig: Record<string, any>= {
+  const emptyStateConfig: Record<string, any> = {
     All: {
       title: "No Trip History",
       subtitle:
@@ -70,8 +69,8 @@ export default function TripHistoryScreen() {
 
   const { title, subtitle, Icon } = emptyStateConfig[filter];
 
-  if(loading){
-    return <HistorySkeleton />
+  if (loading) {
+    return <HistorySkeleton />;
   }
 
   return (
@@ -119,13 +118,13 @@ export default function TripHistoryScreen() {
                   day: "numeric",
                   year: "numeric",
                 })
-              : "—";
+              : "-";
             const scheduledTime = req.scheduledAt
               ? new Date(req.scheduledAt).toLocaleTimeString("en-NG", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })
-              : "—";
+              : "-";
 
             return (
               <View key={req.id} style={styles.rideCard}>
@@ -266,7 +265,7 @@ export default function TripHistoryScreen() {
                         ESTIMATED DURATION
                       </Text>
                       <Text style={styles.rideFooterVal}>
-                        {req.packageType ?? "—"}
+                        {req.packageType ?? "-"}
                       </Text>
                       <Text style={styles.rideFooterSub}>Round Trip</Text>
                     </View>
@@ -281,218 +280,232 @@ export default function TripHistoryScreen() {
   );
 }
 
-const createStyles = (themeColors: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: themeColors.background },
-  header: { padding: 20, paddingBottom: 30 },
-  headerTitle: {
-    fontSize: 21,
-    fontWeight: "medium",
-    color: themeColors.textPrimary,
-    marginBottom: 5,
-  },
-  headerSubtitle: { color: themeColors.textSecondary, fontSize: 12 },
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: themeColors.background },
+    header: { padding: 20, paddingBottom: 30 },
+    headerTitle: {
+      fontSize: 21,
+      fontWeight: "medium",
+      color: themeColors.textPrimary,
+      marginBottom: 5,
+    },
+    headerSubtitle: { color: themeColors.textSecondary, fontSize: 12 },
 
-  filterRow: {
-    flexDirection: "row",
-    backgroundColor: themeColors.cardPrimary,
-    margin: 20,
-    borderRadius: 30,
-    padding: 4,
-    marginTop: -15,
-    zIndex: 10,
-  },
-  filterPill: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  filterPillActive: {
-    backgroundColor: themeColors.cardSecondary,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  filterText: { color: "#6B7280", fontWeight: "600", fontSize: 13 },
-  filterTextActive: { color: themeColors.text },
+    filterRow: {
+      flexDirection: "row",
+      backgroundColor: themeColors.cardPrimary,
+      margin: 20,
+      borderRadius: 30,
+      padding: 4,
+      marginTop: -15,
+      zIndex: 10,
+    },
+    filterPill: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 12,
+      borderRadius: 25,
+    },
+    filterPillActive: {
+      backgroundColor: themeColors.cardSecondary,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    filterText: { color: "#6B7280", fontWeight: "600", fontSize: 13 },
+    filterTextActive: { color: themeColors.text },
 
-  content: { padding: 20 },
-  card: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 15,
-  },
-  cardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: 14,
-  },
-  idRow: { flexDirection: "row", alignItems: "center" },
-  iconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tripId: { fontSize: 12, color: themeColors.textSecondary },
-  tripDate: { fontSize: 14, fontWeight: "600", color: themeColors.text, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  statusText: { fontSize: 12, fontWeight: "700" },
+    content: { padding: 20 },
+    card: {
+      backgroundColor: "#FFF",
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 15,
+    },
+    cardTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      padding: 14,
+    },
+    idRow: { flexDirection: "row", alignItems: "center" },
+    iconBox: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tripId: { fontSize: 12, color: themeColors.textSecondary },
+    tripDate: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: themeColors.text,
+      marginTop: 2,
+    },
+    statusBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    statusText: { fontSize: 12, fontWeight: "700" },
 
-  timeline: { paddingLeft: 5 },
-  locationRow: { flexDirection: "row", alignItems: "center" },
-  locationText: {
-    marginLeft: 15,
-    fontSize: 14,
-    color: "#111827",
-    fontWeight: "500",
-  },
-  line: {
-    width: 2,
-    height: 20,
-    backgroundColor: "#E5E7EB",
-    marginLeft: 8,
-    marginVertical: 4,
-  },
-  rideCard: {
-    backgroundColor: themeColors.card,
-    marginBottom: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: themeColors.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  rideCardHeader: {
-    backgroundColor: "#F97316",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  rideCardHeaderLeft: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "flex-start",
-  },
-  rideCardHeaderText: { color: themeColors.textPrimary, fontWeight: "700", fontSize: 13 },
-  rideCardHeaderSub: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 10,
-    marginTop: 2,
-  },
-  rideTimerBadge: {
-    backgroundColor: "rgba(0,0,0,0.25)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginLeft: 8,
-  },
-  rideTimerText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
+    timeline: { paddingLeft: 5 },
+    locationRow: { flexDirection: "row", alignItems: "center" },
+    locationText: {
+      marginLeft: 15,
+      fontSize: 14,
+      color: "#111827",
+      fontWeight: "500",
+    },
+    line: {
+      width: 2,
+      height: 20,
+      backgroundColor: "#E5E7EB",
+      marginLeft: 8,
+      marginVertical: 4,
+    },
+    rideCard: {
+      backgroundColor: themeColors.card,
+      marginBottom: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.07,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    rideCardHeader: {
+      backgroundColor: "#F97316",
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+    },
+    rideCardHeaderLeft: {
+      flex: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "flex-start",
+    },
+    rideCardHeaderText: {
+      color: themeColors.textPrimary,
+      fontWeight: "700",
+      fontSize: 13,
+    },
+    rideCardHeaderSub: {
+      color: "rgba(255,255,255,0.85)",
+      fontSize: 10,
+      marginTop: 2,
+    },
+    rideTimerBadge: {
+      backgroundColor: "rgba(0,0,0,0.25)",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 20,
+      marginLeft: 8,
+    },
+    rideTimerText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
 
-  rideCardBody: { padding: 14 },
+    rideCardBody: { padding: 14 },
 
-  rideMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: 12,
-    marginBottom: 12,
-    width: "100%",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  // rideMetaCol: { flex: 1 },
-  rideMetaLabel: {
-    fontSize: 9,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  rideMetaValue: { fontSize: 12, fontWeight: "700", color: themeColors.text },
-  rideTypeBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  rideTypeBadgeText: { fontSize: 10, fontWeight: "700" },
+    rideMetaRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingBottom: 12,
+      marginBottom: 12,
+      width: "100%",
+      borderBottomWidth: 1,
+      borderBottomColor: "#F3F4F6",
+    },
+    // rideMetaCol: { flex: 1 },
+    rideMetaLabel: {
+      fontSize: 9,
+      color: "#9CA3AF",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      marginBottom: 4,
+    },
+    rideMetaValue: { fontSize: 12, fontWeight: "700", color: themeColors.text },
+    rideTypeBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 6,
+      alignSelf: "flex-start",
+    },
+    rideTypeBadgeText: { fontSize: 10, fontWeight: "700" },
 
-  rideLocRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  rideLocDot: {
-    width: 17,
-    height: 17,
-    padding: 2,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-    marginTop: 4,
-  },
-  rideLocLabel: {
-    fontSize: 9,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 2,
-  },
-  rideLocValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
+    rideLocRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 10,
+    },
+    rideLocDot: {
+      width: 17,
+      height: 17,
+      padding: 2,
+      borderRadius: 50,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 8,
+      marginTop: 4,
+    },
+    rideLocLabel: {
+      fontSize: 9,
+      color: "#9CA3AF",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      marginBottom: 2,
+    },
+    rideLocValue: { fontSize: 13, fontWeight: "600", color: themeColors.text },
 
-  rideFooterRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 5,
-    marginTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    borderRadius: 3,
-    marginBottom: 14,
-    backgroundColor: themeColors.cardSecondary,
-  },
-  // rideFooterCol: { flex: 1 },
-  rideFooterVal: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: themeColors.text,
-    marginBottom: 2,
-  },
-  rideFooterSub: { fontSize: 10, color: "#6B7280" },
+    rideFooterRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      padding: 5,
+      marginTop: 4,
+      borderTopWidth: 1,
+      borderTopColor: "#F3F4F6",
+      borderRadius: 3,
+      marginBottom: 14,
+      backgroundColor: themeColors.cardSecondary,
+    },
+    // rideFooterCol: { flex: 1 },
+    rideFooterVal: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: themeColors.text,
+      marginBottom: 2,
+    },
+    rideFooterSub: { fontSize: 10, color: "#6B7280" },
 
-  rideActionRow: { flexDirection: "row", gap: 10 },
-  rideBtnReject: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 11,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  rideBtnRejectText: { color: "#EF4444", fontWeight: "600", fontSize: 13 },
-  rideBtnAccept: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 11,
-    borderRadius: 8,
-    backgroundColor: "#E4C77B",
-  },
-  rideBtnAcceptText: { color: "#3E2723", fontWeight: "700", fontSize: 13 },
-});
+    rideActionRow: { flexDirection: "row", gap: 10 },
+    rideBtnReject: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 11,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    },
+    rideBtnRejectText: { color: "#EF4444", fontWeight: "600", fontSize: 13 },
+    rideBtnAccept: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 11,
+      borderRadius: 8,
+      backgroundColor: "#E4C77B",
+    },
+    rideBtnAcceptText: { color: "#3E2723", fontWeight: "700", fontSize: 13 },
+  });

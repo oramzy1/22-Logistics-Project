@@ -301,7 +301,7 @@ export type LangCode = (typeof LANGUAGES)[number]["code"];
 // Configure i18next immediately with a default so the instance is always valid
 i18n.use(initReactI18next).init({
   resources,
-  lng: "en", // safe default — overridden by initI18n()
+  lng: "en", // safe default - overridden by initI18n()
   fallbackLng: "en",
   interpolation: { escapeValue: false },
   nsSeparator: false,

@@ -47,8 +47,8 @@ export default function PaymentScreen() {
     addOns?: string;
     isExtension?: string;
   }>();
-    const { colors: themeColors } = useAppTheme();
-    const styles = createStyles(themeColors);
+  const { colors: themeColors } = useAppTheme();
+  const styles = createStyles(themeColors);
 
   const [selectedType, setSelectedType] = useState<"Card" | "Transfer" | null>(
     null,
@@ -81,7 +81,7 @@ export default function PaymentScreen() {
     }
   };
 
-  // Called when WebView navigates — detect Paystack callback
+  // Called when WebView navigates - detect Paystack callback
   // const handleNavigationChange = async (navState: { url: string }) => {
   //   const { url } = navState;
 
@@ -128,7 +128,7 @@ export default function PaymentScreen() {
       return;
     }
 
-    // Your callback URL — payment flow completed (success OR failure)
+    // Your callback URL - payment flow completed (success OR failure)
     // Extract the status Paystack appends as a query param
     if (url.includes("/api/payments/callback")) {
       setShowWebView(false);
@@ -137,13 +137,22 @@ export default function PaymentScreen() {
         // Verify the extension payment before going back to live
         router.replace({
           pathname: "/screens/extension-success",
-          params: { bookingId, packageType, scheduledAt, pickupAddress, dropoffAddress, totalAmount, reference, addOns },
+          params: {
+            bookingId,
+            packageType,
+            scheduledAt,
+            pickupAddress,
+            dropoffAddress,
+            totalAmount,
+            reference,
+            addOns,
+          },
         });
         return;
       }
 
       // Paystack appends ?trxref=...&reference=... to callback
-      // We don't verify here — webhook already handles DB update.
+      // We don't verify here - webhook already handles DB update.
       // We just optimistically route to success and let the screen
       // do a single delayed verify to confirm.
       router.replace({
@@ -316,69 +325,75 @@ export default function PaymentScreen() {
   );
 }
 
-const createStyles = (themeColors: any) => StyleSheet.create({
-  root: { flex: 1, backgroundColor: themeColors.background },
-  content: {
-    padding: spacing.lg,
-    margin: spacing.lg,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: themeColors.border,
-  },
-  title: { ...text.h2, fontSize: 18, marginBottom: spacing.lg, color: themeColors.textPrimary},
-  card: {
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardUnselected: { backgroundColor: "#F9F6F0", borderColor: "#E5E7EB" },
-  selectedCard: { backgroundColor: "#F0F7FF", borderColor: "#1D4ED8" },
-  selectedTransfer: { backgroundColor: "#FFF8F0", borderColor: "#974C16" },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  iconRow: { flexDirection: "row", alignItems: "center" },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginLeft: 10,
-    color: "#4B5563",
-  },
-  selectedCardTitle: { color: "#1D4ED8" },
-  selectedTransferTitle: { color: "#974C16" },
-  continueBtn: {
-    backgroundColor: "#E4C77B",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 14,
-  },
-  continueBtnText: { fontWeight: "700", color: "#3E2723" },
-  webViewHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  webViewTitle: { fontSize: 16, fontWeight: "700", color: themeColors.text },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  webViewLoader: { flex: 1, justifyContent: "center", alignItems: "center" },
-});
+const createStyles = (themeColors: any) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: themeColors.background },
+    content: {
+      padding: spacing.lg,
+      margin: spacing.lg,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
+    title: {
+      ...text.h2,
+      fontSize: 18,
+      marginBottom: spacing.lg,
+      color: themeColors.textPrimary,
+    },
+    card: {
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    cardUnselected: { backgroundColor: "#F9F6F0", borderColor: "#E5E7EB" },
+    selectedCard: { backgroundColor: "#F0F7FF", borderColor: "#1D4ED8" },
+    selectedTransfer: { backgroundColor: "#FFF8F0", borderColor: "#974C16" },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    iconRow: { flexDirection: "row", alignItems: "center" },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: "500",
+      marginLeft: 10,
+      color: "#4B5563",
+    },
+    selectedCardTitle: { color: "#1D4ED8" },
+    selectedTransferTitle: { color: "#974C16" },
+    continueBtn: {
+      backgroundColor: "#E4C77B",
+      paddingVertical: 14,
+      borderRadius: 8,
+      alignItems: "center",
+      marginTop: 14,
+    },
+    continueBtnText: { fontWeight: "700", color: "#3E2723" },
+    webViewHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: "#F3F4F6",
+    },
+    webViewTitle: { fontSize: 16, fontWeight: "700", color: themeColors.text },
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: "#F3F4F6",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    webViewLoader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  });

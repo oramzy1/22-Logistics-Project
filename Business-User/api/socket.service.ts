@@ -1,5 +1,3 @@
- 
-
 // Business-User/api/socket.service.ts
 import { io, Socket } from "socket.io-client";
 
@@ -14,21 +12,21 @@ type Listener = { event: string; callback: Function };
 class SocketService {
   private socket: Socket | null = null;
   private userId: string | null = null;
-  // Persistent registry — survives socket reconnects and removeAllListeners
+  // Persistent registry - survives socket reconnects and removeAllListeners
   private registry: Listener[] = [];
 
   connect(userId: string) {
     this.userId = userId;
 
-    // Already fully connected — just re-join rooms (for server restarts)
+    // Already fully connected - just re-join rooms (for server restarts)
     if (this.socket?.connected) {
       this._joinRooms();
       return;
     }
 
-    // Already connecting — don't tear it down, just update userId
+    // Already connecting - don't tear it down, just update userId
     if (this.socket) {
-      // Socket exists but not connected yet — DO NOT removeAllListeners.
+      // Socket exists but not connected yet - DO NOT removeAllListeners.
       // The on('connect') handler will fire and call _joinRooms() when ready.
       return;
     }
@@ -195,57 +193,59 @@ class SocketService {
   }
 
   joinTripChat(bookingId: string) {
-  this.socket?.emit('trip:join', bookingId);
-}
+    this.socket?.emit("trip:join", bookingId);
+  }
 
-leaveTripChat(bookingId: string) {
-  this.socket?.emit('trip:leave', bookingId);
-}
+  leaveTripChat(bookingId: string) {
+    this.socket?.emit("trip:leave", bookingId);
+  }
 
-sendTripMessage(data: {
-  targetUserId: string;
-  message: string;
-  sender: string;
-  senderId: string;
-  bookingId: string;
-}) {
-  const payload = { ...data, timestamp: new Date().toISOString() };
-  this.socket?.emit('trip:send_message', payload);
-  return payload; // return so sender can add to local state immediately
-}
+  sendTripMessage(data: {
+    targetUserId: string;
+    message: string;
+    sender: string;
+    senderId: string;
+    bookingId: string;
+  }) {
+    const payload = { ...data, timestamp: new Date().toISOString() };
+    this.socket?.emit("trip:send_message", payload);
+    return payload; // return so sender can add to local state immediately
+  }
 
-onTripMessage(callback: (data: {
-  id: string;
-  targetUserId: string;
-  message: string;
-  sender: string;
-  senderId: string;
-  bookingId: string;
-  timestamp: string;
-  isRead: boolean;
-}) => void) {
-  return this._register('trip:new_message', callback);
-}
+  onTripMessage(
+    callback: (data: {
+      id: string;
+      targetUserId: string;
+      message: string;
+      sender: string;
+      senderId: string;
+      bookingId: string;
+      timestamp: string;
+      isRead: boolean;
+    }) => void,
+  ) {
+    return this._register("trip:new_message", callback);
+  }
 
-onTripMessageSent(callback: (data: any) => void) {
-  return this._register('trip:message_sent', callback);
-}
+  onTripMessageSent(callback: (data: any) => void) {
+    return this._register("trip:message_sent", callback);
+  }
 
-onTripHistory(callback: (messages: any[]) => void) {
-  return this._register('trip:history', callback);
-}
+  onTripHistory(callback: (messages: any[]) => void) {
+    return this._register("trip:history", callback);
+  }
 
-markTripMessagesRead(bookingId: string, readerUserId: string) {
-  this.socket?.emit('trip:mark_read', { bookingId, readerUserId });
-}
+  markTripMessagesRead(bookingId: string, readerUserId: string) {
+    this.socket?.emit("trip:mark_read", { bookingId, readerUserId });
+  }
 
-onTripMessagesRead(callback: (data: { bookingId: string }) => void) {
-  return this._register('trip:messages_read', callback);
-}
+  onTripMessagesRead(callback: (data: { bookingId: string }) => void) {
+    return this._register("trip:messages_read", callback);
+  }
 
-onTripMessageError(callback: (data: { error: string }) => void) {
-  return this._register('trip:message_error', callback);
-}
+  onTripMessageError(callback: (data: { error: string }) => void) {
+    return this._register("trip:message_error", callback);
+  }
 
   private _reapplyRegistry() {
     // Re-register all persistent listeners onto the current socket

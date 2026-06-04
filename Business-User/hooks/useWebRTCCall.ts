@@ -18,37 +18,37 @@ const ICE_SERVERS = {
   // iceServers: [
   //   { urls: "stun:stun.l.google.com:19302" },
   //   { urls: "stun:stun1.l.google.com:19302" },
-  //   // Free TURN fallback via Open Relay — replace with your own for production
+  //   // Free TURN fallback via Open Relay - replace with your own for production
   //   {
   //     urls: "turn:openrelay.metered.ca:80",
   //     username: "openrelayproject",
   //     credential: "openrelayproject",
   //   },
   // ],
-    iceServers: [
-      {
-        urls: "stun:stun.relay.metered.ca:80",
-      },
-      {
-        urls: "turn:global.relay.metered.ca:80",
-        username: "0462f6b1ff476a28f354390d",
-        credential: "q5QAvXxs/GYIXKJP",
-      },
-      {
-        urls: "turn:global.relay.metered.ca:80?transport=tcp",
-        username: "0462f6b1ff476a28f354390d",
-        credential: "q5QAvXxs/GYIXKJP",
-      },
-      {
-        urls: "turn:global.relay.metered.ca:443",
-        username: "0462f6b1ff476a28f354390d",
-        credential: "q5QAvXxs/GYIXKJP",
-      },
-      {
-        urls: "turns:global.relay.metered.ca:443?transport=tcp",
-        username: "0462f6b1ff476a28f354390d",
-        credential: "q5QAvXxs/GYIXKJP",
-      },
+  iceServers: [
+    {
+      urls: "stun:stun.relay.metered.ca:80",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80",
+      username: "0462f6b1ff476a28f354390d",
+      credential: "q5QAvXxs/GYIXKJP",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80?transport=tcp",
+      username: "0462f6b1ff476a28f354390d",
+      credential: "q5QAvXxs/GYIXKJP",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: "0462f6b1ff476a28f354390d",
+      credential: "q5QAvXxs/GYIXKJP",
+    },
+    {
+      urls: "turns:global.relay.metered.ca:443?transport=tcp",
+      username: "0462f6b1ff476a28f354390d",
+      credential: "q5QAvXxs/GYIXKJP",
+    },
   ],
 };
 
@@ -79,15 +79,15 @@ type CallMeta = {
 
 async function playOutgoingRing() {
   try {
-     await stopOutgoingRing();
+    await stopOutgoingRing();
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
-      allowsRecordingIOS: false,        
-      playThroughEarpieceAndroid: false, 
+      allowsRecordingIOS: false,
+      playThroughEarpieceAndroid: false,
     });
     outgoingSound = new Audio.Sound();
-    // Standard dial/ringback tone — swap for a local require() if you bundle one
+    // Standard dial/ringback tone - swap for a local require() if you bundle one
     await outgoingSound.loadAsync(require("../assets/audio/ringback.wav"), {
       isLooping: true,
       volume: 1.0,
@@ -104,8 +104,8 @@ async function playIncomingRing() {
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
-      allowsRecordingIOS: false,        
-      playThroughEarpieceAndroid: false, 
+      allowsRecordingIOS: false,
+      playThroughEarpieceAndroid: false,
     });
     incomingSound = new Audio.Sound();
     await incomingSound.loadAsync(require("../assets/audio/ringtone.wav"), {
@@ -156,31 +156,37 @@ export function useWebRTCCall() {
     async () => {},
   );
   const cleanupRef = useRef<() => void>(() => {});
-  const callStateRef = useRef<CallState>('idle');
-const localStreamRef = useRef<MediaStream | null>(null);
-const targetUserIdRef = useRef<string | null>(null);
+  const callStateRef = useRef<CallState>("idle");
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const targetUserIdRef = useRef<string | null>(null);
 
   // ── Cleanup ──────────────────────────────────────────────────
- const cleanup = useCallback(() => {
-  stopOutgoingRing();
-  stopIncomingRing();
-  if (noAnswerTimer.current) { clearTimeout(noAnswerTimer.current); noAnswerTimer.current = null; }
-  if (durationInterval.current) { clearInterval(durationInterval.current); durationInterval.current = null; }
-  callStartTime.current = null;
-  setCallDuration(0);
-  localStreamRef.current?.getTracks().forEach((t) => t.stop()); // ref, not state
-  pc.current?.close();
-  pc.current = null;
-  remoteSocketId.current = null;
-  targetUserIdRef.current = null;
-  pendingCandidates.current = [];
-  setLocalStream(null);
-  setRemoteStream(null);
-  callStateRef.current = 'idle';
-  setCallState('idle');
-  setIncomingCall(null);
-  setCallMeta(null);
-}, []);
+  const cleanup = useCallback(() => {
+    stopOutgoingRing();
+    stopIncomingRing();
+    if (noAnswerTimer.current) {
+      clearTimeout(noAnswerTimer.current);
+      noAnswerTimer.current = null;
+    }
+    if (durationInterval.current) {
+      clearInterval(durationInterval.current);
+      durationInterval.current = null;
+    }
+    callStartTime.current = null;
+    setCallDuration(0);
+    localStreamRef.current?.getTracks().forEach((t) => t.stop()); // ref, not state
+    pc.current?.close();
+    pc.current = null;
+    remoteSocketId.current = null;
+    targetUserIdRef.current = null;
+    pendingCandidates.current = [];
+    setLocalStream(null);
+    setRemoteStream(null);
+    callStateRef.current = "idle";
+    setCallState("idle");
+    setIncomingCall(null);
+    setCallMeta(null);
+  }, []);
 
   // ── Create peer connection ───────────────────────────────────
   const createPC = useCallback(() => {
@@ -212,9 +218,9 @@ const targetUserIdRef = useRef<string | null>(null);
         state === "failed" ||
         state === "closed"
       ) {
-        if (callStateRef.current !== 'ended') { 
-      cleanup();
-    }
+        if (callStateRef.current !== "ended") {
+          cleanup();
+        }
       }
     });
 
@@ -223,8 +229,8 @@ const targetUserIdRef = useRef<string | null>(null);
       const state = peerConnection.iceConnectionState;
       if (state === "connected" || state === "completed")
         setCallState("connected");
-      if (state === "failed" || state === "closed"){
-        if (callStateRef.current !== 'ended') { 
+      if (state === "failed" || state === "closed") {
+        if (callStateRef.current !== "ended") {
           cleanup();
         }
       }
@@ -256,7 +262,7 @@ const targetUserIdRef = useRef<string | null>(null);
       callerAvatar?: string;
       callType: "audio" | "video";
       bookingId: string;
-      remoteName: string; 
+      remoteName: string;
       remoteAvatar?: string;
     }) => {
       targetUserIdRef.current = params.targetUserId;
@@ -278,12 +284,12 @@ const targetUserIdRef = useRef<string | null>(null);
       // Notify the other party
       socketService.initiateCall(params);
       noAnswerTimer.current = setTimeout(() => {
-      stopOutgoingRing();
-      // Notify callee the call was abandoned before answer
-      if (targetUserIdRef.current) {
-        socketService.cancelCall(targetUserIdRef.current, params.bookingId);
-      }
-      callStateRef.current = 'no_answer';
+        stopOutgoingRing();
+        // Notify callee the call was abandoned before answer
+        if (targetUserIdRef.current) {
+          socketService.cancelCall(targetUserIdRef.current, params.bookingId);
+        }
+        callStateRef.current = "no_answer";
         setCallState("no_answer");
         setTimeout(() => cleanup(), 2500);
       }, 30000);
@@ -333,31 +339,31 @@ const targetUserIdRef = useRef<string | null>(null);
     if (!incomingCall) return;
     stopIncomingRing();
     stopOutgoingRing();
-     localStreamRef.current?.getTracks().forEach((t) => t.stop());
-  pc.current?.close();
-  pc.current = null;
-  callStateRef.current = 'rejected';
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    pc.current?.close();
+    pc.current = null;
+    callStateRef.current = "rejected";
     setCallState("rejected");
     socketService.rejectCall(incomingCall.socketId, incomingCall.bookingId);
   }, [incomingCall, cleanup]);
 
   // ── End active call ──────────────────────────────────────────
   const endCall = useCallback((bookingId: string) => {
-    stopOutgoingRing(); 
-    stopIncomingRing(); 
-    
+    stopOutgoingRing();
+    stopIncomingRing();
+
     // Connected? Drop WebRTC
     if (remoteSocketId.current) {
       socketService.endCall(remoteSocketId.current, bookingId);
-    } 
+    }
     // Ringing but unanswered? Dispatch cancellation
     else if (targetUserIdRef.current) {
       socketService.cancelCall(targetUserIdRef.current, bookingId);
-    }else if (callStateRef.current !== 'ended') { 
-          cleanup();
-        }
-    
-    callStateRef.current = 'ended';
+    } else if (callStateRef.current !== "ended") {
+      cleanup();
+    }
+
+    callStateRef.current = "ended";
     setCallState("ended");
   }, []);
 
@@ -395,108 +401,141 @@ const targetUserIdRef = useRef<string | null>(null);
     }
   }, [callState]);
   // ── Socket listeners ─────────────────────────────────────────
-useEffect(() => {
-  const unsubIncoming = socketService.onIncomingCall((data) => {
-    // Critical guard: ignore if WE are the one placing a call
-    if (['connecting', 'ringing', 'connected'].includes(callStateRef.current)) return;
-     setCallMeta({
-      remoteName: data.callerName,
-      remoteAvatar: data.callerAvatar,
-      bookingId: data.bookingId,
+  useEffect(() => {
+    const unsubIncoming = socketService.onIncomingCall((data) => {
+      // Critical guard: ignore if WE are the one placing a call
+      if (["connecting", "ringing", "connected"].includes(callStateRef.current))
+        return;
+      setCallMeta({
+        remoteName: data.callerName,
+        remoteAvatar: data.callerAvatar,
+        bookingId: data.bookingId,
+      });
+      setIncomingCall(data);
+      callStateRef.current = "incoming";
+      setCallState("incoming");
+      playIncomingRing();
+      socketService.emitRinging(data.socketId, data.bookingId);
     });
-    setIncomingCall(data);
-    callStateRef.current = 'incoming';
-    setCallState('incoming');
-    playIncomingRing();
-    socketService.emitRinging(data.socketId, data.bookingId);
-  });
 
-  const unsubRinging = socketService.onCallRinging(() => {
-    callStateRef.current = 'ringing';
-    setCallState('ringing');
-  });
+    const unsubRinging = socketService.onCallRinging(() => {
+      callStateRef.current = "ringing";
+      setCallState("ringing");
+    });
 
-  const unsubAnswered = socketService.onCallAnswered(async ({ accepted, answerSocketId }) => {
-    if (callStateRef.current === 'connected') return;
-    stopOutgoingRing();
-    if (noAnswerTimer.current) { clearTimeout(noAnswerTimer.current); noAnswerTimer.current = null; }
-    if (accepted) {
-       callStateRef.current = 'connected';
-      setCallState('connected');
-      await sendWebRTCOfferRef.current(answerSocketId);
-    } else {
-      cleanupRef.current();
-    }
-  });
+    const unsubAnswered = socketService.onCallAnswered(
+      async ({ accepted, answerSocketId }) => {
+        if (callStateRef.current === "connected") return;
+        stopOutgoingRing();
+        if (noAnswerTimer.current) {
+          clearTimeout(noAnswerTimer.current);
+          noAnswerTimer.current = null;
+        }
+        if (accepted) {
+          callStateRef.current = "connected";
+          setCallState("connected");
+          await sendWebRTCOfferRef.current(answerSocketId);
+        } else {
+          cleanupRef.current();
+        }
+      },
+    );
 
-  const unsubOffer = socketService.onCallOffer(async ({ offer, from }) => {
-    if (!pc.current) return;
-    if (pc.current.signalingState !== 'stable' && pc.current.remoteDescription) return;
-    remoteSocketId.current = from;
-    try {
-      await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
-      for (const c of pendingCandidates.current) {
-        await pc.current.addIceCandidate(new RTCIceCandidate(c));
-      }
-      pendingCandidates.current = [];
-      if (pc.current.signalingState === 'have-remote-offer') {
-        const answer = await pc.current.createAnswer();
-        await pc.current.setLocalDescription(new RTCSessionDescription(answer));
-        socketService.sendAnswer(from, answer);
-      }
-    } catch (e) { console.warn('offer handling error', e); }
-  });
-
-  const unsubAnswer = socketService.onCallWebRTCAnswer(async ({ answer }) => {
-    if (!pc.current) return;
-    if (pc.current.signalingState === 'have-local-offer') {
+    const unsubOffer = socketService.onCallOffer(async ({ offer, from }) => {
+      if (!pc.current) return;
+      if (
+        pc.current.signalingState !== "stable" &&
+        pc.current.remoteDescription
+      )
+        return;
+      remoteSocketId.current = from;
       try {
-        await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
-      } catch (e) { console.warn('answer handling error', e); }
-    }
-  });
+        await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
+        for (const c of pendingCandidates.current) {
+          await pc.current.addIceCandidate(new RTCIceCandidate(c));
+        }
+        pendingCandidates.current = [];
+        if (pc.current.signalingState === "have-remote-offer") {
+          const answer = await pc.current.createAnswer();
+          await pc.current.setLocalDescription(
+            new RTCSessionDescription(answer),
+          );
+          socketService.sendAnswer(from, answer);
+        }
+      } catch (e) {
+        console.warn("offer handling error", e);
+      }
+    });
 
-  const unsubCandidate = socketService.onIceCandidate(async ({ candidate }) => {
-    if (pc.current?.remoteDescription) {
-      try { await pc.current.addIceCandidate(new RTCIceCandidate(candidate)); } catch {}
-    } else {
-      pendingCandidates.current.push(candidate);
-    }
-  });
+    const unsubAnswer = socketService.onCallWebRTCAnswer(async ({ answer }) => {
+      if (!pc.current) return;
+      if (pc.current.signalingState === "have-local-offer") {
+        try {
+          await pc.current.setRemoteDescription(
+            new RTCSessionDescription(answer),
+          );
+        } catch (e) {
+          console.warn("answer handling error", e);
+        }
+      }
+    });
 
-  const unsubEnded = socketService.onCallEnded(() => {
-    stopIncomingRing();
-    stopOutgoingRing();
-    // Cut media on the receiving end immediately
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
-    pc.current?.close();
-    pc.current = null;
-    callStateRef.current = 'ended';
-    setCallState('ended');
-  });
+    const unsubCandidate = socketService.onIceCandidate(
+      async ({ candidate }) => {
+        if (pc.current?.remoteDescription) {
+          try {
+            await pc.current.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch {}
+        } else {
+          pendingCandidates.current.push(candidate);
+        }
+      },
+    );
 
-  const unsubRejected = socketService.onCallRejected(() => {
-    stopOutgoingRing();
-    if (noAnswerTimer.current) { clearTimeout(noAnswerTimer.current); noAnswerTimer.current = null; }
-    callStateRef.current = 'rejected';
-    setCallState('rejected');
-  });
+    const unsubEnded = socketService.onCallEnded(() => {
+      stopIncomingRing();
+      stopOutgoingRing();
+      // Cut media on the receiving end immediately
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      pc.current?.close();
+      pc.current = null;
+      callStateRef.current = "ended";
+      setCallState("ended");
+    });
 
-  // Caller cancelled before callee answered
-  const unsubCancelled = socketService.onCallCancelled(() => {
-    stopIncomingRing();
-    callStateRef.current = 'ended';
-    setCallState('ended');
-  });
+    const unsubRejected = socketService.onCallRejected(() => {
+      stopOutgoingRing();
+      if (noAnswerTimer.current) {
+        clearTimeout(noAnswerTimer.current);
+        noAnswerTimer.current = null;
+      }
+      callStateRef.current = "rejected";
+      setCallState("rejected");
+    });
 
-  return () => {
-    unsubIncoming(); unsubRinging(); unsubAnswered();
-    unsubOffer(); unsubAnswer(); unsubCandidate();
-    unsubEnded(); unsubRejected(); unsubCancelled();
-  };
-}, []);
+    // Caller cancelled before callee answered
+    const unsubCancelled = socketService.onCallCancelled(() => {
+      stopIncomingRing();
+      callStateRef.current = "ended";
+      setCallState("ended");
+    });
 
-useEffect(() => { localStreamRef.current = localStream; }, [localStream]);
+    return () => {
+      unsubIncoming();
+      unsubRinging();
+      unsubAnswered();
+      unsubOffer();
+      unsubAnswer();
+      unsubCandidate();
+      unsubEnded();
+      unsubRejected();
+      unsubCancelled();
+    };
+  }, []);
+
+  useEffect(() => {
+    localStreamRef.current = localStream;
+  }, [localStream]);
   useEffect(() => {
     sendWebRTCOfferRef.current = sendWebRTCOffer;
   }, [sendWebRTCOffer]);

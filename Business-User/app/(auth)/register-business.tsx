@@ -321,7 +321,7 @@ export default function RegisterBusinessScreen() {
                   Full number:{" "}
                   {companyPhone
                     ? `${countryCode1}${companyPhone.replace(/^0+/, "")}`
-                    : "—"}
+                    : "-"}
                 </Text>
 
                 <Text style={styles.errorText}>{error}</Text>
@@ -416,7 +416,7 @@ export default function RegisterBusinessScreen() {
                   Full number:{" "}
                   {adminPhone
                     ? `${countryCode}${adminPhone.replace(/^0+/, "")}`
-                    : "—"}
+                    : "-"}
                 </Text>
 
                 {/* Radio Buttons */}

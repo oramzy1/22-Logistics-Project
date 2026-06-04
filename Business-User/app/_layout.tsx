@@ -19,7 +19,7 @@ import Toast from "react-native-toast-message";
 import { GlobalSocketAlerts } from "@/src/ui/GlobalSocketAlerts";
 import { NotificationService } from "@/api/notification.service";
 import * as Notifications from "expo-notifications";
-import * as Device from "expo-device"; 
+import * as Device from "expo-device";
 import { initI18n } from "@/src/i18n";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/src/i18n";
@@ -106,61 +106,47 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-function AppLayout(){
+function AppLayout() {
   const colorScheme = useColorScheme();
   const { isConnected } = useNetwork();
-  
+
   return (
-          <LoadingProvider>
-            <OfflineBanner isConnected={isConnected} />
-            <ScheduleProvider>
-              <BookingProvider>
-                <AuthProvider>
-                  <CallProvider>
-                    <GlobalSocketAlerts />
-                    <GlobalCallUI />
-                    <ThemeProvider
-                      value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-                    >
-                      <Stack>
-                        <Stack.Screen
-                          name="index"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="(auth)"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="(tabs)"
-                          options={{ headerShown: false }}
-                        />
-                        {/* Main flow screens */}
-                        <Stack.Screen
-                          name="screens"
-                          options={{ headerShown: false }}
-                        />
+    <LoadingProvider>
+      <OfflineBanner isConnected={isConnected} />
+      <ScheduleProvider>
+        <BookingProvider>
+          <CallProvider>
+            <GlobalSocketAlerts />
+            <GlobalCallUI />
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                {/* Main flow screens */}
+                <Stack.Screen name="screens" options={{ headerShown: false }} />
 
-                        {/* Booking detail */}
-                        <Stack.Screen
-                          name="payment-history"
-                          options={{ headerShown: false }}
-                        />
+                {/* Booking detail */}
+                <Stack.Screen
+                  name="payment-history"
+                  options={{ headerShown: false }}
+                />
 
-                        {/* Keeping template modal available (not used). */}
-                        <Stack.Screen
-                          name="modal"
-                          options={{ presentation: "modal" }}
-                        />
-                      </Stack>
-                    </ThemeProvider>
-                  </CallProvider>
-                </AuthProvider>
-              </BookingProvider>
-            </ScheduleProvider>
-            <Toast config={toastConfig} />
-          </LoadingProvider>
-  )
+                {/* Keeping template modal available (not used). */}
+                <Stack.Screen
+                  name="modal"
+                  options={{ presentation: "modal" }}
+                />
+              </Stack>
+            </ThemeProvider>
+          </CallProvider>
+        </BookingProvider>
+      </ScheduleProvider>
+      <Toast config={toastConfig} />
+    </LoadingProvider>
+  );
 }
 
 function RootLayoutNav() {
@@ -168,7 +154,9 @@ function RootLayoutNav() {
     <GestureHandlerRootView>
       <I18nextProvider i18n={i18n}>
         <NetworkProvider>
-          <AppLayout />
+          <AuthProvider>
+            <AppLayout />
+          </AuthProvider>
         </NetworkProvider>
       </I18nextProvider>
     </GestureHandlerRootView>

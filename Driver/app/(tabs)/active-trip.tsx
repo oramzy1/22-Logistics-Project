@@ -13,7 +13,7 @@ import EmptyState from "@/src/ui/EmptyState";
 import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { useAppTheme } from "@/src/ui/useAppTheme";
 import { useAuth } from "@/context/AuthContext";
-import {Chat} from "@/components/Chat";
+import { Chat } from "@/components/Chat";
 import { useCall } from "@/context/CallContext";
 import { useUnreadTripMessages } from "@/hooks/useUnreadTripMessages";
 
@@ -23,16 +23,16 @@ export default function ActiveTripScreen() {
   const activeTripRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const { colors: themeColors } = useAppTheme(); 
+  const { colors: themeColors } = useAppTheme();
   const { user } = useAuth();
   const webrtc = useCall();
   const { callState, incomingCall } = webrtc;
   const [showCall, setShowCall] = useState(false);
   const [isOutgoingCall, setIsOutgoingCall] = useState(false);
-    const { unreadCount, clearUnread } = useUnreadTripMessages(
-  activeTrip?.id ?? null,
-  user?.id ?? ''
-);
+  const { unreadCount, clearUnread } = useUnreadTripMessages(
+    activeTrip?.id ?? null,
+    user?.id ?? "",
+  );
 
   // Show incoming call screen automatically:
   useEffect(() => {
@@ -64,12 +64,12 @@ export default function ActiveTripScreen() {
       if (!current || updated.id !== current.id) return;
 
       if (updated.status === "CANCELLED") {
-        updateActiveTrip(null); // ✅ customer cancelled — clear active trip
+        updateActiveTrip(null); // ✅ customer cancelled - clear active trip
         return;
       }
       if (updated.status === "COMPLETED") {
         updateActiveTrip(null);
-        router.push("/(tabs)/history"); // ✅ trip ended — go to history
+        router.push("/(tabs)/history"); // ✅ trip ended - go to history
         return;
       }
       updateActiveTrip(updated); // ✅ status update (ACCEPTED → IN_PROGRESS etc)
@@ -131,7 +131,7 @@ export default function ActiveTripScreen() {
       <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
         {/* {showCall && (
           <CallScreen
-            webrtc={webrtc} // ← THIS WAS MISSING — caused the crash
+            webrtc={webrtc} // ← THIS WAS MISSING - caused the crash
             targetUserId={isOutgoingCall ? activeTrip?.customerId : undefined}
             callerId={user?.id}
             callerName={user?.name ?? "Driver"}
@@ -181,24 +181,36 @@ export default function ActiveTripScreen() {
             >
               <Phone size={18} color="#FFF" />
             </TouchableOpacity>
-           <TouchableOpacity
-  style={styles.callBtn}
-  onPress={() => { setShowChat(true); clearUnread(); }}
->
-  <MessageSquare size={18} color="#FFF" />
-  {unreadCount > 0 && (
-    <View style={{
-      position: 'absolute', top: -4, right: -4,
-      backgroundColor: '#EF4444', borderRadius: 8,
-      minWidth: 16, height: 16,
-      alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>
-        {unreadCount > 9 ? '9+' : unreadCount}
-      </Text>
-    </View>
-  )}
-</TouchableOpacity>
+            <TouchableOpacity
+              style={styles.callBtn}
+              onPress={() => {
+                setShowChat(true);
+                clearUnread();
+              }}
+            >
+              <MessageSquare size={18} color="#FFF" />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    backgroundColor: "#EF4444",
+                    borderRadius: 8,
+                    minWidth: 16,
+                    height: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{ color: "#FFF", fontSize: 9, fontWeight: "800" }}
+                  >
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -241,19 +253,19 @@ export default function ActiveTripScreen() {
             />
           )}
         </View>
-        
-      {showChat && activeTrip?.customerId && (
-  <Modal visible={showChat} animationType="slide">
-    <Chat
-      bookingId={activeTrip.id}
-      currentUserId={user!.id}
-      currentUserName={user?.name ?? "Driver"}
-      targetUserId={activeTrip.customerId}
-      targetUserName={activeTrip.customer?.name ?? "Passenger"}
-      onClose={() => setShowChat(false)}
-    />
-  </Modal>
-)}
+
+        {showChat && activeTrip?.customerId && (
+          <Modal visible={showChat} animationType="slide">
+            <Chat
+              bookingId={activeTrip.id}
+              currentUserId={user!.id}
+              currentUserName={user?.name ?? "Driver"}
+              targetUserId={activeTrip.customerId}
+              targetUserName={activeTrip.customer?.name ?? "Passenger"}
+              onClose={() => setShowChat(false)}
+            />
+          </Modal>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -357,11 +369,16 @@ const createStyles = (themeColors: any) =>
     },
     primaryBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
     unreadBadge: {
-  position: 'absolute', top: -8, right: -12,
-  backgroundColor: '#EF4444', borderRadius: 10,
-  minWidth: 18, height: 18,
-  alignItems: 'center', justifyContent: 'center',
-  paddingHorizontal: 4,
-},
-unreadBadgeText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
+      position: "absolute",
+      top: -8,
+      right: -12,
+      backgroundColor: "#EF4444",
+      borderRadius: 10,
+      minWidth: 18,
+      height: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 4,
+    },
+    unreadBadgeText: { color: "#FFF", fontSize: 10, fontWeight: "800" },
   });

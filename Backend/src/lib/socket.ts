@@ -66,13 +66,12 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
     socket.on("support:join_ticket", (ticketId: string) => {
       socket.join(`ticket:${ticketId}`);
       console.log(`📡 Socket ${socket.id} joined ticket:${ticketId}`);
-
     });
-    
+
     socket.on("support:leave_ticket", (ticketId: string) => {
-  socket.leave(`ticket:${ticketId}`);
-});
-    
+      socket.leave(`ticket:${ticketId}`);
+    });
+
     // Fetch message history when joining
     socket.on("trip:join", async (bookingId: string) => {
       socket.join(`trip:${bookingId}`);
@@ -137,10 +136,7 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
           };
 
           // Send to recipient
-          io.to(`user:${data.targetUserId}`).emit(
-            "trip:new_message",
-            payload,
-          );
+          io.to(`user:${data.targetUserId}`).emit("trip:new_message", payload);
 
           // Echo to sender (to replace optimistic message with real ID)
           socket.emit("trip:message_sent", payload);
@@ -170,14 +166,14 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
           }
 
           // Save in-app notification
-          if (!isOnline){
+          if (!isOnline) {
             await createNotification(
-            data.targetUserId,
-            `Message from ${data.sender}`,
-            data.message.slice(0, 80),
-            "TRIP_MESSAGE",
-            data.bookingId,
-          );
+              data.targetUserId,
+              `Message from ${data.sender}`,
+              data.message.slice(0, 80),
+              "TRIP_MESSAGE",
+              data.bookingId,
+            );
           }
         } catch (err) {
           console.error("trip:send_message error:", err);
@@ -313,7 +309,7 @@ export const initSocket = (httpServer: HttpServer): SocketServer => {
     socket.on("disconnect", (reason) => {
       console.log(`🔌 Socket disconnected: ${socket.id} | Reason: ${reason}`);
       const userId = socket.data.userId;
-      if (userId){
+      if (userId) {
         onlineUsers.delete(userId);
       }
     });
@@ -327,7 +323,7 @@ export const getIO = (): SocketServer => {
   return io;
 };
 
-// Helper with logging — use this instead of raw getIO() for important emits
+// Helper with logging - use this instead of raw getIO() for important emits
 export const emitTo = (room: string, event: string, data: any) => {
   console.log(
     `📤 EMIT → room: "${room}" | event: "${event}" | data:`,

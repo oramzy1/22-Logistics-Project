@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   Settings,
   X,
+  Gem,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ const items = [
   { label: "Live Trips & Tracking", to: "/live-trips", icon: MapPin },
   { label: "Users Management", to: "/users", icon: Users },
   { label: "Payment", to: "/payment", icon: CreditCard },
+  { label: "Promotions", to: "/promotions", icon: Gem },
   { label: "Support", to: "/support", icon: LifeBuoy },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
