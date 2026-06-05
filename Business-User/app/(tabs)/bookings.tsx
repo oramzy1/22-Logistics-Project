@@ -34,7 +34,7 @@ export default function BookingsTabScreen() {
     const q = query.trim().toLowerCase();
     const segFiltered = bookings.filter((b) => {
       if (seg === "Ongoing")
-        return b.status === "IN_PROGRESS" || b.status === "ACCEPTED";
+        return b.status === "IN_PROGRESS" || b.status === "ACCEPTED" || b.status === "ARRIVED";
 
       if (seg === "Upcoming") return b.status === "AWAITING_DRIVER";
 

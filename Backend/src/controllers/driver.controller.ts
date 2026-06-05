@@ -290,7 +290,7 @@ export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
       const existingActiveTrip = await prisma.booking.findFirst({
         where: {
           driverId: profile.userId,
-          status: { in: ["ACCEPTED", "IN_PROGRESS"] },
+          status: { in: ["ACCEPTED", "IN_PROGRESS", "ARRIVED"] },
         },
       });
 
@@ -418,7 +418,7 @@ export const getActiveTrip = async (req: AuthRequest, res: Response) => {
     const trip = await prisma.booking.findFirst({
       where: {
         driverId: req.user!.id,
-        status: { in: ["ACCEPTED", "IN_PROGRESS"] },
+        status: { in: ["ACCEPTED", "IN_PROGRESS", "ARRIVED"] },
       },
       include: {
         customer: { select: { name: true, phone: true, avatarUrl: true } },
@@ -478,7 +478,6 @@ export const arriveAtPickup = async (req: AuthRequest, res: Response) => {
     );
 
     // Email customer
-    const { sendDriverStatusEmail } = await import("../lib/email.service");
     if (updated.customer) {
       sendDriverStatusEmail(
         updated.customer.email,

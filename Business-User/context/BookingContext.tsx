@@ -86,7 +86,7 @@ const BookingContext = createContext<BookingContextType>(
 );
 
 const ACTIVE_STATUSES: BookingStatus[] = [
-  "AWAITING_DRIVER",
+  "ARRIVED",
   "IN_PROGRESS",
   "ACCEPTED",
 ];

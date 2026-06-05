@@ -88,7 +88,7 @@ export default function LiveTabScreen() {
   }, [webrtc.callState]);
 
   const bookingsWithDrivers = activeBookings.filter(
-    (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS",
+    (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS" || b.status === "ARRIVED",
   );
 
   const activeBooking = bookingId
@@ -363,6 +363,8 @@ export default function LiveTabScreen() {
                     ? "In Progress"
                     : item.status === "ACCEPTED"
                       ? "Driver en route"
+                      : item.status === "ARRIVED"
+                      ? "Driver Arrived"
                       : "Awaiting Driver"}
                 </Text>
                 <Text
