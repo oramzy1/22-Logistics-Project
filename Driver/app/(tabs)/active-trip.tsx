@@ -141,6 +141,8 @@ export default function ActiveTripScreen() {
           <Text style={styles.enRouteText}>
             {activeTrip.status === "IN_PROGRESS"
               ? "Trip in Progress"
+              : activeTrip.status === "ARRIVED"
+              ? "Waiting for Passenger"
               : "En Route to Pickup"}
           </Text>
           <View style={styles.passengerRow}>

@@ -775,6 +775,11 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
 
     await checkAndGrantMilestonePromo(booking.customerId);
 
+    const customer = await prisma.user.findUnique({
+      where: { id: booking.customerId },
+      select: { email: true, name: true },
+    });
+
     const admins = await prisma.user.findMany({
       where: { role: "ADMIN", isActive: true },
       select: { email: true },
@@ -794,10 +799,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
       data: { isAvailable: true, onlineStatus: "ONLINE" },
     });
 
-    const customer = await prisma.user.findUnique({
-      where: { id: booking.customerId },
-      select: { email: true, name: true },
-    });
+
 
     console.log(
       `✅ endTrip: emitting booking:updated to user:${booking.customerId}`,
@@ -833,6 +835,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: "Trip ended successfully", booking: updated });
   } catch (error) {
-    res;
+  console.error("End trip error:", error);
+  res.status(500).json({ message: "Server error", error });
   }
 };

@@ -36,58 +36,6 @@ const MILESTONE_RULES = [
 
 const MILESTONE_COUNTS = [1, 5, 10, 20] as const;
 
-// export async function checkAndGrantMilestonePromo(userId: string) {
-//   const completedCount = await prisma.booking.count({
-//     where: { customerId: userId, status: 'COMPLETED', paymentStatus: 'PAID' },
-//   });
-
-//   const rule = MILESTONE_RULES.find(r => r.bookingCount === completedCount);
-//   if (!rule) return;
-
-//   const user = await prisma.user.findUnique({
-//     where: { id: userId },
-//     select: { email: true, name: true },
-//   });
-//   if (!user) return;
-
-//   // Build a user-specific promo code e.g. VIP20-A1B2C3
-//   const uniqueSuffix = userId.slice(0, 6).toUpperCase();
-//   const code = `${rule.code}-${uniqueSuffix}`;
-
-//   // Avoid duplicates
-//   const existing = await prisma.promoCode.findUnique({ where: { code } });
-//   if (existing) return;
-
-//   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-
-//   const promo = await prisma.promoCode.create({
-//     data: {
-//       code,
-//       description:    rule.description,
-//       discountType:   rule.discountType as any,
-//       discountValue:  rule.discountValue,
-//       usageLimit:     1,
-//       expiresAt,
-//       targetType:     'USER_SPECIFIC',
-//       targetUserIds:  [userId],
-//       isActive:       true,
-//       createdBy:      'system',
-//     },
-//   });
-
-//   await createNotification(
-//     userId,
-//     '🎉 You earned a promo!',
-//     `${rule.description} Use code: ${code}`,
-//     'PROMO_GRANTED',
-//     undefined,
-//   );
-
-//   await sendPromoEmail(user.email, user.name, code, rule.description, rule.discountValue, 'PERCENTAGE', expiresAt);
-
-//   return promo;
-// }
-
 async function getMilestoneSettings() {
   const keys = [
     "policy_welcome_enabled",
