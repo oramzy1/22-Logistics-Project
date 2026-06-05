@@ -121,6 +121,8 @@ model Booking {
   TripMessages  TripMessages[]
   notifications Notification[]
   extensions    TripExtension[]
+  stops         TripStop[]
+  upgrade       TripUpgrade?
   review        DriverReview?
 }
 
@@ -133,6 +135,23 @@ model TripExtension {
   paymentRef    String   @unique
   paymentStatus String   @default("UNPAID") // UNPAID | PAID
   paystackAccessCode String?
+  createdAt     DateTime @default(now())
+}
+
+model TripUpgrade {
+  id            String   @id @default(uuid())
+  bookingId     String   @unique  // one upgrade per booking
+  booking       Booking  @relation(fields: [bookingId], references: [id])
+  fromPackage   String   // e.g. "3 Hours"
+  toPackage     String   // "Airport Schedule"
+  originalAmount Float
+  upgradeAmount Float    // difference paid
+  totalAmount   Float    // original + upgrade
+  paymentRef    String   @unique
+  paymentStatus String   @default("UNPAID")
+  paystackAccessCode String?
+  requestedBy   String   // "CUSTOMER" | "DRIVER"
+  requestedAt   DateTime @default(now())
   createdAt     DateTime @default(now())
 }
 
@@ -290,6 +309,19 @@ model TripMessages {
   isRead     Boolean  @default(false)
   archivedAt DateTime?
   createdAt  DateTime @default(now())
+}
+
+model TripStop {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  driverId    String   // denormalized for fast queries
+  stopOrder   Int      // 1, 2, 3...
+  address     String
+  lat         Float?
+  lng         Float?
+  arrivedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
 }
 
 enum SupportCategory {

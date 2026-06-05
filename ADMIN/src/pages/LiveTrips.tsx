@@ -50,13 +50,15 @@ const LiveTrips = () => {
 
   const fetchTrips = async () => {
     try {
-      const [accepted, inProgress] = await Promise.all([
+      const [accepted, inProgress, arrived] = await Promise.all([
         api.get<any>("/admin/bookings", { status: "ACCEPTED", limit: "50" }),
         api.get<any>("/admin/bookings", { status: "IN_PROGRESS", limit: "50" }),
+        api.get<any>("/admin/bookings", { status: "ARRIVED", limit: "50" })
       ]);
       const list = [
         ...(accepted?.bookings ?? []),
         ...(inProgress?.bookings ?? []),
+        ...(arrived?.bookings ?? []),
       ];
       setTrips(list);
       setActive((prev: any) => {
@@ -535,19 +537,19 @@ const LiveTrips = () => {
                     const steps = [
                       {
                         label: "Trip accepted",
-                        done: ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(
+                        done: ["ACCEPTED", "ARRIVED", "IN_PROGRESS", "COMPLETED"].includes(
                           active.status,
                         ),
                       },
                       {
                         label: "En Route",
-                        done: ["IN_PROGRESS", "COMPLETED"].includes(
+                        done: ["ARRIVED", "IN_PROGRESS", "COMPLETED"].includes(
                           active.status,
                         ),
                       },
                       {
                         label: "Arrived Pickup",
-                        done: ["IN_PROGRESS", "COMPLETED"].includes(
+                        done: ["ARRIVED", "IN_PROGRESS", "COMPLETED"].includes(
                           active.status,
                         ),
                       },

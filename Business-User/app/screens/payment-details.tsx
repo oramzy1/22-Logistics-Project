@@ -7,10 +7,10 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import  * as FileSystem from 'expo-file-system/legacy';
-import { Asset } from 'expo-asset';
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
+import { Asset } from "expo-asset";
 
 function Row({
   label,
@@ -39,18 +39,21 @@ export default function PaymentHistoryScreen() {
   const booking = bookings.find((b) => b.id === id);
   const extensions: TripExtension[] = booking?.extensions ?? [];
   const paidExtensions = extensions.filter((e) => e.paymentStatus === "PAID");
+  const upgrade = booking?.upgrade;
 
-const handleDownload = async () => {
-  try {
-    // Load the bundled asset and read it as base64
-    const asset = Asset.fromModule(require('../../assets/images/22LogisticsLogo.png'));
-    await asset.downloadAsync();
-    const base64Logo = await FileSystem.readAsStringAsync(asset.localUri!, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    const logoDataUri = `data:image/png;base64,${base64Logo}`;
+  const handleDownload = async () => {
+    try {
+      // Load the bundled asset and read it as base64
+      const asset = Asset.fromModule(
+        require("../../assets/images/22LogisticsLogo.png"),
+      );
+      await asset.downloadAsync();
+      const base64Logo = await FileSystem.readAsStringAsync(asset.localUri!, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const logoDataUri = `data:image/png;base64,${base64Logo}`;
 
-    const html = `
+      const html = `
       <html><body style="font-family:sans-serif;padding:32px;max-width:600px;margin:auto">
         <div style="text-align:center;background:#0B1B2B;padding:20px;border-radius:12px;margin-bottom:24px">
           <img src="${logoDataUri}" style="height:48px;object-fit:contain;margin-bottom:8px" />
@@ -68,17 +71,22 @@ const handleDownload = async () => {
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Drop-off</td>
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.dropoffAddress}</td></tr>
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Driver</td>
-              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.driver ? booking.driver.name : 'Pending'}</td></tr>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.driver ? booking.driver.name : "Pending"}</td></tr>
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Payment Status</td>
-              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:${booking?.paymentStatus === 'PAID' ? '#22C55E' : '#EF4444'}">${booking?.paymentStatus}</td></tr>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:${booking?.paymentStatus === "PAID" ? "#22C55E" : "#EF4444"}">${booking?.paymentStatus}</td></tr>
           <tr><td style="padding:14px 0;color:#111827;font-weight:800;font-size:16px">Total Amount</td>
               <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${booking?.totalAmount.toLocaleString()}</td></tr>
-          ${paidExtensions.length > 0 ? `
+          ${
+            paidExtensions.length > 0
+              ? `
           <tr><td style="padding:10px 0;color:#6B7280">Extensions Total</td>
               <td style="padding:10px 0;font-weight:700;text-align:right">₦${paidExtensions.reduce((s, e) => s + e.amount, 0).toLocaleString()}</td></tr>
+              
           <tr><td style="padding:14px 0;color:#111827;font-weight:800">Grand Total</td>
-              <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${(booking?.totalAmount + paidExtensions.reduce((s, e) => s + e.amount, 0)).toLocaleString()}</td></tr>
-          ` : ''}
+              <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${((booking?.totalAmount ?? 0) + paidExtensions.reduce((s, e) => s + e.amount, 0)).toLocaleString()}</td></tr>
+          `
+              : ""
+          }
         </table>
         <p style="text-align:center;color:#9CA3AF;font-size:12px;margin-top:32px">
           Thank you for riding with 22Logistics<br>
@@ -87,16 +95,16 @@ const handleDownload = async () => {
       </body></html>
     `;
 
-    const { uri } = await Print.printToFileAsync({ html, base64: false });
-    await Sharing.shareAsync(uri, {
-      mimeType: 'application/pdf',
-      dialogTitle: `Receipt - ${booking?.packageType}`,
-      UTI: 'com.adobe.pdf',
-    });
-  } catch (err) {
-    console.error('Download failed:', err);
-  }
-};
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: `Receipt - ${booking?.packageType}`,
+        UTI: "com.adobe.pdf",
+      });
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
 
   if (!booking) {
     return (
@@ -227,10 +235,16 @@ const handleDownload = async () => {
         </View>
 
         {/* Download Button */}
-        <TouchableOpacity style={styles.downloadBtn}onPress={handleDownload}>
+        <TouchableOpacity style={styles.downloadBtn} onPress={handleDownload}>
           <Download size={16} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.downloadText}>Download</Text>
         </TouchableOpacity>
+        {upgrade?.paymentStatus === "PAID" && (
+          <Row
+            label="Airport Upgrade"
+            value={`+₦${(upgrade.upgradeAmount ?? 0).toLocaleString()}`}
+          />
+        )}
         {paidExtensions.length > 0 && (
           <>
             <TouchableOpacity
@@ -297,6 +311,7 @@ const handleDownload = async () => {
                     ₦
                     {(
                       booking.totalAmount +
+                      (upgrade?.upgradeAmount ?? 0) +
                       paidExtensions.reduce((s, e) => s + e.amount, 0)
                     ).toLocaleString()}
                   </Text>
@@ -382,7 +397,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    marginTop: 10
+    marginTop: 10,
   },
   extensionsToggleLabel: {
     fontSize: 14,

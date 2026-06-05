@@ -285,6 +285,9 @@ class SocketService {
   onRideRequest(callback: (data: any) => void) {
     return this._register("ride:new_request", callback);
   }
+  onUpgradeRequested(callback: (data: any) => void) {
+    return this._register("upgrade:requested", callback);
+  }
 }
 
 export const socketService = new SocketService();

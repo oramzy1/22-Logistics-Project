@@ -8,19 +8,20 @@ type BookingSocketOptions = {
   onBookingUpdated?: (booking: any) => void;
   onRideRemoved?: (bookingId: string) => void;
   onNewRideRequest?: (data: any) => void;
+  onUpgradeRequested?: (data: any) => void;
 };
 
 export function useBookingSocket(options: BookingSocketOptions) {
   const { user } = useAuth();
   const optionsRef = useRef(options);
-  optionsRef.current = options; // always latest without re-subscribing
+
+  optionsRef.current = options;
 
   useEffect(() => {
     if (!user?.id) return;
 
     socketService.connect(user.id);
 
-    // Subscribe - each returns an unsubscribe fn
     const unsubs: (() => void)[] = [];
 
     if (optionsRef.current.onBookingUpdated) {
@@ -30,6 +31,7 @@ export function useBookingSocket(options: BookingSocketOptions) {
         ),
       );
     }
+
     if (optionsRef.current.onRideRemoved) {
       unsubs.push(
         socketService.onRideRemoved((id) =>
@@ -37,10 +39,19 @@ export function useBookingSocket(options: BookingSocketOptions) {
         ),
       );
     }
+
     if (optionsRef.current.onNewRideRequest) {
       unsubs.push(
         socketService.onRideRequest((d) =>
           optionsRef.current.onNewRideRequest?.(d),
+        ),
+      );
+    }
+
+    if (optionsRef.current.onUpgradeRequested) {
+      unsubs.push(
+        socketService.onUpgradeRequested((d) =>
+          optionsRef.current.onUpgradeRequested?.(d),
         ),
       );
     }

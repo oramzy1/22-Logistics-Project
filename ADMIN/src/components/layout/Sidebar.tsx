@@ -10,6 +10,7 @@ import {
   Settings,
   X,
   Gem,
+  ChartBar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const items = [
   { label: "Users Management", to: "/users", icon: Users },
   { label: "Payment", to: "/payment", icon: CreditCard },
   { label: "Promotions", to: "/promotions", icon: Gem },
+  { label: "Demographics", to: "/demographics", icon: ChartBar },
   { label: "Support", to: "/support", icon: LifeBuoy },
   { label: "Settings", to: "/settings", icon: Settings },
 ];

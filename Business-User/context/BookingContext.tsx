@@ -39,7 +39,6 @@ export type Booking = {
   status: BookingStatus;
   paymentStatus: "UNPAID" | "PAID";
   paymentRef: string;
-  duration?: number;
   notes?: string;
   trackingId: string;
   driver?: {
@@ -49,6 +48,13 @@ export type Booking = {
     id?: string;
   } | null;
   extensions?: TripExtension[];
+  upgrade?: {
+  id: string;
+  fromPackage: string;
+  upgradeAmount: number;
+  totalAmount: number;
+  paymentStatus: 'UNPAID' | 'PAID';
+} | null;
   _count?: {
     extensions: number;
   };

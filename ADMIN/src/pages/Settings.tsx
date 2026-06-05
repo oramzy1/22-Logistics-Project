@@ -46,6 +46,7 @@ const PRICE_FIELDS = [
   { key: 'ext_price_1_hour',  label: 'Extension - 1 Hour' },
   { key: 'ext_price_2_hours', label: 'Extension - 2 Hours' },
   { key: 'ext_price_3_hours', label: 'Extension - 3 Hours' },
+  { key: 'price_airport_upgrade_discount', label: 'Airport Upgrade Discount (%)' },
 ];
 
 const Settings = () => {

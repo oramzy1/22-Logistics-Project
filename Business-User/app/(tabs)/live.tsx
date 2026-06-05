@@ -73,6 +73,8 @@ export default function LiveTabScreen() {
   const [activeCallType, setActiveCallType] = useState<"audio" | "video">(
     "audio",
   );
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
   const webrtc = useCall();
   const [ratingStats, setRatingStats] = useState({
     totalRatings: 0,
@@ -88,7 +90,10 @@ export default function LiveTabScreen() {
   }, [webrtc.callState]);
 
   const bookingsWithDrivers = activeBookings.filter(
-    (b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS" || b.status === "ARRIVED",
+    (b) =>
+      b.status === "ACCEPTED" ||
+      b.status === "IN_PROGRESS" ||
+      b.status === "ARRIVED",
   );
 
   const activeBooking = bookingId
@@ -99,6 +104,10 @@ export default function LiveTabScreen() {
   const { unreadCount, clearUnread } = useUnreadTripMessages(
     activeBooking?.id ?? null,
     user?.id ?? "",
+  );
+  const upgradeAmount = Math.max(
+    0,
+    (prices.price_airport ?? 0) - (activeBooking?.totalAmount ?? 0),
   );
 
   const [timeResult, setTimeResult] = useState(() =>
@@ -131,6 +140,80 @@ export default function LiveTabScreen() {
     extensionMinutes: paidExtensionMinutes,
   };
 
+  const handleUpgrade = async () => {
+    if (!activeBooking) return;
+    setIsUpgrading(true);
+    try {
+      const res = await apiClient.post("/bookings/upgrade", {
+        bookingId: activeBooking.id,
+      });
+      router.push({
+        pathname: "/screens/payment",
+        params: {
+          bookingId: activeBooking.id,
+          packageType: "Upgrade: Airport Schedule",
+          scheduledAt: activeBooking.scheduledAt,
+          pickupAddress: activeBooking.pickupAddress,
+          dropoffAddress: activeBooking.dropoffAddress,
+          totalAmount: String(res.data.upgrade.upgradeAmount),
+          authorizationUrl: res.data.payment.authorizationUrl,
+          reference: res.data.payment.reference,
+          isExtension: "true", // reuse extension success screen flow
+        },
+      });
+    } catch (err: any) {
+      Alert.alert(
+        "Upgrade Failed",
+        err?.response?.data?.message ?? "Could not initialize upgrade",
+      );
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+useBookingSocket({
+  onBookingUpdated: (updatedBooking) => {
+    patchBooking(updatedBooking);
+
+    const current = activeBookings.find(
+      (b) => b.id === updatedBooking.id,
+    );
+
+    if (
+      current?.status === "ACCEPTED" &&
+      updatedBooking.status === "IN_PROGRESS"
+    ) {
+      Alert.alert(
+        "Driver Arrived!",
+        "Your driver has arrived at the pickup location and started the trip.",
+        [{ text: "OK" }],
+      );
+    }
+
+    if (updatedBooking.status === "COMPLETED") {
+      Alert.alert("Trip Completed", "Your trip has been completed!", [
+        {
+          text: "View Receipt",
+          onPress: () => router.push("/(tabs)/bookings"),
+        },
+      ]);
+    }
+  },
+
+  onUpgradeRequested: (data) => {
+    if (data.bookingId !== activeBooking?.id) return;
+
+    Alert.alert(
+      "✈️ Airport Upgrade",
+      `Your driver suggests upgrading to an Airport ride.\nYou'll pay an additional ${formatPrice(data.upgradeAmount)}.`,
+      [
+        { text: "Not now", style: "cancel" },
+        { text: "Upgrade", onPress: handleUpgrade },
+      ],
+    );
+  },
+});
+
   useEffect(() => {
     const fetchStats = async () => {
       const driverId = activeBooking?.driver?.id;
@@ -162,34 +245,34 @@ export default function LiveTabScreen() {
     return () => clearInterval(interval);
   }, [activeBooking?.id, activeBooking?.status, paidExtensionMinutes]);
 
-  useBookingSocket({
-    onBookingUpdated: (updatedBooking) => {
-      patchBooking(updatedBooking);
+  // useBookingSocket({
+  //   onBookingUpdated: (updatedBooking) => {
+  //     patchBooking(updatedBooking);
 
-      // Alert user when driver status changes to IN_PROGRESS (arrived + started)
-      const current = activeBookings.find((b) => b.id === updatedBooking.id);
-      if (
-        current?.status === "ACCEPTED" &&
-        updatedBooking.status === "IN_PROGRESS"
-      ) {
-        Alert.alert(
-          "Driver Arrived!",
-          "Your driver has arrived at the pickup location and started the trip.",
-          [{ text: "OK" }],
-        );
-      }
+  //     // Alert user when driver status changes to IN_PROGRESS (arrived + started)
+  //     const current = activeBookings.find((b) => b.id === updatedBooking.id);
+  //     if (
+  //       current?.status === "ACCEPTED" &&
+  //       updatedBooking.status === "IN_PROGRESS"
+  //     ) {
+  //       Alert.alert(
+  //         "Driver Arrived!",
+  //         "Your driver has arrived at the pickup location and started the trip.",
+  //         [{ text: "OK" }],
+  //       );
+  //     }
 
-      // Trip completed by driver - clear live tab
-      if (updatedBooking.status === "COMPLETED") {
-        Alert.alert("Trip Completed", "Your trip has been completed!", [
-          {
-            text: "View Receipt",
-            onPress: () => router.push("/(tabs)/bookings"),
-          },
-        ]);
-      }
-    },
-  });
+  //     // Trip completed by driver - clear live tab
+  //     if (updatedBooking.status === "COMPLETED") {
+  //       Alert.alert("Trip Completed", "Your trip has been completed!", [
+  //         {
+  //           text: "View Receipt",
+  //           onPress: () => router.push("/(tabs)/bookings"),
+  //         },
+  //       ]);
+  //     }
+  //   },
+  // });
 
   const handleExtendTrip = async () => {
     if (!selectedExtension) return;
@@ -364,8 +447,8 @@ export default function LiveTabScreen() {
                     : item.status === "ACCEPTED"
                       ? "Driver en route"
                       : item.status === "ARRIVED"
-                      ? "Driver Arrived"
-                      : "Awaiting Driver"}
+                        ? "Driver Arrived"
+                        : "Awaiting Driver"}
                 </Text>
                 <Text
                   style={{
@@ -573,9 +656,13 @@ export default function LiveTabScreen() {
                   <View style={styles.statusRow}>
                     <Text style={styles.statusLabel}>Status</Text>
                     <Text style={styles.statusVal}>
-                      {bookingStatus === 'IN_PROGRESS' ? 'Trip In Progress' :
-bookingStatus === 'ARRIVED'     ? 'Driver at pickup location' :
-bookingStatus === 'ACCEPTED'    ? 'Driver en route' : 'Looking for a driver'}
+                      {bookingStatus === "IN_PROGRESS"
+                        ? "Trip In Progress"
+                        : bookingStatus === "ARRIVED"
+                          ? "Driver at pickup location"
+                          : bookingStatus === "ACCEPTED"
+                            ? "Driver en route"
+                            : "Looking for a driver"}
                     </Text>
                   </View>
 
@@ -665,6 +752,31 @@ bookingStatus === 'ACCEPTED'    ? 'Driver en route' : 'Looking for a driver'}
                     </View>
                   )}
 
+                  {/* Airport Upgrade Section */}
+                  {bookingStatus !== "ACCEPTED" &&
+                    ["3 Hours", "6 Hours", "10 Hours"].includes(
+                      activeBooking?.packageType,
+                    ) &&
+                    !activeBooking?.upgrade && (
+                      <TouchableOpacity
+                        style={styles.upgradeBtn}
+                        onPress={handleUpgrade}
+                        disabled={isUpgrading}
+                      >
+                        <Text style={styles.upgradeBtnText}>
+                          ✈️ Upgrade to Airport Ride —{" "}
+                          {formatPrice(upgradeAmount)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                  {activeBooking?.upgrade?.paymentStatus === "PAID" && (
+                    <View style={styles.upgradedBadge}>
+                      <Text style={styles.upgradedText}>
+                        ✈️ Upgraded to Airport Ride
+                      </Text>
+                    </View>
+                  )}
                   <TouchableOpacity
                     onPress={() => setShowEndFlow(true)}
                     style={styles.endTripBtn}
@@ -1099,6 +1211,25 @@ const createStyles = (themeColors: any) =>
     },
     proceedBtnDisabled: { backgroundColor: "#F3F4F6" },
     proceedText: { fontSize: 14, fontWeight: "700", color: "#111827" },
+
+    upgradeBtn: {
+      backgroundColor: "#0B1B2B",
+      paddingVertical: 14,
+      borderRadius: 24,
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    upgradeBtnText: { color: "#E4C77B", fontWeight: "700", fontSize: 14 },
+    upgradedBadge: {
+      backgroundColor: "#F0FDF4",
+      borderWidth: 1,
+      borderColor: "#86EFAC",
+      borderRadius: 12,
+      padding: 12,
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    upgradedText: { color: "#166534", fontWeight: "700", fontSize: 13 },
 
     endTripBtn: {
       backgroundColor: "#EF4444",

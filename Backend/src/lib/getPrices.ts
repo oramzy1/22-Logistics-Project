@@ -2,7 +2,7 @@ import prisma from './prisma';
 
 export async function getPackagePrices(): Promise<Record<string, number>> {
   const settings = await prisma.appSettings.findMany({
-    where: { key: { in: ['price_3_hours','price_6_hours','price_10_hours','price_airport','price_multiday'] } }
+    where: { key: { in: ['price_3_hours','price_6_hours','price_10_hours','price_airport','price_multiday', 'price_airport_upgrade_discount'] } }
   });
   const map: Record<string, number> = {};
   for (const s of settings) {
@@ -14,6 +14,7 @@ export async function getPackagePrices(): Promise<Record<string, number>> {
       price_multiday: 'Multi-day',
     };
     map[labels[s.key]] = parseFloat(s.value);
+    map['airport_upgrade_discount'] = parseFloat(s.value);
   }
   return map;
 }

@@ -29,6 +29,7 @@ import {
 } from "../controllers/driver.controller";
 import { authenticate, authorize } from "../middlewares/auth.middleware";
 import { loginLimiter } from "../middlewares/rateLimiter";
+import { getStopDemographics } from "../controllers/stops.controller";
 
 const router = Router();
 
@@ -74,5 +75,8 @@ router.delete("/promos/:id", deletePromo);
 
 // Promo validation (also usable by authenticated users at checkout)
 router.post("/promos/validate", authenticate, validatePromoCode);
+
+// Trip Demographics
+router.get("/trips/demographics", getStopDemographics);
 
 export default router;
