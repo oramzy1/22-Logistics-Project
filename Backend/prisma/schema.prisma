@@ -343,6 +343,7 @@ enum BookingStatus {
   PENDING         // just created, unpaid
   AWAITING_DRIVER // paid, waiting for driver assignment
   ACCEPTED        // driver assigned/accepted
+  ARRIVED         // driver has arrived
   IN_PROGRESS     // ride started
   COMPLETED
   CANCELLED

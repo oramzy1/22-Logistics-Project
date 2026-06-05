@@ -571,11 +571,9 @@ export default function LiveTabScreen() {
                   <View style={styles.statusRow}>
                     <Text style={styles.statusLabel}>Status</Text>
                     <Text style={styles.statusVal}>
-                      {bookingStatus === "IN_PROGRESS"
-                        ? "Trip In Progress"
-                        : bookingStatus === "ACCEPTED"
-                          ? "Driver en route"
-                          : "Looking for a driver"}
+                      {bookingStatus === 'IN_PROGRESS' ? 'Trip In Progress' :
+bookingStatus === 'ARRIVED'     ? 'Driver at pickup location' :
+bookingStatus === 'ACCEPTED'    ? 'Driver en route' : 'Looking for a driver'}
                     </Text>
                   </View>
 

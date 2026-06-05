@@ -13,7 +13,10 @@ import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { createNotification, notifyAdmins } from "../lib/notifications";
 import { checkAndGrantMilestonePromo } from "../lib/promoMilestones";
-import { sendAdminBookingStatusEmail } from "../lib/email.service";
+import {
+  sendAdminBookingStatusEmail,
+  sendDriverStatusEmail,
+} from "../lib/email.service";
 
 const generateCode = () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -269,110 +272,6 @@ export const getMyRideRequests = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// ── RESPOND TO RIDE REQUEST ─────────────────────────────────────
-// export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
-//   try {
-//     const { requestId } = req.params;
-//     const { action } = req.body; // 'ACCEPTED' | 'DECLINED'
-
-//     const profile = await prisma.driverProfile.findUnique({
-//       where: { userId: req.user!.id },
-//       include: { user: {select: {name: true}}, rideRequests: { where: { id: requestId } } },
-//     });
-
-//     if (!profile) return res.status(404).json({ message: 'Profile not found' });
-
-//     const request = await prisma.rideRequest.findFirst({
-//       where: { id: requestId, driverProfileId: profile.id },
-//       include: { booking: true },
-//     });
-
-//     if (!request) return res.status(404).json({ message: 'Ride request not found' });
-//     if (request.status !== 'PENDING') {
-//       return res.status(400).json({ message: 'Request already responded to' });
-//     }
-//     if (new Date() > request.expiresAt) {
-//       await prisma.rideRequest.update({
-//         where: { id: requestId },
-//         data: { status: 'EXPIRED' },
-//       });
-//       return res.status(400).json({ message: 'Request has expired' });
-//     }
-
-//     // Check if driver is already on an active trip
-//     if (action === 'ACCEPTED') {
-//       const activeTrip = await prisma.booking.findFirst({
-//         where: {
-//           driverId: profile.userId,
-//           status: { in: ['ACCEPTED', 'IN_PROGRESS'] },
-//         },
-//       });
-
-//       if (activeTrip) {
-//         // Don't block - just warn. Frontend shows the prompt.
-//         // Let driver confirm via a separate flag if needed.
-//         // For now we include the warning in the response.
-//         console.warn(`Driver ${profile.id} accepted ride while on active trip`);
-//       }
-//     }
-
-//     const updatedRequest = await prisma.rideRequest.update({
-//       where: { id: requestId },
-//       data: {
-//         status: action as 'ACCEPTED' | 'DECLINED',
-//         respondedAt: new Date(),
-//       },
-//     });
-
-//     if (action === 'ACCEPTED') {
-//       // Assign driver to booking
-//       await prisma.booking.update({
-//         where: { id: request.bookingId },
-//         data: {
-//           driverId: profile.userId,
-//           status: 'ACCEPTED',
-//         },
-//       });
-
-//       // Update driver stats
-//       await prisma.driverProfile.update({
-//         where: { id: profile.id },
-//         data: {
-//           isAvailable: false, // no longer available for new rides
-//           totalTrips: { increment: 1 },
-//         },
-//       });
-
-//       // Notify customer in real-time
-//       getIO().to(`user:${request.booking.customerId}`).emit('booking:driver_assigned', {
-//         bookingId: request.bookingId,
-//         driverName: profile.user?.name,
-//       });
-
-//       await createNotification(
-//         request.booking.customerId,
-//         'Driver Assigned!',
-//         `A driver has been assigned to your booking.`,
-//         'DRIVER_ASSIGNED',
-//         request.bookingId,
-//       );
-//     }
-
-//     // Notify admin of response
-//     getIO().emit('driver:request_responded', {
-//       requestId,
-//       action,
-//       driverProfileId: profile.id,
-//       bookingId: request.bookingId,
-//     });
-
-//     res.json({ message: `Ride ${action.toLowerCase()}`, request: updatedRequest });
-//   } catch (error) {
-//     console.error('Respond to ride request error:', error);
-//     res.status(500).json({ message: 'Server error', error });
-//   }
-// };
-
 export const respondToRideRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { requestId } = req.params; // In this case, requestId is actually the Booking ID
@@ -533,12 +432,88 @@ export const getActiveTrip = async (req: AuthRequest, res: Response) => {
 };
 
 // ── START TRIP ──────────────────────────────────────────────────
-export const startTrip = async (req: AuthRequest, res: Response) => {
+export const arriveAtPickup = async (req: AuthRequest, res: Response) => {
   try {
     const { bookingId } = req.params;
 
     const booking = await prisma.booking.findFirst({
       where: { id: bookingId, driverId: req.user!.id, status: "ACCEPTED" },
+    });
+    if (!booking)
+      return res
+        .status(404)
+        .json({ message: "Booking not found or not in accepted state" });
+
+    const updated = await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: "ARRIVED" },
+      include: {
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            driverProfile: {
+              select: {
+                brandModel: true,
+                vehicleColor: true,
+                plateNumber: true,
+              },
+            },
+          },
+        },
+        customer: { select: { email: true, name: true } },
+      },
+    });
+
+    // Notify customer in-app
+    getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
+
+    await createNotification(
+      booking.customerId,
+      "Driver Arrived!",
+      "Your driver has arrived at the pickup location. Please come out.",
+      "DRIVER_ARRIVED",
+      bookingId,
+    );
+
+    // Email customer
+    const { sendDriverStatusEmail } = await import("../lib/email.service");
+    if (updated.customer) {
+      sendDriverStatusEmail(
+        updated.customer.email,
+        updated.customer.name,
+        "ARRIVED",
+        updated.driver?.name ?? "Your driver",
+        updated.trackingId ?? bookingId,
+      );
+    }
+
+    // Notify admins
+    await notifyAdmins(
+      "Driver Arrived at Pickup",
+      `Driver arrived for booking ${updated.trackingId ?? bookingId}`,
+      "BOOKING_UPDATED",
+      bookingId,
+    );
+
+    res.json({ message: "Marked as arrived", booking: updated });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// ── START TRIP ──────────────────────────────────────────────────
+export const startTrip = async (req: AuthRequest, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: bookingId,
+        driverId: req.user!.id,
+        status: { in: ["ACCEPTED", "ARRIVED"] },
+      },
     });
     if (!booking)
       return res
@@ -590,6 +565,20 @@ export const startTrip = async (req: AuthRequest, res: Response) => {
         status: updated.status,
       },
     );
+
+    const customer = await prisma.user.findUnique({
+      where: { id: booking.customerId },
+      select: { email: true, name: true },
+    });
+    if (customer) {
+      sendDriverStatusEmail(
+        customer.email,
+        customer.name,
+        "IN_PROGRESS",
+        updated.driver?.name ?? "Your driver",
+        updated.trackingId ?? bookingId,
+      );
+    }
 
     await createNotification(
       booking.customerId,

@@ -20,21 +20,24 @@ import { PackageId } from "@/src/utils/timeSlots";
 import { Clock } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { usePrices, formatPrice } from "@/hooks/usePrices";
+import { PromoCarousel } from "@/src/ui/PromoCarousel";
+import { useUserPromos } from "@/hooks/useUserPromos";
 
 export default function HomeTabScreen() {
+  const { promos } = useUserPromos();
   const { prices } = usePrices();
   const { isBusiness, user, isLoading } = useAuth();
-  const { setSelectedPackage } = useSchedule();
+  const { setSelectedPackage, setPendingPromo } = useSchedule();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
 
   const packages = [
-  { title: "3 Hours",  price: formatPrice(prices.price_3_hours) },
-  { title: "6 Hours",  price: formatPrice(prices.price_6_hours) },
-  { title: "10 Hours", price: formatPrice(prices.price_10_hours) },
-  { title: "Multi-day", price: "Schedule" },
-  { title: "Airport",  price: "Schedule" },
-];
+    { title: "3 Hours", price: formatPrice(prices.price_3_hours) },
+    { title: "6 Hours", price: formatPrice(prices.price_6_hours) },
+    { title: "10 Hours", price: formatPrice(prices.price_10_hours) },
+    { title: "Multi-day", price: "Schedule" },
+    { title: "Airport", price: "Schedule" },
+  ];
 
   const titleToId: Record<string, PackageId> = {
     "3 Hours": "3h",
@@ -57,11 +60,11 @@ export default function HomeTabScreen() {
               <View>
                 <Text
                   style={{
-                    color: '#fff',
+                    color: "#fff",
                     fontWeight: "800",
                     fontSize: 16,
                     width: 150,
-                    flexShrink: 1
+                    flexShrink: 1,
                   }}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -92,31 +95,18 @@ export default function HomeTabScreen() {
             showsVerticalScrollIndicator={false}
           >
             <Text style={styles.h1}>Your Ride, On Schedule</Text>
-
-            <Text style={styles.section}>Special Offers</Text>
-            <ImageBackground
-              source={{
-                uri: "https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1200&q=60",
-              }}
-              style={styles.offer}
-              imageStyle={{ borderRadius: radius.xl }}
-            >
-              <View style={styles.offerOverlay} />
-              <Text style={styles.offerDiscount}>20% OFF</Text>
-              <Text style={styles.offerTitle}>Rent Smart, Save More</Text>
-              <Text style={styles.offerSubtitle}>
-                Save big on rentals with limited time promotions.
-              </Text>
-              <Pressable style={styles.offerBtn}>
-                <Text style={{ fontWeight: "600" }}>Claim Offer</Text>
-              </Pressable>
-            </ImageBackground>
-
-            <View style={styles.dots}>
-              <View style={[styles.dot, styles.dotInactive]} />
-              <View style={styles.dot} />
-              <View style={[styles.dot, styles.dotInactive]} />
-            </View>
+            {promos.length > 0 && (
+              <>
+                <Text style={styles.section}>Special Offers</Text>
+                <PromoCarousel
+                  promos={promos}
+                  // onApply={(code) => {
+                  //   setPendingPromo(code);
+                  //   setSelectedPackage('3h'); // default, user can change on schedule tab
+                  // }}
+                />
+              </>
+            )}
 
             <Text style={styles.section}>Schedule Your Ride</Text>
             <View style={styles.grid}>
@@ -137,7 +127,7 @@ export default function HomeTabScreen() {
                       fontSize: 18,
                       marginTop: 6,
                       margin: "auto",
-                      color: themeColors.textPrimary
+                      color: themeColors.textPrimary,
                     }}
                   >
                     {p.title}
@@ -149,7 +139,7 @@ export default function HomeTabScreen() {
                         fontSize: 18,
                         marginTop: 6,
                         margin: "auto",
-                        color: themeColors.textSecondary
+                        color: themeColors.textSecondary,
                       }}
                     >
                       {p.price}

@@ -73,6 +73,10 @@ export const DriverService = {
     return res.data;
   },
 
+  arrivedAtPickup: async (bookingId: string) => {
+    const res = await apiClient.patch(`/driver/trips/${bookingId}/arrive`);
+    return res.data;
+  },
   startTrip: async (bookingId: string) => {
     const res = await apiClient.patch(`/driver/trips/${bookingId}/start`);
     return res.data;

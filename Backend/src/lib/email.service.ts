@@ -93,7 +93,7 @@ const emailHeader = () => `
   </div>
 `;
 
-async function sendEmail(to: string, subject: string, htmlContent: string) {
+export async function sendEmail(to: string, subject: string, htmlContent: string) {
   // Fire-and-forget - response is never blocked
   axios
     .post(
@@ -196,7 +196,39 @@ export const sendWelcomeEmail = async (
   );
 };
 
-// ── NEW: Trip Completion Email ───────────────────────────────────
+export const sendDriverStatusEmail = async (
+  email: string,
+  customerName: string,
+  status: 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED',
+  driverName: string,
+  trackingId: string,
+) => {
+  const statusMap = {
+    ARRIVED:     { emoji: '📍', heading: 'Driver Has Arrived',   body: `${driverName} has arrived at your pickup location. Please head out now.` },
+    IN_PROGRESS: { emoji: '🚗', heading: 'Your Ride Has Started', body: `${driverName} has started your trip. Sit back and enjoy the ride!` },
+    COMPLETED:   { emoji: '✅', heading: 'Trip Completed',        body: `Your trip with ${driverName} has been completed. Thank you for riding with 22Logistics!` },
+  };
+  const { emoji, heading, body } = statusMap[status];
+
+  sendEmail(
+    email,
+    `${emoji} ${heading} — Booking ${trackingId}`,
+    `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
+      ${emailHeader()}
+      <h2 style="color:#0B1B2B">${emoji} ${heading}</h2>
+      <p style="color:#374151">Hi <strong>${customerName}</strong>, ${body}</p>
+      <div style="background:#F9F6F0;border-radius:12px;padding:16px;margin:20px 0;border-left:4px solid #E4C77B">
+        <p style="margin:0;color:#6B7280;font-size:13px">Booking ID: <strong style="color:#0B1B2B">${trackingId}</strong></p>
+        <p style="margin:4px 0 0;color:#6B7280;font-size:13px">Driver: <strong style="color:#0B1B2B">${driverName}</strong></p>
+      </div>
+      <p style="color:#9CA3AF;font-size:12px;text-align:center;margin-top:24px">© 22Logistics - Moving you forward.</p>
+    </div>
+    `,
+  );
+};
+
+//  Trip Completion Email ───────────────────────────────────
 export const sendTripCompletionEmail = async (
   email: string,
   name: string,

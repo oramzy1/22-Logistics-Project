@@ -17,6 +17,7 @@ import {
   getAvailableDrivers,
   updateDriverProfile,
   endTrip,
+  arriveAtPickup,
 } from '../controllers/driver.controller';
 
 const router = Router();
@@ -35,6 +36,7 @@ router.get('/requests', authorize(['DRIVER']), getMyRideRequests);
 router.patch('/requests/:requestId/respond', authorize(['DRIVER']), respondToRideRequest);
 router.get('/trips/history', authorize(['DRIVER']), getDriverTripHistory);
 router.get('/trips/active', authorize(['DRIVER']), getActiveTrip);
+router.patch('/trips/:bookingId/arrive', authorize(['DRIVER']), arriveAtPickup);
 router.patch('/trips/:bookingId/start', authorize(['DRIVER']), startTrip);
 router.patch('/trips/:bookingId/end', authorize(['DRIVER']), endTrip);
 

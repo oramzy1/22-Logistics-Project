@@ -14,6 +14,7 @@ export const lightColors = {
   textSecondary: '#6B7280',
   muted: '#6B7280',
   border: '#D1D5DB',
+  borderHome: '#D1D5DB',
   softBorder: '#E5E7EB',
   inputBg: '#FFFFFF',
   sectionBg: '#F3F4F6',
@@ -22,7 +23,7 @@ export const lightColors = {
   danger: '#EF4444',
   warning: '#F59E0B',
 };
-
+ 
 export const darkColors = { 
   navy: '#121212',
   background: '#121212',
@@ -37,6 +38,7 @@ export const darkColors = {
   textSecondary: '#D1D5DB',
   muted: '#9CA3AF',
   border: '#2D3F52',
+  borderHome: '#E4C77B',
   softBorder: '#1F3044',
   inputBg: '#152232',
   sectionBg: '#152232',

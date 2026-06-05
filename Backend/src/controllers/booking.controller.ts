@@ -267,48 +267,6 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// export const verifyPayment = async (req: AuthRequest, res: Response) => {
-//   try {
-//     const { reference } = req.params;
-
-//     const booking = await prisma.booking.findFirst({
-//       where: { paymentRef: reference },
-//     });
-//     if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-//       if (booking.paymentStatus === 'PAID') {
-//       return res.json({ message: 'Payment already verified', booking });
-//     }
-
-//     const paystackData = await verifyTransaction(reference);
-
-//     if (paystackData.status === 'success') {
-//       const updated = await prisma.booking.update({
-//         where: { id: booking.id },
-//         data: {
-//           paymentStatus: 'PAID',
-//           status: 'AWAITING_DRIVER',
-//         },
-//       });
-
-//       await createNotification(
-//         booking.customerId,
-//         'Payment Confirmed',
-//         `Your payment for ${booking.packageType} was successful. We are assigning a driver.`,
-//         'PAYMENT_CONFIRMED',
-//         booking.id
-//       );
-
-//       return res.json({ message: 'Payment verified', booking: updated });
-//     }
-
-//       console.error('Paystack verify returned non-success:', paystackData);
-//     res.status(400).json({ message: 'Payment not successful', status: paystackData.status });
-//   } catch (error) {
-//     console.error('Verify payment error:', error);
-//     res.status(500).json({ message: 'Server error', error });
-//   }
-// };
 
 export const verifyPayment = async (req: AuthRequest, res: Response) => {
   try {

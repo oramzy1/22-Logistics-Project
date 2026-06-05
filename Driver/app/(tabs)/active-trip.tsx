@@ -82,6 +82,19 @@ export default function ActiveTripScreen() {
     }, []),
   );
 
+  const handleArriveAtPickup = async () => {
+    setIsLoading(true);
+    if (!activeTrip) return;
+    try {
+      await DriverService.arrivedAtPickup(activeTrip.id);
+      fetchActiveTrip();
+    } catch (error) {
+      console.log("Failed to arrive at pickup");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleStartTrip = async () => {
     setIsLoading(true);
     if (!activeTrip) return;
@@ -122,28 +135,8 @@ export default function ActiveTripScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Map Placeholder */}
-      {/* <View style={styles.mapBase}>
-         <Image source={{ uri: "https://maps.googleapis.com/maps/api/staticmap?center=Port+Harcourt&zoom=14&size=600x600&key=YOUR_API_KEY_HERE" }} style={{flex: 1, backgroundColor: '#E5E7EB'}} />
-      </View> */}
-
       {/* Bottom Sheet Card */}
       <SafeAreaView style={styles.bottomCard} edges={["bottom"]}>
-        {/* {showCall && (
-          <CallScreen
-            webrtc={webrtc} // ← THIS WAS MISSING - caused the crash
-            targetUserId={isOutgoingCall ? activeTrip?.customerId : undefined}
-            callerId={user?.id}
-            callerName={user?.name ?? "Driver"}
-            callType="audio"
-            bookingId={activeTrip?.id ?? ""}
-            remoteName={activeTrip?.customer?.name ?? "Passenger"}
-            onClose={() => {
-              setShowCall(false);
-              setIsOutgoingCall(false);
-            }}
-          />
-        )} */}
         <View style={styles.cardHeader}>
           <Text style={styles.enRouteText}>
             {activeTrip.status === "IN_PROGRESS"
@@ -236,6 +229,14 @@ export default function ActiveTripScreen() {
           </View>
 
           {activeTrip.status === "ACCEPTED" ? (
+            <PrimaryButton
+              marginTop
+              loading={isLoading}
+              disabled={isLoading}
+              onPress={handleArriveAtPickup}
+              title="Arrive at Pickup"
+            />
+          ) : activeTrip.status === "ARRIVED" ? (
             <PrimaryButton
               marginTop
               loading={isLoading}

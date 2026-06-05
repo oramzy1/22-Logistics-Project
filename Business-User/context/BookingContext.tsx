@@ -13,6 +13,7 @@ export type BookingStatus =
   | "PENDING"
   | "AWAITING_DRIVER"
   | "ACCEPTED"
+  | "ARRIVED"
   | "IN_PROGRESS"
   | "COMPLETED"
   | "CANCELLED";
