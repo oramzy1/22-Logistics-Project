@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createBooking, getBookings, getBookingById, cancelBooking, rateDriver, cancelBookingWithReason } from '../controllers/booking.controller';
-import {verifyPayment, reinitializePayment, endTrip } from '../controllers/booking.controller';
+import {verifyPayment, reinitializePayment, endTrip, getAvailablePromos  } from '../controllers/booking.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 import { validatePromoCode } from '../controllers/admin.controller'; 
 
@@ -10,6 +10,7 @@ router.use(authenticate);
 router.post('/promo/validate', authorize(['INDIVIDUAL', 'BUSINESS']), validatePromoCode);
 router.post('/', authorize(['INDIVIDUAL', 'BUSINESS']), createBooking);
 router.get('/', getBookings);
+router.get('/promos/available', authenticate, getAvailablePromos);
 router.get('/:id', getBookingById);
 router.get('/verify/:reference', verifyPayment);
 router.post('/:id/reinitialize', authorize(['INDIVIDUAL', 'BUSINESS']), reinitializePayment);

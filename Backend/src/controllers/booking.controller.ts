@@ -658,3 +658,53 @@ export const cancelBookingWithReason = async (
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+export const getAvailablePromos = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    const now = new Date();
+    const promos = await prisma.promoCode.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: now } },
+        ],
+        AND: [
+          // not usage-limit exhausted
+          { OR: [{ usageLimit: null }, { usedCount: { lt: prisma.promoCode.fields.usageLimit } }] },
+        ],
+      },
+      select: {
+        id: true, code: true, description: true,
+        discountType: true, discountValue: true,
+        expiresAt: true, targetType: true, targetUserIds: true,
+        usageLimit: true, usedCount: true,
+      },
+    });
+
+    // Filter by targeting + not already used by this user
+    const usedPromoIds = (await prisma.promoUsage.findMany({
+      where: { userId },
+      select: { promoId: true },
+    })).map(u => u.promoId);
+
+    const visible = promos.filter(p => {
+      if (usedPromoIds.includes(p.id)) return false;
+      if (p.usageLimit && p.usedCount >= p.usageLimit) return false;
+      if (p.targetType === 'USER_SPECIFIC') return p.targetUserIds.includes(userId);
+      if (p.targetType === 'INDIVIDUAL') return user?.role === 'INDIVIDUAL';
+      if (p.targetType === 'BUSINESS') return user?.role === 'BUSINESS';
+      return true; // ALL
+    });
+
+    res.json(visible.map(({ targetUserIds, ...rest }) => rest));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};

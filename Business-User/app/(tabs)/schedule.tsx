@@ -88,15 +88,16 @@ export default function ScheduleTabScreen() {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
     try {
-      const res = await apiClient.post("/bookings/validate", {
+      const res = await apiClient.post("/bookings/promo/validate", {
         code: promoCode.toUpperCase(),
         bookingAmount: total,
       });
       setPromoResult(res.data);
-      showToast.success("Promo code applied! " + res.data.description);
+      showToast.success("Promo code applied!");
     } catch (err: any) {
       setPromoResult(null);
       showToast.error("Invalid promo" + err?.response?.data?.message);
+      console.error("Promo validation error:", err?.response?.data ?? err);
     } finally {
       setPromoLoading(false);
     }
@@ -229,10 +230,10 @@ useEffect(() => {
     prices,
   ]);
 
-  const totalLabel = `₦${total.toLocaleString()}`;
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
-
+  
   const effectiveTotal = promoResult ? promoResult.finalAmount : total;
+  const totalLabel = `₦${effectiveTotal.toLocaleString()}`;
 
   const handleSchedule = async () => {
     // if (!pickupLocation.trim()) {
