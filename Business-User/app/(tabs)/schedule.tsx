@@ -69,7 +69,7 @@ export default function ScheduleTabScreen() {
     airportRide: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pickupStreet, setPickupStreet] = useState("");
+  const [pickupStreet, setPickupStreet] = useState("");   
   const [pickupLGA, setPickupLGA] = useState("");
   const [dropoffStreet, setDropoffStreet] = useState("");
   const [dropoffLGA, setDropoffLGA] = useState("");
@@ -88,7 +88,7 @@ export default function ScheduleTabScreen() {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
     try {
-      const res = await apiClient.post("/bookings/validate-promo", {
+      const res = await apiClient.post("/bookings/validate", {
         code: promoCode.toUpperCase(),
         bookingAmount: total,
       });
@@ -119,9 +119,9 @@ useEffect(() => {
   setTimeSlot("");
   setPromoCode("");
   setPromoResult(null);
-  setPickupDate(null);        // add this
-  setPickupTime(null);        // add this
-  setExtras({                 // add this
+  setPickupDate(null);        
+  setPickupTime(null);        
+  setExtras({                 
     babySeat: false,
     extraLuggage: false,
     wifi: true,

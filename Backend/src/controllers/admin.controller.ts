@@ -1247,6 +1247,13 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
       if (!promo) return res.status(404).json({ message: "Promo not found" });
       if (!promo.isActive)
         return res.status(400).json({ message: "Promo is not active" });
+      if (promo.targetType === 'USER_SPECIFIC') {
+    const merged = Array.from(new Set([...promo.targetUserIds, ...userIds]));
+    promo = await prisma.promoCode.update({
+      where: { id: promoId },
+      data: { targetUserIds: merged },
+    });
+  }
     } else {
       // ── Create new promo on the fly ──
       if (!code || discountValue === undefined) {
