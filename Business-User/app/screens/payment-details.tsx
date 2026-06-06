@@ -52,6 +52,10 @@ export default function PaymentHistoryScreen() {
         encoding: FileSystem.EncodingType.Base64,
       });
       const logoDataUri = `data:image/png;base64,${base64Logo}`;
+      const upgradeAmount =
+        upgrade?.paymentStatus === "PAID" ? upgrade.upgradeAmount : 0;
+      const extensionsTotal = paidExtensions.reduce((s, e) => s + e.amount, 0);
+      const grandTotal = (booking?.totalAmount ?? 0) + extensionsTotal;
 
       const html = `
       <html><body style="font-family:sans-serif;padding:32px;max-width:600px;margin:auto">
@@ -76,17 +80,40 @@ export default function PaymentHistoryScreen() {
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:${booking?.paymentStatus === "PAID" ? "#22C55E" : "#EF4444"}">${booking?.paymentStatus}</td></tr>
           <tr><td style="padding:14px 0;color:#111827;font-weight:800;font-size:16px">Total Amount</td>
               <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${booking?.totalAmount.toLocaleString()}</td></tr>
-          ${
-            paidExtensions.length > 0
-              ? `
-          <tr><td style="padding:10px 0;color:#6B7280">Extensions Total</td>
-              <td style="padding:10px 0;font-weight:700;text-align:right">₦${paidExtensions.reduce((s, e) => s + e.amount, 0).toLocaleString()}</td></tr>
-              
-          <tr><td style="padding:14px 0;color:#111827;font-weight:800">Grand Total</td>
-              <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${((booking?.totalAmount ?? 0) + paidExtensions.reduce((s, e) => s + e.amount, 0)).toLocaleString()}</td></tr>
-          `
-              : ""
-          }
+         ${
+           upgrade?.paymentStatus === "PAID"
+             ? `
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Airport Upgrade</td>
+    <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:#0369A1">
+      +₦${upgrade.upgradeAmount.toLocaleString()} (${upgrade.fromPackage} → Airport)
+    </td>
+  </tr>
+`
+             : ""
+         }
+${
+  paidExtensions.length > 0
+    ? `
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Extensions Total</td>
+    <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">
+      +₦${extensionsTotal.toLocaleString()}
+    </td>
+  </tr>
+`
+    : ""
+}
+${
+  upgrade?.paymentStatus === "PAID" || paidExtensions.length > 0
+    ? `
+  <tr>
+    <td style="padding:14px 0;color:#111827;font-weight:800">Grand Total</td>
+    <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${grandTotal.toLocaleString()}</td>
+  </tr>
+`
+    : ""
+}
         </table>
         <p style="text-align:center;color:#9CA3AF;font-size:12px;margin-top:32px">
           Thank you for riding with 22Logistics<br>
@@ -226,6 +253,14 @@ export default function PaymentHistoryScreen() {
             }
             valueStyle={{ color: statusColor }}
           />
+          {upgrade?.paymentStatus === 'PAID' && (
+  <View style={styles.upgradeBadgeRow}>
+    <Text style={styles.rowLabel}>✈️ Airport Upgrade</Text>
+    <Text style={[styles.rowValue, { color: '#0369A1' }]}>
+      +₦{(upgrade.upgradeAmount ?? 0).toLocaleString()}
+    </Text>
+  </View>
+)}
           <Row
             label="Payment status"
             value={booking.paymentStatus === "PAID" ? "Successful" : "Unpaid"}
@@ -239,12 +274,6 @@ export default function PaymentHistoryScreen() {
           <Download size={16} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.downloadText}>Download</Text>
         </TouchableOpacity>
-        {upgrade?.paymentStatus === "PAID" && (
-          <Row
-            label="Airport Upgrade"
-            value={`+₦${(upgrade.upgradeAmount ?? 0).toLocaleString()}`}
-          />
-        )}
         {paidExtensions.length > 0 && (
           <>
             <TouchableOpacity
@@ -399,6 +428,14 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     marginTop: 10,
   },
+  upgradeBadgeRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingVertical: 12,
+  borderBottomWidth: 1,
+  borderBottomColor: '#F1F5F9',
+},
   extensionsToggleLabel: {
     fontSize: 14,
     fontWeight: "700",

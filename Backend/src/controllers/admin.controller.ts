@@ -598,6 +598,7 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
             },
           },
           extensions: true,
+          upgrade: true,
         },
       }),
       prisma.booking.count({ where }),

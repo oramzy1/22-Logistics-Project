@@ -5,7 +5,7 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
 import { getPackagePrices } from "../lib/getPrices";
 import { createNotification, notifyAdmins } from "../lib/notifications";
-import { getIO } from "../lib/socket";
+import { emitToAdmin, getIO } from "../lib/socket";
 import { sendEmail } from "../lib/email.service";
 
 const UPGRADEABLE_FROM = ["3 Hours", "6 Hours", "10 Hours"];
@@ -245,6 +245,16 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
 
     const booking = upgrade.booking;
     const trackingId = booking.trackingId ?? booking.id;
+
+    emitToAdmin("admin:booking_updated", {
+      bookingId: upgrade.bookingId,
+      trackingId,
+      customerName: booking.customer.name,
+      event: "TRIP_UPGRADED",
+      newPackageType: "Airport Schedule",
+      newTotal: upgrade.totalAmount,
+      upgradeAmount: upgrade.upgradeAmount,
+    });
 
     // Notify customer
     await createNotification(

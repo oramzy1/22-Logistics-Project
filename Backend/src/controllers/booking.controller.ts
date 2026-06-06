@@ -180,6 +180,8 @@ export const getBookings = async (req: AuthRequest, res: Response) => {
         extensions: {
           orderBy: { createdAt: "asc" },
         },
+        upgrade: true,
+        stops: { orderBy: { createdAt: "asc" } },
       },
     });
     res.json(bookings);
@@ -215,6 +217,8 @@ export const getBookingById = async (req: AuthRequest, res: Response) => {
         extensions: {
           orderBy: { createdAt: "asc" },
         },
+        upgrade: true,
+        stops: { orderBy: { createdAt: "asc" } },
       },
     });
     if (!booking) return res.status(404).json({ message: "Booking not found" });

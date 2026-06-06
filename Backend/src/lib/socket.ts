@@ -349,5 +349,6 @@ export type AdminDashboardEvent =
   | "admin:license_submitted"
   | "admin:payment_received"
   | "admin:user_registered"
+  | "admin:booking_updated"
   | "admin:support_new_ticket"
   | "admin:trip_delay";

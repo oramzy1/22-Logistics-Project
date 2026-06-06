@@ -423,6 +423,8 @@ export const getActiveTrip = async (req: AuthRequest, res: Response) => {
       include: {
         customer: { select: { name: true, phone: true, avatarUrl: true } },
         extensions: { where: { paymentStatus: "PAID" } },
+        upgrade: true,
+        stops: { orderBy: { createdAt: "asc" } },
       },
     });
     res.json(trip ?? null);

@@ -48,13 +48,22 @@ export type Booking = {
     id?: string;
   } | null;
   extensions?: TripExtension[];
-  upgrade?: {
+upgrade?: {
   id: string;
   fromPackage: string;
+  toPackage: string;
+  originalAmount: number;
   upgradeAmount: number;
   totalAmount: number;
   paymentStatus: 'UNPAID' | 'PAID';
+  requestedBy: string;
 } | null;
+stops?: Array<{
+  id: string;
+  stopOrder: number;
+  address: string;
+  arrivedAt: string;
+}>;
   _count?: {
     extensions: number;
   };

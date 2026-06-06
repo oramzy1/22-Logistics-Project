@@ -40,6 +40,27 @@ export const paystackWebhook = async (req: Request, res: Response) => {
           },
         });
       }
+const extension = await prisma.tripExtension.findFirst({
+  where: { paymentRef: reference, paymentStatus: 'UNPAID' },
+  include: {
+    booking: {
+      include: { driver: { select: { id: true } } }
+    }
+  }
+});
+if (extension) {
+  await prisma.tripExtension.update({
+    where: { id: extension.id },
+    data: { paymentStatus: 'PAID' },
+  });
+  // Notify driver via socket
+  if (extension.booking?.driverId) {
+    const { getIO } = require('./lib/socket');
+    getIO()
+      .to(`user:${extension.booking.driverId}`)
+      .emit('booking:updated', { id: extension.bookingId, extensionPaid: true, hours: extension.hours });
+  }
+}
 
       if (booking && booking.paymentStatus === "UNPAID") {
         await prisma.booking.update({

@@ -19,7 +19,7 @@ import {
   endTrip,
   arriveAtPickup,
 } from '../controllers/driver.controller';
-import { addStop } from '../controllers/stops.controller';
+import { addStop, getTripStops } from '../controllers/stops.controller';
  
 const router = Router();
 
@@ -41,6 +41,7 @@ router.patch('/trips/:bookingId/arrive', authorize(['DRIVER']), arriveAtPickup);
 router.patch('/trips/:bookingId/start', authorize(['DRIVER']), startTrip);
 router.patch('/trips/:bookingId/end', authorize(['DRIVER']), endTrip);
 router.post('/trips/stops', authorize(['DRIVER']),  addStop);
+router.get('/trips/:bookingId/stops', authorize(['DRIVER']), getTripStops);
 
 // Admin only
 router.post('/admin/verify-license', authorize(['ADMIN']), verifyDriverLicense);
