@@ -55,9 +55,9 @@ export default function PaymentHistoryScreen() {
 
       const html = `
       <html><body style="font-family:sans-serif;padding:32px;max-width:600px;margin:auto">
-        <div style="text-align:center;background:#0B1B2B;padding:20px;border-radius:12px;margin-bottom:24px">
+        <div style="text-align:center;background:#f0f0f0;padding:20px;border-radius:12px;margin-bottom:24px">
           <img src="${logoDataUri}" style="height:48px;object-fit:contain;margin-bottom:8px" />
-          <p style="color:#9CA3AF;margin:4px 0 0;font-size:13px">Official Receipt</p>
+          <p style="color:#0B1B2B;margin:4px 0 0;font-size:13px">Official Receipt</p>
         </div>
         <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Invoice Number</td>

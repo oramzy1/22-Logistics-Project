@@ -144,7 +144,7 @@ export default function LiveTabScreen() {
     if (!activeBooking) return;
     setIsUpgrading(true);
     try {
-      const res = await apiClient.post("/bookings/upgrade", {
+      const res = await apiClient.post("/upgrade", {
         bookingId: activeBooking.id,
       });
       router.push({
@@ -764,7 +764,7 @@ useBookingSocket({
                         disabled={isUpgrading}
                       >
                         <Text style={styles.upgradeBtnText}>
-                          ✈️ Upgrade to Airport Ride —{" "}
+                          Upgrade to Airport Ride -{" "}
                           {formatPrice(upgradeAmount)}
                         </Text>
                       </TouchableOpacity>
@@ -773,7 +773,7 @@ useBookingSocket({
                   {activeBooking?.upgrade?.paymentStatus === "PAID" && (
                     <View style={styles.upgradedBadge}>
                       <Text style={styles.upgradedText}>
-                        ✈️ Upgraded to Airport Ride
+                        Upgraded to Airport Ride
                       </Text>
                     </View>
                   )}

@@ -1,9 +1,23 @@
 // Driver/app/(tabs)/active-trip.tsx
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Image, Modal, Alert, TextInput } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Modal,
+  Alert,
+  TextInput,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Phone, MapPin, CarFront, MessageSquare } from "lucide-react-native";
+import {
+  Phone,
+  MapPin,
+  CarFront,
+  MessageSquare,
+  Plane,
+} from "lucide-react-native";
 import { DriverService } from "@/api/driver.service";
 import { useFocusEffect } from "expo-router";
 import { Text } from "../../components/AppText";
@@ -31,31 +45,34 @@ export default function ActiveTripScreen() {
   const [showCall, setShowCall] = useState(false);
   const [isOutgoingCall, setIsOutgoingCall] = useState(false);
   const [stops, setStops] = useState<any[]>([]);
-const [showAddStop, setShowAddStop] = useState(false);
-const [stopAddress, setStopAddress] = useState('');
-const [isAddingStop, setIsAddingStop] = useState(false);
+  const [showAddStop, setShowAddStop] = useState(false);
+  const [stopAddress, setStopAddress] = useState("");
+  const [isAddingStop, setIsAddingStop] = useState(false);
   const { unreadCount, clearUnread } = useUnreadTripMessages(
     activeTrip?.id ?? null,
     user?.id ?? "",
   );
 
   const handleAddStop = async () => {
-  if (!stopAddress.trim()) return;
-  setIsAddingStop(true);
-  try {
-    const res = await apiClient.post('/driver/trips/stops', {
-      bookingId: activeTrip.id,
-      address: stopAddress.trim(),
-    });
-    setStops(prev => [...prev, res.data.stop]);
-    setStopAddress('');
-    setShowAddStop(false);
-  } catch (err: any) {
-    Alert.alert('Error', err?.response?.data?.message ?? 'Failed to add stop');
-  } finally {
-    setIsAddingStop(false);
-  }
-};
+    if (!stopAddress.trim()) return;
+    setIsAddingStop(true);
+    try {
+      const res = await apiClient.post("/driver/trips/stops", {
+        bookingId: activeTrip.id,
+        address: stopAddress.trim(),
+      });
+      setStops((prev) => [...prev, res.data.stop]);
+      setStopAddress("");
+      setShowAddStop(false);
+    } catch (err: any) {
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message ?? "Failed to add stop",
+      );
+    } finally {
+      setIsAddingStop(false);
+    }
+  };
 
   // Show incoming call screen automatically:
   useEffect(() => {
@@ -165,8 +182,8 @@ const [isAddingStop, setIsAddingStop] = useState(false);
             {activeTrip.status === "IN_PROGRESS"
               ? "Trip in Progress"
               : activeTrip.status === "ARRIVED"
-              ? "Waiting for Passenger"
-              : "En Route to Pickup"}
+                ? "Waiting for Passenger"
+                : "En Route to Pickup"}
           </Text>
           <View style={styles.passengerRow}>
             <View style={styles.passInfo}>
@@ -180,7 +197,8 @@ const [isAddingStop, setIsAddingStop] = useState(false);
                 <Text style={styles.passRole}>Passenger</Text>
               </View>
             </View>
-            <TouchableOpacity
+           <View style={styles.buttonRow}>
+             <TouchableOpacity
               style={styles.callBtn}
               // onPress={() => {
               //   setIsOutgoingCall(true); // ← mark as outgoing BEFORE showing screen
@@ -199,6 +217,7 @@ const [isAddingStop, setIsAddingStop] = useState(false);
             >
               <Phone size={18} color="#FFF" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.callBtn}
               onPress={() => {
@@ -229,24 +248,40 @@ const [isAddingStop, setIsAddingStop] = useState(false);
                 </View>
               )}
             </TouchableOpacity>
-          </View>
+
           {activeTrip &&
-  ['3 Hours', '6 Hours', '10 Hours'].includes(activeTrip.packageType) &&
-  !activeTrip.upgrade && (
-  <TouchableOpacity
-    style={styles.upgradeNudgeBtn}
-    onPress={async () => {
-      try {
-        await apiClient.post('/bookings/upgrade/driver-request', { bookingId: activeTrip.id });
-        Alert.alert('Sent', 'Customer has been notified to upgrade to Airport ride.');
-      } catch (err: any) {
-        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to send upgrade request');
-      }
-    }}
-  >
-    <Text style={styles.upgradeNudgeText}>✈️ Suggest Airport Upgrade</Text>
-  </TouchableOpacity>
-)}
+            ["3 Hours", "6 Hours", "10 Hours"].includes(
+              activeTrip.packageType,
+            ) &&
+            !activeTrip.upgrade &&
+            (activeTrip.status === "ARRIVED" ||
+              activeTrip.status === "IN_PROGRESS") && (
+               <TouchableOpacity
+              style={styles.callBtn}
+              onPress={async () => {
+                try {
+                  await apiClient.post("/upgrade/driver-request", {
+                    bookingId: activeTrip.id,
+                  });
+                  Alert.alert(
+                    "Sent",
+                    "Customer has been notified to upgrade to Airport ride.",
+                  );
+                } catch (err: any) {
+                  Alert.alert(
+                    "Error",
+                    err?.response?.data?.message ??
+                      "Failed to send upgrade request",
+                  );
+                }
+              }}
+            >
+              <Plane size={18} color="#FFF" />
+            </TouchableOpacity>
+            )}
+           </View>
+
+          </View>
         </View>
 
         <View style={styles.cardBody}>
@@ -295,59 +330,110 @@ const [isAddingStop, setIsAddingStop] = useState(false);
               title="End Trip"
             />
           )}
-          {activeTrip.status === 'IN_PROGRESS' && (
-  <View style={{ marginTop: 16 }}>
-    <Text style={{ color: themeColors.text, fontWeight: '700', marginBottom: 8 }}>
-      Stops ({stops.length})
-    </Text>
-    {stops.map((s, i) => (
-      <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-        <MapPin size={14} color="#6B7280" />
-        <Text style={{ marginLeft: 8, color: themeColors.text, fontSize: 13 }}>
-          Stop {i + 1}: {s.address}
-        </Text>
-      </View>
-    ))}
-    {showAddStop ? (
-      <View style={{ marginTop: 8 }}>
-        <TextInput
-          value={stopAddress}
-          onChangeText={setStopAddress}
-          placeholder="Enter stop address"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10,
-            padding: 12, color: themeColors.text, marginBottom: 8,
-          }}
-        />
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity
-            style={{ flex: 1, backgroundColor: '#E4C77B', padding: 12, borderRadius: 20, alignItems: 'center' }}
-            onPress={handleAddStop}
-            disabled={isAddingStop}
-          >
-            <Text style={{ fontWeight: '700', color: '#3E2723' }}>
-              {isAddingStop ? 'Saving...' : 'Save Stop'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ flex: 1, borderWidth: 1, borderColor: '#E5E7EB', padding: 12, borderRadius: 20, alignItems: 'center' }}
-            onPress={() => setShowAddStop(false)}
-          >
-            <Text style={{ color: themeColors.text }}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    ) : (
-      <TouchableOpacity
-        style={{ borderWidth: 1, borderColor: '#E4C77B', borderRadius: 20, padding: 10, alignItems: 'center', marginTop: 4 }}
-        onPress={() => setShowAddStop(true)}
-      >
-        <Text style={{ color: '#E4C77B', fontWeight: '600', fontSize: 13 }}>+ Add Stop</Text>
-      </TouchableOpacity>
-    )}
-  </View>
-)}
+          {activeTrip.status === "IN_PROGRESS" && (
+            <View style={{ marginTop: 16 }}>
+              <Text
+                style={{
+                  color: themeColors.text,
+                  fontWeight: "700",
+                  marginBottom: 8,
+                }}
+              >
+                Stops ({stops.length})
+              </Text>
+              {stops.map((s, i) => (
+                <View
+                  key={s.id}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 6,
+                  }}
+                >
+                  <MapPin size={14} color="#6B7280" />
+                  <Text
+                    style={{
+                      marginLeft: 8,
+                      color: themeColors.text,
+                      fontSize: 13,
+                    }}
+                  >
+                    Stop {i + 1}: {s.address}
+                  </Text>
+                </View>
+              ))}
+              {showAddStop ? (
+                <View style={{ marginTop: 8 }}>
+                  <TextInput
+                    value={stopAddress}
+                    onChangeText={setStopAddress}
+                    placeholder="Enter stop address"
+                    placeholderTextColor="#9CA3AF"
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#E5E7EB",
+                      borderRadius: 10,
+                      padding: 12,
+                      color: themeColors.text,
+                      marginBottom: 8,
+                    }}
+                  />
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TouchableOpacity
+                      style={{
+                        flex: 1,
+                        backgroundColor: "#E4C77B",
+                        padding: 12,
+                        borderRadius: 20,
+                        alignItems: "center",
+                      }}
+                      onPress={handleAddStop}
+                      disabled={isAddingStop}
+                    >
+                      <Text style={{ fontWeight: "700", color: "#3E2723" }}>
+                        {isAddingStop ? "Saving..." : "Save Stop"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        flex: 1,
+                        borderWidth: 1,
+                        borderColor: "#E5E7EB",
+                        padding: 12,
+                        borderRadius: 20,
+                        alignItems: "center",
+                      }}
+                      onPress={() => setShowAddStop(false)}
+                    >
+                      <Text style={{ color: themeColors.text }}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#E4C77B",
+                    borderRadius: 20,
+                    padding: 10,
+                    alignItems: "center",
+                    marginTop: 4,
+                  }}
+                  onPress={() => setShowAddStop(true)}
+                >
+                  <Text
+                    style={{
+                      color: "#E4C77B",
+                      fontWeight: "600",
+                      fontSize: 13,
+                    }}
+                  >
+                    + Add Stop
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
 
         {showChat && activeTrip?.customerId && (
@@ -412,6 +498,12 @@ const createStyles = (themeColors: any) =>
       justifyContent: "space-between",
       alignItems: "center",
     },
+    buttonRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 4,
+    },
     passInfo: { flexDirection: "row", alignItems: "center" },
     passAvatar: {
       width: 40,
@@ -464,14 +556,14 @@ const createStyles = (themeColors: any) =>
       alignItems: "center",
     },
     upgradeNudgeBtn: {
-  borderWidth: 1,
-  borderColor: '#E4C77B',
-  paddingVertical: 12,
-  borderRadius: 20,
-  alignItems: 'center',
-  marginTop: 8,
-},
-upgradeNudgeText: { color: '#E4C77B', fontWeight: '600', fontSize: 13 },
+      borderWidth: 1,
+      borderColor: "#E4C77B",
+      paddingVertical: 12,
+      borderRadius: 20,
+      alignItems: "center",
+      marginTop: 8,
+    },
+    upgradeNudgeText: { color: "#E4C77B", fontWeight: "600", fontSize: 13 },
     primaryBtnText: { color: "#3E2723", fontWeight: "bold", fontSize: 16 },
     unreadBadge: {
       position: "absolute",

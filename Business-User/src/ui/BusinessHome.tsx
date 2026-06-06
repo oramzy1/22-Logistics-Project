@@ -26,11 +26,15 @@ import { getRideTimeLabel } from "../utils/rideTimer";
 import { PackageId } from "../utils/timeSlots";
 import { useAppTheme } from "./useAppTheme";
 import { usePrices, formatPrice } from '@/hooks/usePrices';
+import { PromoCarousel } from "./PromoCarousel";
+import { useUserPromos } from "@/hooks/useUserPromos";
+
 
 
 
 export function BusinessHome() {
   const { prices } = usePrices();
+  const { promos } = useUserPromos();
   const [showDrawer, setShowDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
   const { setSelectedPackage } = useSchedule();
@@ -273,30 +277,18 @@ export function BusinessHome() {
       >
         <Text style={styles.h1}>Your Ride, On Schedule</Text>
 
-        <Text style={styles.sectionTitle}>Special Offers</Text>
-        <ImageBackground
-          source={{
-            uri: "https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1200&q=60",
-          }}
-          style={styles.offer}
-          imageStyle={{ borderRadius: radius.xl }}
-        >
-          <View style={styles.offerOverlay} />
-          <Text style={styles.offerDiscount}>20% OFF</Text>
-          <Text style={styles.offerTitle}>Rent Smart, Save More</Text>
-          <Text style={styles.offerSubtitle}>
-            Save big on rentals with limited{"\n"}time promotions.
-          </Text>
-          <Pressable style={styles.offerBtn}>
-            <Text style={{ fontWeight: "700" }}>Claim Offer</Text>
-          </Pressable>
-        </ImageBackground>
-
-        <View style={styles.dots}>
-          <View style={[styles.dot, styles.dotInactive]} />
-          <View style={styles.dot} />
-          <View style={[styles.dot, styles.dotInactive]} />
-        </View>
+          {promos.length > 0 && (
+                      <>
+                        <Text style={styles.sectionTitle}>Special Offers</Text>
+                        <PromoCarousel
+                          promos={promos}
+                          // onApply={(code) => {
+                          //   setPendingPromo(code);
+                          //   setSelectedPackage('3h'); // default, user can change on schedule tab
+                          // }}
+                        />
+                      </>
+                    )}
 
         <Text style={styles.sectionTitle}>Ride Activity</Text>
         <View style={styles.activityRow}>

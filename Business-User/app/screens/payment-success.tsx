@@ -15,11 +15,15 @@ import LottieView from "lottie-react-native";
 import { colors, radius, spacing, text } from "@/src/ui/theme";
 import { Image } from "expo-image";
 import { useAppTheme } from "@/src/ui/useAppTheme";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
+import { Asset } from "expo-asset";
 
 function SuccessBadge() {
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
-  return (
+  return ( 
     <View style={styles.lottieContainer}>
       <LottieView
         source={require("../../assets/animations/Done_tick.json")}
@@ -129,6 +133,58 @@ export default function PaymentSuccessScreen() {
       })
     : "-";
 
+      const handleDownload = async () => {
+    try {
+      // Load the bundled asset and read it as base64
+      const asset = Asset.fromModule(
+        require("../../assets/images/22LogisticsLogo.png"),
+      );
+      await asset.downloadAsync();
+      const base64Logo = await FileSystem.readAsStringAsync(asset.localUri!, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const logoDataUri = `data:image/png;base64,${base64Logo}`;
+
+      const html = `
+      <html><body style="font-family:sans-serif;padding:32px;max-width:600px;margin:auto">
+        <div style="text-align:center;background:#f0f0f0;padding:20px;border-radius:12px;margin-bottom:24px">
+          <img src="${logoDataUri}" style="height:48px;object-fit:contain;margin-bottom:8px" />
+          <p style="color:#0B1B2B;margin:4px 0 0;font-size:13px">Official Receipt</p>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Booking ID</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">22LOG${params?.bookingId.slice(-12).toUpperCase()}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Package</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${params?.packageType}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Date</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${formattedDate}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Pick-up</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${params?.pickupAddress}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Drop-off</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${params?.dropoffAddress}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Payment Status</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:#22C55E">PAID</td></tr>
+          <tr><td style="padding:14px 0;color:#111827;font-weight:800;font-size:16px">Total Amount</td>
+              <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${params?.totalAmount.toLocaleString()}</td></tr>
+        </table>
+        <p style="text-align:center;color:#9CA3AF;font-size:12px;margin-top:32px">
+          Thank you for riding with 22Logistics<br>
+          📞 +1238095832217 · ✉️ hello@22logistics.com
+        </p>
+      </body></html>
+    `;
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: `Receipt - ${params?.packageType}`,
+        UTI: "com.adobe.pdf",
+      });
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView
@@ -201,7 +257,7 @@ export default function PaymentSuccessScreen() {
         </TouchableOpacity>
 
         {verifyStatus !== "pending" && (
-          <TouchableOpacity style={styles.outlineBtn}>
+          <TouchableOpacity onPress={handleDownload} style={styles.outlineBtn}>
             <Text style={styles.outlineBtnText}>Download Receipt</Text>
           </TouchableOpacity>
         )}

@@ -591,10 +591,12 @@ useEffect(() => {
               style={{ flex: 1 }}
               placeholder="Enter promo code"
               value={promoCode}
+              autoCapitalize="characters"
               onChangeText={(t) => {
                 setPromoCode(t.toUpperCase());
                 setPromoResult(null);
               }}
+              
             />
             <PrimaryButton
               title={promoLoading ? "..." : "Apply"}

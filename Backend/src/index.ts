@@ -7,6 +7,7 @@ import path from 'path'
 import bookingRoutes from './routes/booking.routes';
 import notificationRoutes from './routes/notification.routes';
 import paymentRoutes from './routes/payment.routes';
+import upgradeRoutes from './routes/upgrade.routes';
 import extensionRoutes from './routes/extension.route';
 import { cleanupStaleBookings, expireRideRequests } from './lib/cleanup';
 import { createServer } from 'http';
@@ -33,7 +34,7 @@ app.use(cors());
 app.use('/api/payments', paymentRoutes);
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);``
 app.use('/api/users', userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/bookings/webhook', express.raw({ type: 'application/json' }));
@@ -41,6 +42,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/extensions', extensionRoutes)
 app.use('/api/driver', driverRoutes);
+app.use('/api/upgrade', upgradeRoutes)
 app.use('/api/support', supportRouter)
 app.use('/api/admin', adminRoutes);
 

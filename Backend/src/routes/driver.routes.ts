@@ -20,7 +20,7 @@ import {
   arriveAtPickup,
 } from '../controllers/driver.controller';
 import { addStop } from '../controllers/stops.controller';
-
+ 
 const router = Router();
 
 // Public

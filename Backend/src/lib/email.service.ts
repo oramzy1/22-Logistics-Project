@@ -80,7 +80,7 @@ const LOGO_URL =
   "https://res.cloudinary.com/df7l33e7p/image/upload/v1776926722/22LogisticsLogo_ojwyzz.png";
 
 const emailHeader = () => `
-  <div style="text-align:center;background:#0B1B2B;padding:24px;border-radius:12px;margin-bottom:24px">
+  <div style="text-align:center;background:#f0f0f0;padding:24px;border-radius:12px;margin-bottom:24px">
     <img 
       src="${LOGO_URL}" 
       alt="22Logistics" 
