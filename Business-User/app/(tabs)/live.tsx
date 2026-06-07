@@ -158,7 +158,7 @@ export default function LiveTabScreen() {
           totalAmount: String(res.data.upgrade.upgradeAmount),
           authorizationUrl: res.data.payment.authorizationUrl,
           reference: res.data.payment.reference,
-          isExtension: "true", // reuse extension success screen flow
+          isUpgrade: "true",
         },
       });
     } catch (err: any) {

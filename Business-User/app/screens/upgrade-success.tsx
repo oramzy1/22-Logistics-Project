@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
 import { useAppTheme } from "@/src/ui/useAppTheme";
 
-export default function ExtensionSuccessScreen() {
+export default function UpgradeSuccessScreen() {
   const { reference, bookingId } = useLocalSearchParams<{
     reference: string;
     bookingId: string;
@@ -52,6 +52,7 @@ export default function ExtensionSuccessScreen() {
         }
       };
 
+      // Small initial delay - let Paystack process on their end first
       await new Promise((r) => setTimeout(r, 1500));
       await tryVerify();
     };
@@ -71,9 +72,9 @@ export default function ExtensionSuccessScreen() {
           />
         </View>
 
-        <Text style={styles.title}>Trip Extended!</Text>
+        <Text style={styles.title}>Trip Upgraded!</Text>
         <Text style={styles.subtitle}>
-          Your trip has been extended successfully.
+          Your trip has been upgraded successfully.
         </Text>
 
         {/* <View style={[styles.badge, status === 'confirmed' && styles.badgeConfirmed]}>
@@ -83,22 +84,21 @@ export default function ExtensionSuccessScreen() {
               <Text style={styles.badgeText}>Confirming payment...</Text>
             </>
           ) : status === 'confirmed' ? (
-            <Text style={[styles.badgeText, { color: '#166534' }]}>✓ Extension confirmed</Text>
+            <Text style={[styles.badgeText, { color: '#166534' }]}>✓ Upgrade confirmed</Text>
           ) : (
             <Text style={[styles.badgeText, { color: '#991B1B' }]}>Payment verification pending</Text>
           )}
         </View> */}
 
-         <TouchableOpacity
-                  style={[styles.primaryBtn, status === "pending" && { opacity: 0.7 }]}
-                  onPress={() => router.replace("/(tabs)/live")}
-                  disabled={status === "pending"}
-                >
-                  <Text style={styles.primaryBtnText}>
-                    {status === "pending" ? "Loading..." : "View Live Trip"}
-                  </Text>
-                </TouchableOpacity>
-        
+        <TouchableOpacity
+          style={[styles.primaryBtn, status === "pending" && { opacity: 0.7 }]}
+          onPress={() => router.replace("/(tabs)/live")}
+          disabled={status === "pending"}
+        >
+          <Text style={styles.primaryBtnText}>
+            {status === "pending" ? "Loading..." : "View Live Trip"}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.outlineBtn, status === "pending" && { opacity: 0.7 }]}
@@ -110,7 +110,7 @@ export default function ExtensionSuccessScreen() {
           }
           disabled={status === "pending"}
         >
-          <Text style={styles.outlineBtnText}>View Booking & Extensions</Text>
+          <Text style={styles.outlineBtnText}>View Bookings</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

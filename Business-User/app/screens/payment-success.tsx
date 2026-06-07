@@ -23,7 +23,7 @@ import { Asset } from "expo-asset";
 function SuccessBadge() {
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
-  return ( 
+  return (
     <View style={styles.lottieContainer}>
       <LottieView
         source={require("../../assets/animations/Done_tick.json")}
@@ -133,7 +133,7 @@ export default function PaymentSuccessScreen() {
       })
     : "-";
 
-      const handleDownload = async () => {
+  const handleDownload = async () => {
     try {
       // Load the bundled asset and read it as base64
       const asset = Asset.fromModule(
@@ -247,12 +247,12 @@ export default function PaymentSuccessScreen() {
         </View>
 
         <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.replace("/(tabs)/bookings")}
+          style={[styles.primaryBtn, verifyStatus === "pending" && { opacity: 0.7 }]}
+          onPress={() => router.replace("/(tabs)/live")}
           disabled={verifyStatus === "pending"}
         >
           <Text style={styles.primaryBtnText}>
-            {verifyStatus === "pending" ? "Loading..." : "View Bookings"}
+            {verifyStatus === "pending" ? "Loading..." : "View Live Trip"}
           </Text>
         </TouchableOpacity>
 

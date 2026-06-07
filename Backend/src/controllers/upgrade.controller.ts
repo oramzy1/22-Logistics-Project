@@ -251,9 +251,11 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
       trackingId,
       customerName: booking.customer.name,
       event: "TRIP_UPGRADED",
+      fromPackage: upgrade.fromPackage,
       newPackageType: "Airport Schedule",
-      newTotal: upgrade.totalAmount,
+      originalAmount: upgrade.originalAmount,
       upgradeAmount: upgrade.upgradeAmount,
+      newTotal: upgrade.totalAmount,
     });
 
     // Notify customer
@@ -270,19 +272,24 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
       await createNotification(
         booking.driverId,
         "✈️ Trip Upgraded",
-        `${booking.customer.name} upgraded to an Airport ride.`,
+        `${booking.customer.name} upgraded to an Airport ride. New total: ₦${upgrade.totalAmount.toLocaleString()}`,
         "TRIP_UPGRADED",
         booking.id,
       );
       getIO()
         .to(`user:${booking.driverId}`)
-        .emit("booking:updated", updatedBooking);
+        .emit("booking:updated", {
+          ...updatedBooking,
+          upgrade: updatedUpgrade,
+        });
     }
 
     getIO()
       .to(`user:${booking.customerId}`)
-      .emit("booking:updated", updatedBooking);
-
+      .emit("booking:updated", {
+        ...updatedBooking,
+        upgrade: updatedUpgrade,
+      });
     // Email customer
     sendEmail(
       booking.customer.email,

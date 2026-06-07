@@ -35,7 +35,8 @@ export default function PaymentScreen() {
     reference,
     addOns,
     isExtension,
-  } = useLocalSearchParams<{
+    isUpgrade,
+  } = useLocalSearchParams<{ 
     bookingId: string;
     packageType: string;
     scheduledAt: string;
@@ -46,6 +47,7 @@ export default function PaymentScreen() {
     reference: string;
     addOns?: string;
     isExtension?: string;
+    isUpgrade?: string;
   }>();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
@@ -62,6 +64,11 @@ export default function PaymentScreen() {
   const handleContinue = async () => {
     if (!selectedType || !bookingId) return;
     if (isExtension === "true") {
+      setFinalAuthUrl(authorizationUrl);
+      setShowWebView(true);
+      return;
+    }
+    if (isUpgrade === "true") {
       setFinalAuthUrl(authorizationUrl);
       setShowWebView(true);
       return;
@@ -137,6 +144,23 @@ export default function PaymentScreen() {
         // Verify the extension payment before going back to live
         router.replace({
           pathname: "/screens/extension-success",
+          params: {
+            bookingId,
+            packageType,
+            scheduledAt,
+            pickupAddress,
+            dropoffAddress,
+            totalAmount,
+            reference,
+            addOns,
+          },
+        });
+        return;
+      }
+
+      if (isUpgrade === "true") {
+        router.replace({
+          pathname: "/screens/upgrade-success",
           params: {
             bookingId,
             packageType,
