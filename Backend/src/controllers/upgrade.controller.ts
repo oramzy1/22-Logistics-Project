@@ -229,6 +229,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
     }
 
     // Mark upgrade paid + update booking packageType and totalAmount
+    // Replace the Promise.all block:
     const [updatedUpgrade, updatedBooking] = await Promise.all([
       prisma.tripUpgrade.update({
         where: { id: upgrade.id },
@@ -239,6 +240,26 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
         data: {
           packageType: "Airport Schedule",
           totalAmount: upgrade.totalAmount,
+        },
+        // ADD this include so driver info isn't lost on frontend patch:
+        include: {
+          driver: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              avatarUrl: true,
+              driverProfile: {
+                select: {
+                  brandModel: true,
+                  vehicleColor: true,
+                  plateNumber: true,
+                },
+              },
+            },
+          },
+          extensions: true,
+          stops: { orderBy: { createdAt: "asc" } },
         },
       }),
     ]);

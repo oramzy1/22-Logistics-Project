@@ -55,7 +55,7 @@ export default function PaymentHistoryScreen() {
       const upgradeAmount =
         upgrade?.paymentStatus === "PAID" ? upgrade.upgradeAmount : 0;
       const extensionsTotal = paidExtensions.reduce((s, e) => s + e.amount, 0);
-      const grandTotal = (booking?.totalAmount ?? 0) + extensionsTotal;
+      const grandTotal = booking?.totalAmount ?? 0;
 
       const html = `
       <html><body style="font-family:sans-serif;padding:32px;max-width:600px;margin:auto">
@@ -78,8 +78,16 @@ export default function PaymentHistoryScreen() {
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.driver ? booking.driver.name : "Pending"}</td></tr>
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Payment Status</td>
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right;color:${booking?.paymentStatus === "PAID" ? "#22C55E" : "#EF4444"}">${booking?.paymentStatus}</td></tr>
-          <tr><td style="padding:14px 0;color:#111827;font-weight:800;font-size:16px">Total Amount</td>
-              <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${booking?.totalAmount.toLocaleString()}</td></tr>
+          ${
+            upgrade?.paymentStatus === "PAID" || paidExtensions.length > 0
+              ? `
+<tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Base Amount</td>
+    <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">
+      ₦${(upgrade ? upgrade.originalAmount : (booking?.totalAmount ?? 0) - extensionsTotal).toLocaleString()}
+    </td></tr>
+`
+              : ""
+          }
          ${
            upgrade?.paymentStatus === "PAID"
              ? `
@@ -112,7 +120,12 @@ ${
     <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${grandTotal.toLocaleString()}</td>
   </tr>
 `
-    : ""
+    : `
+  <tr>
+    <td style="padding:14px 0;color:#111827;font-weight:800;font-size:16px">Total Amount</td>
+    <td style="padding:14px 0;font-weight:900;font-size:18px;text-align:right">₦${grandTotal.toLocaleString()}</td>
+  </tr>
+`
 }
         </table>
         <p style="text-align:center;color:#9CA3AF;font-size:12px;margin-top:32px">
@@ -253,14 +266,14 @@ ${
             }
             valueStyle={{ color: statusColor }}
           />
-          {upgrade?.paymentStatus === 'PAID' && (
-  <View style={styles.upgradeBadgeRow}>
-    <Text style={styles.rowLabel}>✈️ Airport Upgrade</Text>
-    <Text style={[styles.rowValue, { color: '#0369A1' }]}>
-      +₦{(upgrade.upgradeAmount ?? 0).toLocaleString()}
-    </Text>
-  </View>
-)}
+          {upgrade?.paymentStatus === "PAID" && (
+            <View style={styles.upgradeBadgeRow}>
+              <Text style={styles.rowLabel}>✈️ Airport Upgrade</Text>
+              <Text style={[styles.rowValue, { color: "#0369A1" }]}>
+                +₦{(upgrade.upgradeAmount ?? 0).toLocaleString()}
+              </Text>
+            </View>
+          )}
           <Row
             label="Payment status"
             value={booking.paymentStatus === "PAID" ? "Successful" : "Unpaid"}
@@ -337,12 +350,7 @@ ${
                     Total Paid (incl. extensions)
                   </Text>
                   <Text style={styles.extTotalValue}>
-                    ₦
-                    {(
-                      booking.totalAmount +
-                      (upgrade?.upgradeAmount ?? 0) +
-                      paidExtensions.reduce((s, e) => s + e.amount, 0)
-                    ).toLocaleString()}
+                    ₦{booking.totalAmount.toLocaleString()}
                   </Text>
                 </View>
               </View>
@@ -429,13 +437,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   upgradeBadgeRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingVertical: 12,
-  borderBottomWidth: 1,
-  borderBottomColor: '#F1F5F9',
-},
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
   extensionsToggleLabel: {
     fontSize: 14,
     fontWeight: "700",
