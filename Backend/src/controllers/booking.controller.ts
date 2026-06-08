@@ -458,7 +458,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
 
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status: "COMPLETED", onlineStatus: "ONLINE" },
+      data: { status: "COMPLETED"},
     });
 
     await archiveTripMessages(updated.id);
@@ -466,7 +466,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
     if (booking.driverId) {
       await prisma.driverProfile.update({
         where: { userId: booking.driverId },
-        data: { isAvailable: true },
+        data: { isAvailable: true, onlineStatus: "ONLINE" },
       });
       const { getIO } = require("../lib/socket");
       getIO().to(`user:${booking.customerId}`).emit("booking:updated", updated);
