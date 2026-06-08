@@ -1,11 +1,13 @@
-import { router } from "expo-router";
-import React from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState} from "react";
 import {
   ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { Text } from "../../components/AppText";
 
@@ -26,10 +28,11 @@ import { useUserPromos } from "@/hooks/useUserPromos";
 export default function HomeTabScreen() {
   const { promos } = useUserPromos();
   const { prices } = usePrices();
-  const { isBusiness, user, isLoading } = useAuth();
+  const { isBusiness, user, isLoading, signOut } = useAuth();
   const { setSelectedPackage, setPendingPromo } = useSchedule();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
+const [refreshing, setRefreshing] = useState(false);
 
   const packages = [
     { title: "3 Hours", price: formatPrice(prices.price_3_hours) },
@@ -47,6 +50,29 @@ export default function HomeTabScreen() {
     Airport: "airport",
   };
 
+  const fetchHomeData = useCallback(async () => {
+  try {
+    setRefreshing(true);
+    // Trigger any data refetches your hooks expose, e.g.:
+    // await refetchPrices();
+    // await refetchPromos();
+  } catch (err: any) {
+    if (err?.response?.status === 401) {
+      Alert.alert("Session Expired", "Please log in again.");
+      signOut();
+      router.push("/(auth)/sign-in");
+    }
+  } finally {
+    setRefreshing(false);
+  }
+}, []);
+
+
+useFocusEffect(
+  useCallback(() => {
+    fetchHomeData();
+  }, [fetchHomeData])
+);
   if (!user || isLoading) {
     return <HomeSkeleton />;
   }
@@ -90,9 +116,12 @@ export default function HomeTabScreen() {
         {isBusiness ? (
           <BusinessHome />
         ) : (
-          <ScrollView
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
+        <ScrollView
+  contentContainerStyle={styles.content}
+  showsVerticalScrollIndicator={false}
+  refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={fetchHomeData} />
+  }
           >
             <Text style={styles.h1}>Your Ride, On Schedule</Text>
             {promos.length > 0 && (
@@ -160,7 +189,7 @@ const createStyles = (themeColors: any) =>
     origin: { backgroundColor: themeColors.navy },
     root: { backgroundColor: themeColors.background, height: "100%" },
     top: { paddingBottom: spacing.md },
-    content: { padding: spacing.lg, paddingBottom: 40 },
+    content: { padding: spacing.lg, paddingBottom: 40 }, 
     h1: {
       fontSize: 20,
       fontWeight: "600",

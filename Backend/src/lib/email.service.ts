@@ -93,7 +93,11 @@ const emailHeader = () => `
   </div>
 `;
 
-export async function sendEmail(to: string, subject: string, htmlContent: string) {
+export async function sendEmail(
+  to: string,
+  subject: string,
+  htmlContent: string,
+) {
   // Fire-and-forget - response is never blocked
   axios
     .post(
@@ -199,20 +203,32 @@ export const sendWelcomeEmail = async (
 export const sendDriverStatusEmail = async (
   email: string,
   customerName: string,
-  status: 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED',
+  status: "ARRIVED" | "IN_PROGRESS" | "COMPLETED",
   driverName: string,
   trackingId: string,
 ) => {
   const statusMap = {
-    ARRIVED:     { emoji: '📍', heading: 'Driver Has Arrived',   body: `${driverName} has arrived at your pickup location. Please head out now.` },
-    IN_PROGRESS: { emoji: '🚗', heading: 'Your Ride Has Started', body: `${driverName} has started your trip. Sit back and enjoy the ride!` },
-    COMPLETED:   { emoji: '✅', heading: 'Trip Completed',        body: `Your trip with ${driverName} has been completed. Thank you for riding with 22Logistics!` },
+    ARRIVED: {
+      emoji: "📍",
+      heading: "Driver Has Arrived",
+      body: `${driverName} has arrived at your pickup location. Please head out now.`,
+    },
+    IN_PROGRESS: {
+      emoji: "🚗",
+      heading: "Your Ride Has Started",
+      body: `${driverName} has started your trip. Sit back and enjoy the ride!`,
+    },
+    COMPLETED: {
+      emoji: "✅",
+      heading: "Trip Completed",
+      body: `Your trip with ${driverName} has been completed. Thank you for riding with 22Logistics!`,
+    },
   };
   const { emoji, heading, body } = statusMap[status];
 
   sendEmail(
     email,
-    `${emoji} ${heading} — Booking ${trackingId}`,
+    `${emoji} ${heading} - Booking ${trackingId}`,
     `
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
       ${emailHeader()}
@@ -483,27 +499,27 @@ export const sendAdminBookingStatusEmail = async (
 export const sendExtensionEmail = async (
   email: string,
   name: string,
-  role: 'customer' | 'driver' | 'admin',
+  role: "customer" | "driver" | "admin",
   customerName: string,
   trackingId: string,
   hours: number,
   amount: number,
   driverName?: string,
 ) => {
-  const isDriver = role === 'driver';
-  const isAdmin  = role === 'admin';
+  const isDriver = role === "driver";
+  const isAdmin = role === "admin";
 
   const subject = isAdmin
     ? `🔄 Trip Extension Payment - ${trackingId}`
     : isDriver
-      ? `Trip Extended — ${trackingId}`
-      : `Your trip has been extended — ${trackingId}`;
+      ? `Trip Extended - ${trackingId}`
+      : `Your trip has been extended - ${trackingId}`;
 
   const heading = isAdmin
-    ? 'Trip Extension Received'
+    ? "Trip Extension Received"
     : isDriver
-      ? 'Trip Extended by Customer'
-      : 'Trip Extension Confirmed ✅';
+      ? "Trip Extended by Customer"
+      : "Trip Extension Confirmed ✅";
 
   const intro = isAdmin
     ? `A customer has paid for a trip extension.`
@@ -523,8 +539,8 @@ export const sendExtensionEmail = async (
         <table style="width:100%;border-collapse:collapse">
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0;width:140px">Booking ID</td><td style="color:#111;font-weight:600">${trackingId}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Customer</td><td style="color:#111;font-weight:600">${customerName}</td></tr>
-          ${driverName ? `<tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>` : ''}
-          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Extension</td><td style="color:#111;font-weight:600">+${hours} hour${hours > 1 ? 's' : ''}</td></tr>
+          ${driverName ? `<tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Driver</td><td style="color:#111;font-weight:600">${driverName}</td></tr>` : ""}
+          <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Extension</td><td style="color:#111;font-weight:600">+${hours} hour${hours > 1 ? "s" : ""}</td></tr>
           <tr><td style="color:#6B7280;font-size:13px;padding:6px 0">Amount Paid</td><td style="color:#0B1B2B;font-weight:700;font-size:15px">₦${amount.toLocaleString()}</td></tr>
         </table>
       </div>

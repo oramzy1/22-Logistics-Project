@@ -64,12 +64,14 @@ export default function ScheduleTabScreen() {
   const [extras, setExtras] = useState({
     babySeat: false,
     extraLuggage: false,
-    wifi: true,
-    coldWater: true,
-    airportRide: false,
+    wifi: false,
+    coldWater: false,
+    petFriendly: false,
+    wheelchair: false,
+    customExtra: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pickupStreet, setPickupStreet] = useState("");   
+  const [pickupStreet, setPickupStreet] = useState("");
   const [pickupLGA, setPickupLGA] = useState("");
   const [dropoffStreet, setDropoffStreet] = useState("");
   const [dropoffLGA, setDropoffLGA] = useState("");
@@ -111,25 +113,27 @@ export default function ScheduleTabScreen() {
     );
   }, [pickupTime]);
 
-useEffect(() => {
-  setPickupStreet("");
-  setPickupLGA("");
-  setDropoffStreet("");
-  setDropoffLGA("");
-  setInterstateLocation(null);
-  setTimeSlot("");
-  setPromoCode("");
-  setPromoResult(null);
-  setPickupDate(null);        
-  setPickupTime(null);        
-  setExtras({                 
-    babySeat: false,
-    extraLuggage: false,
-    wifi: true,
-    coldWater: true,
-    airportRide: false,
-  });
-}, [selectedPackage]);
+  useEffect(() => {
+    setPickupStreet("");
+    setPickupLGA("");
+    setDropoffStreet("");
+    setDropoffLGA("");
+    setInterstateLocation(null);
+    setTimeSlot("");
+    setPromoCode("");
+    setPromoResult(null);
+    setPickupDate(null);
+    setPickupTime(null);
+    setExtras({
+      babySeat: false,
+      extraLuggage: false,
+      wifi: false,
+      coldWater: false,
+      petFriendly: false,
+      wheelchair: false,
+      customExtra: "",
+    });
+  }, [selectedPackage]);
 
   const { createBooking } = useBookings();
   const { colors: themeColors } = useAppTheme();
@@ -203,6 +207,9 @@ useEffect(() => {
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
 
+    const customExtraPrice =
+      extrasEnabled && extras.customExtra.trim().length > 0 ? 2000 : 0;
+
     const interstatePrice = interstateLocation?.price || 0;
     const outOfLGAFee =
       (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
@@ -218,7 +225,9 @@ useEffect(() => {
       add("extraLuggage", 2000) +
       add("wifi", 4000) +
       add("coldWater", 2000) +
-      add("airportRide", 2000)
+      add("petFriendly", 2000) +
+      add("wheelchair", 2000) +
+      customExtraPrice
     );
   }, [
     extras,
@@ -231,7 +240,7 @@ useEffect(() => {
   ]);
 
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
-  
+
   const effectiveTotal = promoResult ? promoResult.finalAmount : total;
   const totalLabel = `₦${effectiveTotal.toLocaleString()}`;
 
@@ -297,18 +306,18 @@ useEffect(() => {
         airport: "Airport Schedule",
       };
 
-      const addOnsList = Object.entries(extras)
-        .filter(([, v]) => extrasEnabled && v)
-        .map(
-          ([k]) =>
-            ({
-              babySeat: "Baby Car Seat",
-              extraLuggage: "Extra Luggage",
-              wifi: "WiFi",
-              coldWater: "Cold Water",
-              airportRide: "Airport Ride",
-            })[k],
-        )
+      const addOnsList = [
+        extras.babySeat && "Baby Car Seat",
+        extras.extraLuggage && "Extra Luggage",
+        extras.wifi && "WiFi",
+        extras.coldWater && "Cold Water",
+        extras.petFriendly && "Pet Friendly",
+        extras.wheelchair && "Wheelchair Access",
+        extrasEnabled && extras.customExtra.trim()
+          ? extras.customExtra.trim()
+          : null,
+      ]
+        .filter((v): v is string => !!v && extrasEnabled)
         .filter(Boolean) as string[];
 
       const payload = {
@@ -354,6 +363,12 @@ useEffect(() => {
 
       console.log("Your Payload", payload);
 
+      const outOfLGAFeeValue =
+  (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
+  (!interstateLocation && dropoffLGA && !PH_LGAS.includes(dropoffLGA)
+    ? OUT_OF_LGA_FEE
+    : 0);
+
       router.push({
         pathname: "/screens/confirmation",
         params: {
@@ -366,14 +381,9 @@ useEffect(() => {
           authorizationUrl: payment.authorizationUrl,
           reference: payment.reference,
           addOns: addOnsList,
-          outOfLGAFee: String(
-            (pickupLGA && !PH_LGAS.includes(pickupLGA) ? OUT_OF_LGA_FEE : 0) +
-              (!interstateLocation &&
-              dropoffLGA &&
-              !PH_LGAS.includes(dropoffLGA)
-                ? OUT_OF_LGA_FEE
-                : 0),
-          ),
+         outOfLGAFee: outOfLGAFeeValue > 0
+      ? String(outOfLGAFeeValue)
+      : undefined,
           pickupDate: pickupDate
             ? pickupDate.toISOString().split("T")[0]
             : undefined,
@@ -576,14 +586,50 @@ useEffect(() => {
               disabled={!extrasEnabled}
             />
             <AppCheckboxRow
-              label="Airport Ride"
+              label="Pet Friendly"
               price="(₦2,000)"
-              value={extras.airportRide}
+              value={extras.petFriendly}
               onValueChange={(v) =>
-                setExtras((s) => ({ ...s, airportRide: v }))
+                setExtras((s) => ({ ...s, petFriendly: v }))
               }
               disabled={!extrasEnabled}
             />
+            <AppCheckboxRow
+              label="Wheelchair Access"
+              price="(₦2,000)"
+              value={extras.wheelchair}
+              onValueChange={(v) => setExtras((s) => ({ ...s, wheelchair: v }))}
+              disabled={!extrasEnabled}
+            />
+
+            {/* Custom extra */}
+            <View style={styles.customExtraRow}>
+              <Text
+                style={[
+                  styles.customExtraLabel,
+                  !extrasEnabled && styles.customExtraDisabled,
+                ]}
+              >
+                Other (₦2,000)
+              </Text>
+              <FormInput
+                placeholder="Describe your extra…"
+                value={extras.customExtra}
+                onChangeText={(t) =>
+                  setExtras((s) => ({ ...s, customExtra: t.slice(0, 15) }))
+                }
+                editable={extrasEnabled}
+                style={[
+                  styles.customExtraInput,
+                  !extrasEnabled && { opacity: 0.4 },
+                ]}
+              />
+              {extras.customExtra.length > 0 && (
+                <Text style={styles.customExtraCount}>
+                  {extras.customExtra.length}/15
+                </Text>
+              )}
+            </View>
           </View>
           <Text style={styles.h2}>Promo Code</Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -596,7 +642,6 @@ useEffect(() => {
                 setPromoCode(t.toUpperCase());
                 setPromoResult(null);
               }}
-              
             />
             <PrimaryButton
               title={promoLoading ? "..." : "Apply"}
@@ -607,7 +652,7 @@ useEffect(() => {
           </View>
           {promoResult && (
             <Text style={{ color: "#16a34a", fontSize: 12, marginTop: 4 }}>
-              ✓ {promoResult.description} — saving ₦
+              ✓ {promoResult.description} - saving ₦
               {promoResult.discountAmount.toLocaleString()}
             </Text>
           )}
@@ -700,6 +745,30 @@ const createStyles = (themeColors: any) =>
       borderRadius: radius.lg,
       padding: 10,
       marginTop: spacing.sm,
+    },
+    customExtraRow: {
+      marginTop: spacing.sm,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: themeColors.border,
+    },
+    customExtraLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: themeColors.text,
+      marginBottom: 6,
+    },
+    customExtraDisabled: {
+      opacity: 0.4,
+    },
+    customExtraInput: {
+      marginBottom: 0,
+    },
+    customExtraCount: {
+      fontSize: 11,
+      color: themeColors.textSecondary,
+      textAlign: "right",
+      marginTop: 2,
     },
     totalBox: {
       height: 56,

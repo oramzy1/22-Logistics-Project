@@ -458,7 +458,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
 
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status: "COMPLETED" },
+      data: { status: "COMPLETED", onlineStatus: "ONLINE" },
     });
 
     await archiveTripMessages(updated.id);
@@ -547,7 +547,6 @@ export const rateDriver = async (req: AuthRequest, res: Response) => {
       where: { driverId: booking.driverId },
     });
 
-    // ✅ NOW we actually write the computed rating back to DriverProfile
     await prisma.driverProfile.update({
       where: { userId: booking.driverId },
       data: {

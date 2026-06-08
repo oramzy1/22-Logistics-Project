@@ -773,7 +773,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
           },
         },
       },
-    });
+    }); 
 
     await checkAndGrantMilestonePromo(booking.customerId);
 

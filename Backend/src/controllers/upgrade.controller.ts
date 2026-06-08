@@ -55,7 +55,7 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
     if (upgradeAmount <= 0) {
       return res.status(400).json({
         message:
-          "No upgrade amount needed — current price exceeds airport rate",
+          "No upgrade amount needed - current price exceeds airport rate",
       });
     }
 
@@ -153,7 +153,7 @@ export const requestUpgradeAsDriver = async (
     // Email customer
     sendEmail(
       booking.customer.email,
-      `✈️ Airport Ride Upgrade — ${booking.trackingId}`,
+      `✈️ Airport Ride Upgrade - ${booking.trackingId}`,
       `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
         <h2 style="color:#0B1B2B">Airport Upgrade Available ✈️</h2>
@@ -175,14 +175,14 @@ export const requestUpgradeAsDriver = async (
     admins.forEach((a) =>
       sendEmail(
         a.email,
-        `✈️ Upgrade Requested — ${booking.trackingId}`,
+        `✈️ Upgrade Requested - ${booking.trackingId}`,
         `<p>Driver <strong>${booking.driver?.name}</strong> requested an airport upgrade for booking <strong>${booking.trackingId}</strong> (Customer: ${booking.customer.name}). Upgrade amount: ₦${upgradeAmount.toLocaleString()}</p>`,
       ),
     );
 
     await notifyAdmins(
       "Airport Upgrade Requested",
-      `Driver requested upgrade for ${booking.trackingId} — ₦${upgradeAmount.toLocaleString()}`,
+      `Driver requested upgrade for ${booking.trackingId} - ₦${upgradeAmount.toLocaleString()}`,
       "BOOKING_UPDATED",
       bookingId,
     );
@@ -314,7 +314,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
     // Email customer
     sendEmail(
       booking.customer.email,
-      `✈️ Airport Upgrade Confirmed — ${trackingId}`,
+      `✈️ Airport Upgrade Confirmed - ${trackingId}`,
       `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:16px">
         <h2 style="color:#0B1B2B">Upgrade Confirmed ✈️</h2>
@@ -339,7 +339,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
     admins.forEach((a) =>
       sendEmail(
         a.email,
-        `✈️ Upgrade Paid — ${trackingId}`,
+        `✈️ Upgrade Paid - ${trackingId}`,
         `<p>Booking <strong>${trackingId}</strong> upgraded to Airport. Customer: ${booking.customer.name}. Upgrade: ₦${upgrade.upgradeAmount.toLocaleString()}. New total: ₦${upgrade.totalAmount.toLocaleString()}</p>`,
       ),
     );

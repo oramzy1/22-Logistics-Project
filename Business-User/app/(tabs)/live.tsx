@@ -758,16 +758,22 @@ useBookingSocket({
                       activeBooking?.packageType,
                     ) &&
                     !activeBooking?.upgrade && (
-                      <TouchableOpacity
-                        style={styles.upgradeBtn}
+                      // <TouchableOpacity
+                      //   style={styles.upgradeBtn}
+                      //   onPress={handleUpgrade}
+                      //   disabled={isUpgrading}
+                      // >
+                      //   <Text style={styles.upgradeBtnText}>
+                      //     Upgrade to Airport Ride -{" "}
+                      //     {formatPrice(upgradeAmount)}
+                      //   </Text>
+                      // </TouchableOpacity>
+                      <PrimaryButton variant="dark"
                         onPress={handleUpgrade}
                         disabled={isUpgrading}
-                      >
-                        <Text style={styles.upgradeBtnText}>
-                          Upgrade to Airport Ride -{" "}
-                          {formatPrice(upgradeAmount)}
-                        </Text>
-                      </TouchableOpacity>
+                        loading={isUpgrading}
+                        title={`Upgrade to Airport Ride - ${formatPrice(upgradeAmount)}`}
+                       />
                     )}
 
                   {activeBooking?.upgrade?.paymentStatus === "PAID" && (

@@ -81,7 +81,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <TabBarIcon name="live" focused={focused} />
           ),
-          tabBarLabel: "Live",
+          tabBarLabel: "Trip",
         }}
       />
 

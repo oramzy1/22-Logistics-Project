@@ -34,7 +34,7 @@ export default function UpgradeSuccessScreen() {
       const tryVerify = async (): Promise<void> => {
         attempts++;
         try {
-          await BookingService.verifyExtension(reference);
+          await BookingService.verifyUpgrade(reference);
           await fetchBookings();
           setStatus("confirmed");
         } catch (err: any) {
@@ -52,7 +52,6 @@ export default function UpgradeSuccessScreen() {
         }
       };
 
-      // Small initial delay - let Paystack process on their end first
       await new Promise((r) => setTimeout(r, 1500));
       await tryVerify();
     };

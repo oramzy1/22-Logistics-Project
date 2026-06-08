@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useState, useCallback } from "react";
 import {
   ActivityIndicator,
   ImageBackground,
@@ -10,6 +10,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
+  Alert
 } from "react-native";
 
 import { useBookings } from "@/context/BookingContext";
@@ -28,6 +30,7 @@ import { useAppTheme } from "./useAppTheme";
 import { usePrices, formatPrice } from '@/hooks/usePrices';
 import { PromoCarousel } from "./PromoCarousel";
 import { useUserPromos } from "@/hooks/useUserPromos";
+import { useAuth } from "@/context/AuthContext";
 
 
 
@@ -56,6 +59,30 @@ export function BusinessHome() {
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
 
+  const { signOut } = useAuth();
+const [refreshing, setRefreshing] = useState(false);
+
+const fetchData = useCallback(async () => {
+  try {
+    setRefreshing(true);
+    // Call whatever refetch methods your context/hooks expose
+    // e.g. await refetchBookings(); await refetchPromos(); await refetchPrices();
+  } catch (err: any) {
+    if (err?.response?.status === 401) {
+      Alert.alert("Session Expired", "Please log in again.");
+      signOut();
+      router.push("/(auth)/sign-in");
+    }
+  } finally {
+    setRefreshing(false);
+  }
+}, []);
+
+useFocusEffect(
+  useCallback(() => {
+    fetchData();
+  }, [fetchData])
+);
   const now = new Date();
   const thisMonth = bookings.filter((b) => {
     const d = new Date(b.createdAt);
@@ -271,10 +298,13 @@ export function BusinessHome() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+     <ScrollView
+  contentContainerStyle={styles.content}
+  showsVerticalScrollIndicator={false}
+  refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
+  }
+>
         <Text style={styles.h1}>Your Ride, On Schedule</Text>
 
           {promos.length > 0 && (

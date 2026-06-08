@@ -69,6 +69,11 @@ verifyExtension: async (reference: string) => {
   return response.data;
 },
 
+verifyUpgrade: async (reference: string) => {
+  const response = await apiClient.get(`/upgrade/verify/${reference}`);
+  return response.data;
+},
+
 endTrip: async (id: string) => {
   const { data } = await apiClient.patch(`/bookings/${id}/end`);
   return data;

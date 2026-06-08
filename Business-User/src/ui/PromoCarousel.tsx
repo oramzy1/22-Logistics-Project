@@ -13,7 +13,7 @@
 // const CARD_WIDTH = width - 48; // matches screen horizontal padding
 // const INTERVAL = 4000;
 
-// // Palette cycles per slide — rich, non-generic
+// // Palette cycles per slide - rich, non-generic
 // const GRADIENTS = [
 //   { bg: '#0B1B2B', accent: '#E4C77B', sub: 'rgba(228,199,123,0.15)' },
 //   { bg: '#1a1a2e', accent: '#e94560', sub: 'rgba(233,69,96,0.15)'  },
@@ -125,7 +125,7 @@
 //         </View>
 //       </Animated.View>
 
-//       {/* Dots — only show when multiple promos */}
+//       {/* Dots - only show when multiple promos */}
 //       {promos.length > 1 && (
 //         <View style={styles.dots}>
 //           {promos.map((_, i) => {
@@ -201,41 +201,54 @@
 //   dot: { height: 5, borderRadius: 3 },
 // });
 
-import React from 'react';
+import React from "react";
 import {
-  Clipboard, ImageBackground, StyleSheet,
-  TouchableOpacity, View,
-} from 'react-native';
-import { Text } from '../../components/AppText';
-import { useRouter } from 'expo-router';
-import { useSchedule } from '@/context/ScheduleContext';
-import { UserPromo } from '@/hooks/useUserPromos';
-import { showToast } from '../../app/utils/toast';
-import { CardSlider } from './CardSlider';
-import { Dimensions } from 'react-native';
+  Clipboard,
+  ImageBackground,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Text } from "../../components/AppText";
+import { useRouter } from "expo-router";
+import { useSchedule } from "@/context/ScheduleContext";
+import { UserPromo } from "@/hooks/useUserPromos";
+import { showToast } from "../../app/utils/toast";
+import { CardSlider } from "./CardSlider";
+import { Dimensions } from "react-native";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - 48;
 
-// Curated vehicle images — each gives a distinct mood
+// Curated vehicle images - each gives a distinct mood
 const VEHICLE_IMAGES = [
-  { uri: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&q=80' }, // luxury sedan interior
-  { uri: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80' }, // BMW on road
-  { uri: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&q=80' }, // dark SUV
-  { uri: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80' }, // clean car side
-  { uri: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80' }, // dashboard glow
+  {
+    uri: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&q=80",
+  }, // luxury sedan interior
+  {
+    uri: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
+  }, // BMW on road
+  {
+    uri: "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&q=80",
+  }, // dark SUV
+  {
+    uri: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80",
+  }, // clean car side
+  {
+    uri: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80",
+  }, // dashboard glow
 ];
 
-// Overlay tints — semi-transparent so image texture shows through
+// Overlay tints - semi-transparent so image texture shows through
 const OVERLAYS = [
-  'rgba(11,27,43,0.72)',   // navy
-  'rgba(30,27,75,0.72)',   // indigo
-  'rgba(13,59,46,0.72)',   // forest
-  'rgba(67,20,7,0.72)',    // burnt orange
-  'rgba(20,20,30,0.75)',   // near-black
+  "rgba(11,27,43,0.72)", // navy
+  "rgba(30,27,75,0.72)", // indigo
+  "rgba(13,59,46,0.72)", // forest
+  "rgba(67,20,7,0.72)", // burnt orange
+  "rgba(20,20,30,0.75)", // near-black
 ];
 
-const ACCENT_COLORS = ['#E4C77B', '#818cf8', '#4ade80', '#fb923c', '#e94560'];
+const ACCENT_COLORS = ["#E4C77B", "#818cf8", "#4ade80", "#fb923c", "#e94560"];
 
 interface Props {
   promos: UserPromo[];
@@ -255,13 +268,15 @@ function PromoCard({
   const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
 
   const discountLabel =
-    promo.discountType === 'PERCENTAGE'
+    promo.discountType === "PERCENTAGE"
       ? `${promo.discountValue}% OFF`
       : `₦${promo.discountValue.toLocaleString()} OFF`;
 
   const expiry = promo.expiresAt
-    ? new Date(promo.expiresAt).toLocaleDateString('en-NG', {
-        day: 'numeric', month: 'short', year: 'numeric',
+    ? new Date(promo.expiresAt).toLocaleDateString("en-NG", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
       })
     : null;
 
@@ -273,7 +288,13 @@ function PromoCard({
       resizeMode="cover"
     >
       {/* Gradient-style overlay */}
-      <View style={[StyleSheet.absoluteFillObject, styles.overlay, { backgroundColor: overlayColor }]} />
+      <View
+        style={[
+          StyleSheet.absoluteFillObject,
+          styles.overlay,
+          { backgroundColor: overlayColor },
+        ]}
+      />
 
       {/* Decorative circle */}
       {/* <View style={[styles.decorCircle, { borderColor: accent + '30' }]} /> */}
@@ -281,24 +302,37 @@ function PromoCard({
       <View style={styles.cardBody}>
         {/* Top row: badge + expiry */}
         <View style={styles.topRow}>
-          <View style={[styles.badge, { backgroundColor: accent + '25', borderColor: accent + '60' }]}>
-            <Text style={[styles.badgeText, { color: accent }]}>{discountLabel}</Text>
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: accent + "25", borderColor: accent + "60" },
+            ]}
+          >
+            <Text style={[styles.badgeText, { color: accent }]}>
+              {discountLabel}
+            </Text>
           </View>
           {expiry && (
-            <Text style={[styles.expiryText, { color: accent + 'bb' }]}>Ends {expiry}</Text>
+            <Text style={[styles.expiryText, { color: accent + "bb" }]}>
+              Ends {expiry}
+            </Text>
           )}
         </View>
 
         {/* Description */}
         <Text style={styles.description} numberOfLines={2}>
-          {promo.description ?? 'Exclusive offer just for you'}
+          {promo.description ?? "Exclusive offer just for you"}
         </Text>
 
         {/* Bottom row: code + CTA */}
         <View style={styles.bottomRow}>
           <View style={styles.codeBlock}>
-            <Text style={[styles.codeLabel, { color: accent + '99' }]}>PROMO CODE</Text>
-            <Text style={[styles.codeValue, { color: accent }]}>{promo.code}</Text>
+            <Text style={[styles.codeLabel, { color: accent + "99" }]}>
+              PROMO CODE
+            </Text>
+            <Text style={[styles.codeValue, { color: accent }]}>
+              {promo.code}
+            </Text>
           </View>
           <TouchableOpacity
             style={[styles.claimBtn, { backgroundColor: accent }]}
@@ -319,15 +353,15 @@ export function PromoCarousel({ promos }: Props) {
 
   const handleClaim = (code: string) => {
     Clipboard.setString(code);
-    showToast.success(`Code "${code}" copied — apply it at checkout!`);
+    showToast.success(`Code "${code}" copied - apply it at checkout!`);
     setPendingPromo(code);
-    setSelectedPackage('3h');
-    router.push('/(tabs)/schedule');
+    setSelectedPackage("3h");
+    router.push("/(tabs)/schedule");
   };
 
   if (!promos.length) return null;
 
-  // Single promo — no slider chrome needed, just the card
+  // Single promo - no slider chrome needed, just the card
   if (promos.length === 1) {
     return (
       <View style={styles.singleWrapper}>
@@ -357,13 +391,13 @@ const styles = StyleSheet.create({
   card: {
     height: 178,
     borderRadius: 20,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
+    overflow: "hidden",
+    justifyContent: "flex-end",
   },
   cardImage: { borderRadius: 20 },
   overlay: { borderRadius: 20, opacity: 0.75 },
   decorCircle: {
-    position: 'absolute',
+    position: "absolute",
     width: 160,
     height: 160,
     borderRadius: 80,
@@ -376,9 +410,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   badge: {
     borderWidth: 1,
@@ -386,26 +420,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  badgeText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.4 },
-  expiryText: { fontSize: 10, fontWeight: '500' },
+  badgeText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.4 },
+  expiryText: { fontSize: 10, fontWeight: "500" },
   description: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     lineHeight: 20,
   },
   bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   codeBlock: { gap: 1 },
-  codeLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.2 },
-  codeValue: { fontSize: 15, fontWeight: '800', letterSpacing: 2.5 },
+  codeLabel: { fontSize: 8, fontWeight: "700", letterSpacing: 1.2 },
+  codeValue: { fontSize: 15, fontWeight: "800", letterSpacing: 2.5 },
   claimBtn: {
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 10,
   },
-  claimText: { color: '#000', fontWeight: '800', fontSize: 11 },
+  claimText: { color: "#000", fontWeight: "800", fontSize: 11 },
 });

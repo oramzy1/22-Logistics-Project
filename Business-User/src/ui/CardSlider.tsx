@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Dimensions, FlatList, NativeScrollEvent, NativeSyntheticEvent,
-  StyleSheet, TouchableOpacity, View, ViewToken,
+  Dimensions,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  ViewToken,
 } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -43,12 +49,12 @@ export function CardSlider<T extends { id?: string | number }>({
   const containerWidth = SCREEN_WIDTH - 32;
   const effectiveCardWidth = visibleCards
     ? (containerWidth - gap * (visibleCards - 1)) / visibleCards
-    : cardWidth ?? containerWidth - peekWidth * 2;
+    : (cardWidth ?? containerWidth - peekWidth * 2);
   const snapWidth = effectiveCardWidth + gap;
 
   // Build infinite list: [last N clones] + [real items] + [first N clones]
   const clonesBefore = data.slice(-CLONE_COUNT);
-  const clonesAfter  = data.slice(0, CLONE_COUNT);
+  const clonesAfter = data.slice(0, CLONE_COUNT);
   const loopData = [...clonesBefore, ...data, ...clonesAfter];
   const offset = CLONE_COUNT; // real items start here
 
@@ -82,7 +88,9 @@ export function CardSlider<T extends { id?: string | number }>({
   useEffect(() => {
     if (!autoPlay || data.length <= 1) return;
     timerRef.current = setInterval(advance, autoPlayInterval);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [autoPlay, autoPlayInterval, advance]);
 
   const resetTimer = useCallback(() => {
@@ -102,15 +110,21 @@ export function CardSlider<T extends { id?: string | number }>({
       let realIdx = rawIndex - offset;
 
       if (realIdx < 0) {
-        // Scrolled into left clones — jump to equivalent real position at end
+        // Scrolled into left clones - jump to equivalent real position at end
         realIdx = ((realIdx % data.length) + data.length) % data.length;
         setActiveIndex(realIdx);
-        flatRef.current?.scrollToIndex({ index: realIdx + offset, animated: false });
+        flatRef.current?.scrollToIndex({
+          index: realIdx + offset,
+          animated: false,
+        });
       } else if (realIdx >= data.length) {
-        // Scrolled into right clones — jump to equivalent real position at start
+        // Scrolled into right clones - jump to equivalent real position at start
         realIdx = realIdx % data.length;
         setActiveIndex(realIdx);
-        flatRef.current?.scrollToIndex({ index: realIdx + offset, animated: false });
+        flatRef.current?.scrollToIndex({
+          index: realIdx + offset,
+          animated: false,
+        });
       } else {
         setActiveIndex(realIdx);
       }
@@ -130,7 +144,9 @@ export function CardSlider<T extends { id?: string | number }>({
       <FlatList
         ref={flatRef}
         data={loopData}
-        keyExtractor={(item, i) => `${String((item as any)?.id ?? i)}-loop-${i}`}
+        keyExtractor={(item, i) =>
+          `${String((item as any)?.id ?? i)}-loop-${i}`
+        }
         horizontal
         pagingEnabled={false}
         snapToInterval={snapWidth}
@@ -148,10 +164,13 @@ export function CardSlider<T extends { id?: string | number }>({
           offset: snapWidth * index,
           index,
         })}
-        // Disable viewability — we compute real index from scroll offset instead
+        // Disable viewability - we compute real index from scroll offset instead
         renderItem={({ item, index }) => (
           <View style={{ width: effectiveCardWidth }}>
-            {renderItem(item as T, (index - offset + data.length) % data.length)}
+            {renderItem(
+              item as T,
+              (index - offset + data.length) % data.length,
+            )}
           </View>
         )}
       />
@@ -172,7 +191,8 @@ export function CardSlider<T extends { id?: string | number }>({
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: i === activeIndex ? activeDotColor : inactiveDotColor,
+                    backgroundColor:
+                      i === activeIndex ? activeDotColor : inactiveDotColor,
                     width: i === activeIndex ? 18 : 6,
                   },
                 ]}
