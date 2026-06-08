@@ -452,7 +452,7 @@ export const endTrip = async (req: AuthRequest, res: Response) => {
     });
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
-    if (!["IN_PROGRESS", "AWAITING_DRIVER"].includes(booking.status)) {
+    if (!["IN_PROGRESS", "AWAITING_DRIVER", "ARRIVED"].includes(booking.status)) {
       return res.status(400).json({ message: "Trip cannot be ended" });
     }
 

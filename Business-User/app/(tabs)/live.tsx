@@ -770,6 +770,7 @@ useBookingSocket({
                       // </TouchableOpacity>
                       <PrimaryButton variant="dark"
                         onPress={handleUpgrade}
+                        style={styles.upgradeBtn}
                         disabled={isUpgrading}
                         loading={isUpgrading}
                         title={`Upgrade to Airport Ride - ${formatPrice(upgradeAmount)}`}
