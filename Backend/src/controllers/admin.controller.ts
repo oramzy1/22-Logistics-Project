@@ -6,6 +6,8 @@ import { getIO } from "../lib/socket";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { createNotification } from "../lib/notifications";
 import { sendPromoEmail } from "../lib/email.service";
+import { cacheDel, cacheGet, cacheSet } from "../lib/redis";
+
 // import { Prisma } from "@prisma/client";
 
 // ── Helper: write audit log ─────────────────────────────────────
@@ -60,6 +62,8 @@ export const adminLogin = async (req: any, res: Response) => {
 
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
+    const cached = await cacheGet("admin:dashboard");
+    if (cached) return res.json(cached);
     const now = new Date();
     const todayStart = new Date(
       now.getFullYear(),
@@ -204,7 +208,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
           )
         : 0;
 
-    res.json({
+    const responseData = {
       totalBookings,
       bookingsChangeFromYesterday: bookingsYesterday,
       totalRevenue,
@@ -228,7 +232,11 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       individualTxnCount: individualRevenueAgg._count.id,
       recentTransactions,
       weeklyRevenue,
-    });
+    };
+
+    await cacheSet("admin:dashboard", responseData, 10);
+
+    res.json(responseData);
   } catch (error) {
     console.error("getDashboardStats error:", error);
     res.status(500).json({ message: "Server error", error });
@@ -704,9 +712,12 @@ export const getAllDrivers = async (req: AuthRequest, res: Response) => {
 // ── SETTINGS (PRICING) ─────────────────────────────────────────
 export const getSettings = async (req: AuthRequest, res: Response) => {
   try {
+    const cached = await cacheGet("admin:settings");
+    if (cached) return res.json(cached);
     const settings = await prisma.appSettings.findMany({
       orderBy: { key: "asc" },
     });
+    await cacheSet("admin:settings", settings, 60);
     res.json(settings);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -732,6 +743,8 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
     await audit(req.user!.id, "UPDATE_SETTINGS", "SETTINGS", undefined, {
       keys: updates.map((u) => u.key),
     });
+    await cacheDel("public:prices");
+    await cacheDel("admin:settings")
     res.json({ message: "Settings updated", settings: results });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -741,9 +754,13 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
 // Public endpoint - frontend fetches prices without auth
 export const getPublicPrices = async (req: any, res: Response) => {
   try {
+    const cached = await cacheGet<Record<string, number>>("public:prices");
+    if (cached) return res.json(cached);
+
     const settings = await prisma.appSettings.findMany();
     const prices: Record<string, number> = {};
     for (const s of settings) prices[s.key] = parseFloat(s.value);
+    await cacheSet("public:prices", prices, 300);
     res.json(prices);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

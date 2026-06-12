@@ -114,7 +114,6 @@ function AppLayout() {
     <LoadingProvider>
       <OfflineBanner isConnected={isConnected} />
       <ScheduleProvider>
-        <AuthProvider>
           <CallProvider>
             <GlobalCallUI />
             <ThemeProvider
@@ -141,9 +140,8 @@ function AppLayout() {
               </Stack>
             </ThemeProvider>
           </CallProvider>
-        </AuthProvider>
       </ScheduleProvider>
-      <Toast config={toastConfig} />
+      <Toast config={toastConfig} /> 
     </LoadingProvider>
   );
 }
@@ -160,7 +158,9 @@ function RootLayoutNav() {
           backgroundColor={isDark ? "#060F18" : "#0B1B2B"}
         />
         <NetworkProvider>
+        <AuthProvider>
           <AppLayout />
+        </AuthProvider>
         </NetworkProvider>
       </I18nextProvider>
     </GestureHandlerRootView>
