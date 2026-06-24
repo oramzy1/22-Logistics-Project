@@ -5,18 +5,15 @@ const BASE_URL = "https://two2-logistics-project.onrender.com";
 export const submitContact = createServerFn({ method: "POST" })
   .inputValidator((data: { name: string; email: string; subject: string; message: string }) => data)
   .handler(async ({ data }) => {
-    const payload = {
-      name: data.name,
-      email: data.email,
-      subject: data.subject,
-      description: data.message,
-      category: "OTHER",
-    };
+const payload = {
+  name: data.name,
+  email: data.email,
+  subject: data.subject,
+  message: data.message,
+};
 
     const attempts = [
-      `${BASE_URL}/api/support/public-ticket`,
-      `${BASE_URL}/api/contact`,
-      `${BASE_URL}/api/support/ticket`,
+      `${BASE_URL}/api/public/contact`,
     ];
 
     let lastStatus = 0;

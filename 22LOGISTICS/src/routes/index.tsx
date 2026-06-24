@@ -27,10 +27,10 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { IconTile } from "@/components/ui/icon-tile";
 import heroCar from "@/assets/herocar.png";
-import road from "@/assets/road.jpg";
-import driverPhone from "@/assets/driver-phone.jpg";
-import phonesMockup from "@/assets/phones-mockup.png";
-import singlePhone from "@/assets/single-phone.png";
+import road from "@/assets/road1.png";
+import driverPhone from "@/assets/driver.png";
+import phonesMockup from "@/assets/phone-mockup1.png";
+import singlePhone from "@/assets/Black.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
