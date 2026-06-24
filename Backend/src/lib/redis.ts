@@ -18,4 +18,4 @@ export async function cacheSet(key: string, value: any, ttlSeconds: number) {
 
 export async function cacheDel(key: string | string[]) {
   await redis.del(...(Array.isArray(key) ? key : [key]));
-}
+}   

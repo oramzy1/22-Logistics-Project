@@ -319,7 +319,7 @@ export const getTicketStats = async (_req: AuthRequest, res: Response) => {
   try {
     const [open, inProgress, resolvedToday] = await Promise.all([
       prisma.supportTicket.count({ where: { status: "OPEN" } }),
-      prisma.supportTicket.count({ where: { status: "IN_PROGRESS" } }),
+      prisma.supportTicket.count({ where: { status: "IN_PROGRESS" } }), 
       prisma.supportTicket.count({
         where: {
           status: "RESOLVED",

@@ -15,6 +15,7 @@ import { initSocket } from './lib/socket';
 import driverRoutes from './routes/driver.routes';
 import supportRouter from './routes/support.route';
 import adminRoutes from './routes/admin.routes';
+import publicRoutes from './routes/public.routes';
 import { checkTripDelays } from './lib/tripDelayMonitor';
 import { startKeepAlive } from './lib/keepAlive';
 import { runReminderCheck } from './lib/reminderSchedule';
@@ -45,6 +46,7 @@ app.use('/api/driver', driverRoutes);
 app.use('/api/upgrade', upgradeRoutes)
 app.use('/api/support', supportRouter)
 app.use('/api/admin', adminRoutes);
+app.use('/api/public', publicRoutes)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Logistics API is running' });
