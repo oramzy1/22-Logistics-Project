@@ -7,7 +7,7 @@ import { initializeTransaction, verifyTransaction } from "../lib/paystack";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { getIO, emitToAdmin } from "../lib/socket";
-import { getPackagePrices } from "../lib/getPrices";
+import { getFuelPrices, getPackagePrices } from "../lib/getPrices";
 import { sendAdminNewBookingEmail } from "../lib/email.service";
 import { checkAndGrantMilestonePromo } from "../lib/promoMilestones";
 
@@ -47,6 +47,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     if (!customer) return res.status(404).json({ message: "User not found" });
 
     const rideType = customer.role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL";
+    const FUEL_PRICES = await getFuelPrices();
 
     // ── INTERSTATE PRICE EVALUATION ──
     let finalAmount = 0;
@@ -60,13 +61,16 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     } else {
       // Local PH pricing evaluation
       const PACKAGE_PRICES = await getPackagePrices();
+      const FUEL_PRICES = await getFuelPrices();
       const basePrice = PACKAGE_PRICES[packageType] ?? 0;
       if (!basePrice)
         return res
           .status(400)
           .json({ message: "Invalid package type or custom pricing required" });
 
-      const MAX_EXTRAS = 20000;
+
+      const fuelAllowance = FUEL_PRICES[packageType] ?? 0;
+      const MAX_EXTRAS = 20000 + fuelAllowance;
       finalAmount =
         clientTotal &&
         clientTotal >= basePrice &&
@@ -99,6 +103,10 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       ? addOns.filter((item) => typeof item === "string")
       : [];
 
+      const hasFuelAddOn = safeAddOns.some((a) => a.toLowerCase().includes("fuel"));
+      const fuelAddOnAmount = hasFuelAddOn ? (FUEL_PRICES[packageType] ?? 0) : null;
+
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {
@@ -123,6 +131,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         outsidePH: outsidePH || false,
         addOns: safeAddOns,
         rideType,
+        fuelAddOnAmount,
       },
     });
 
@@ -389,7 +398,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
     console.error("Verify payment error:", error);
     res.status(500).json({ message: "Server error", error });
   }
-};
+}; 
 
 export const reinitializePayment = async (req: AuthRequest, res: Response) => {
   try {

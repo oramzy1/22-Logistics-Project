@@ -68,6 +68,7 @@ export default function ScheduleTabScreen() {
     coldWater: false,
     petFriendly: false,
     wheelchair: false,
+    fueling: false,
     customExtra: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,6 +132,7 @@ export default function ScheduleTabScreen() {
       coldWater: false,
       petFriendly: false,
       wheelchair: false,
+      fueling: false,
       customExtra: "",
     });
   }, [selectedPackage]);
@@ -143,23 +145,33 @@ export default function ScheduleTabScreen() {
     {
       id: "3h" as const,
       title: "3-Hours",
-      price: `₦${prices.price_3_hours.toLocaleString()}`,
+      price: `₦${(prices.price_3_hours ?? 0).toLocaleString()}`,
     },
     {
       id: "6h" as const,
       title: "6-Hours",
-      price: `₦${prices.price_6_hours.toLocaleString()}`,
+      price: `₦${(prices.price_6_hours ?? 0).toLocaleString()}`,
     },
     {
       id: "10h" as const,
       title: "10-Hours",
-      price: `₦${prices.price_10_hours.toLocaleString()}`,
+      price: `₦${(prices.price_10_hours ?? 0).toLocaleString()}`,
     },
     { id: "multi" as const, title: "Multi-day", price: undefined },
     { id: "airport" as const, title: "Airport Schedule", price: undefined },
   ];
 
   const pkg = selectedPackage;
+
+const fuelPriceForPackage = () => {
+  switch (pkg) {
+    case "3h": return prices.price_fuel_3_hours ?? 0;
+    case "6h": return prices.price_fuel_6_hours ?? 0;
+    case "10h": return prices.price_fuel_10_hours ?? 0;
+    case "airport": return prices.price_fuel_airport ?? 0;
+    default: return 0; // multi-day: no fueling add-on
+  }
+};
 
   const getInterstatePrice = (value: string) => {
     if (!value) return 0;
@@ -207,6 +219,9 @@ export default function ScheduleTabScreen() {
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
 
+    const fuelPrice = 
+      pkg !== "multi" ? add("fueling", fuelPriceForPackage()) : 0;
+
     const customExtraPrice =
       extrasEnabled && extras.customExtra.trim().length > 0 ? 2000 : 0;
 
@@ -227,6 +242,7 @@ export default function ScheduleTabScreen() {
       add("coldWater", 2000) +
       add("petFriendly", 2000) +
       add("wheelchair", 2000) +
+      fuelPrice +
       customExtraPrice
     );
   }, [
@@ -313,6 +329,7 @@ export default function ScheduleTabScreen() {
         extras.coldWater && "Cold Water",
         extras.petFriendly && "Pet Friendly",
         extras.wheelchair && "Wheelchair Access",
+        extras.fueling && "Fueling (Pre-paid)",
         extrasEnabled && extras.customExtra.trim()
           ? extras.customExtra.trim()
           : null,
@@ -554,7 +571,8 @@ export default function ScheduleTabScreen() {
             <Text style={styles.h2}>Add Extras to Your Ride</Text>
             <AppSwitch value={extrasEnabled} onValueChange={setExtrasEnabled} />
           </View>
-          <View style={styles.extrasWrap}>
+         {extrasEnabled && (
+           <View style={styles.extrasWrap}>
             <AppCheckboxRow
               label="Baby Car Seat"
               price="(₦2,000)"
@@ -601,7 +619,23 @@ export default function ScheduleTabScreen() {
               onValueChange={(v) => setExtras((s) => ({ ...s, wheelchair: v }))}
               disabled={!extrasEnabled}
             />
-
+              {pkg !== "multi" && (
+  <>
+    <AppCheckboxRow
+      label="Fueling (Pre-paid)"
+      price={`(₦${fuelPriceForPackage().toLocaleString()})`}
+      value={extras.fueling}
+      onValueChange={(v) => setExtras((s) => ({ ...s, fueling: v }))}
+      disabled={!extrasEnabled}
+    />
+    {extrasEnabled && extras.fueling && (
+      <InfoBanner
+        variant="warning"
+        text="If you later upgrade this ride to an Airport Schedule, this fuel add-on won't carry over — you may need to fuel again."
+      />
+    )}
+  </>
+)}
             {/* Custom extra */}
             <View style={styles.customExtraRow}>
               <Text
@@ -631,6 +665,7 @@ export default function ScheduleTabScreen() {
               )}
             </View>
           </View>
+         )}
           <Text style={styles.h2}>Promo Code</Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <FormInput

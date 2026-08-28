@@ -235,6 +235,10 @@ class SocketService {
     return this._register("trip:history", callback);
   }
 
+   onPricesUpdated(callback: () => void) {
+    return this._register("prices:updated", callback);
+  }
+
   markTripMessagesRead(bookingId: string, readerUserId: string) {
     this.socket?.emit("trip:mark_read", { bookingId, readerUserId });
   }

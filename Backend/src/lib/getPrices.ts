@@ -34,3 +34,20 @@ export async function getExtensionPrices(): Promise<Record<string, number>> {
   }
   return map;
 }
+
+export const getFuelPrices = async () => {
+  const settings = await prisma.appSettings.findMany({
+    where: { key: { in: ["price_fuel_3_hours", "price_fuel_6_hours", "price_fuel_10_hours", "price_fuel_airport"] } },
+  });
+  const map: Record<string, number> = {
+    "3 Hours": 0, "6 Hours": 0, "10 Hours": 0, "Airport Schedule": 0,
+  };
+  const keyToPackage: Record<string, string> = {
+    price_fuel_3_hours: "3 Hours",
+    price_fuel_6_hours: "6 Hours",
+    price_fuel_10_hours: "10 Hours",
+    price_fuel_airport: "Airport Schedule",
+  };
+  settings.forEach((s) => { map[keyToPackage[s.key]] = parseFloat(s.value) || 0; });
+  return map;
+};

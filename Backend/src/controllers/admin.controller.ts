@@ -109,7 +109,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
         where: { paymentStatus: "PAID" },
         _sum: { totalAmount: true },
       }),
-      prisma.booking.aggregate({
+      prisma.booking.aggregate({ 
         where: {
           paymentStatus: "PAID",
           createdAt: { gte: yesterdayStart, lt: todayStart },
@@ -745,6 +745,7 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
     });
     await cacheDel("public:prices");
     await cacheDel("admin:settings")
+    getIO().emit("prices:updated");
     res.json({ message: "Settings updated", settings: results });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

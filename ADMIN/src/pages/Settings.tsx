@@ -47,6 +47,10 @@ const PRICE_FIELDS = [
   { key: 'ext_price_2_hours', label: 'Extension - 2 Hours' },
   { key: 'ext_price_3_hours', label: 'Extension - 3 Hours' },
   { key: 'price_airport_upgrade_discount', label: 'Airport Upgrade Discount (%)' },
+  { key: 'price_fuel_3_hours',  label: 'Fueling Add-on - 3 Hours' },
+  { key: 'price_fuel_6_hours',  label: 'Fueling Add-on - 6 Hours' },
+  { key: 'price_fuel_10_hours', label: 'Fueling Add-on - 10 Hours' },
+  { key: 'price_fuel_airport',  label: 'Fueling Add-on - Airport Schedule' },
 ];
 
 const Settings = () => {

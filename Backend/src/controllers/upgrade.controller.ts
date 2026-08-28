@@ -3,7 +3,7 @@ import crypto from "crypto";
 import prisma from "../lib/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
-import { getPackagePrices } from "../lib/getPrices";
+import { getFuelPrices, getPackagePrices } from "../lib/getPrices";
 import { createNotification, notifyAdmins } from "../lib/notifications";
 import { emitToAdmin, getIO } from "../lib/socket";
 import { sendEmail } from "../lib/email.service";
@@ -37,7 +37,9 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
         .json({ message: "This trip has already been upgraded" });
     }
 
+
     const prices = await getPackagePrices();
+    const FUEL_PRICES = await getFuelPrices();
     const airportPrice = prices["Airport Schedule"];
     const currentPrice = booking.totalAmount;
     const discountSetting = await prisma.appSettings.findUnique({
@@ -48,10 +50,22 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
       return res.status(500).json({ message: "Airport price not configured" });
 
     const discountPct = parseFloat(discountSetting?.value ?? "0");
-    const upgradeAmount = Math.max(
+    const baseUpgradeAmount = Math.max(
       0,
       Math.round((airportPrice - currentPrice) * (1 - discountPct / 100)),
     );
+
+     const hadFuelAddOn = booking.addOns?.some((a) =>
+      a.toLowerCase().includes("fuel"),
+    );
+    const originalFuelAmount = booking.fuelAddOnAmount ?? 0;
+    const airportFuelPrice = FUEL_PRICES["Airport Schedule"] ?? 0;
+    const fuelTopUpAmount = hadFuelAddOn
+      ? Math.max(0, airportFuelPrice - originalFuelAmount)
+      : 0;
+
+    const upgradeAmount = baseUpgradeAmount + fuelTopUpAmount;
+
     if (upgradeAmount <= 0) {
       return res.status(400).json({
         message:
@@ -68,6 +82,7 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
         toPackage: "Airport Schedule",
         originalAmount: currentPrice,
         upgradeAmount,
+        fuelTopUpAmount,
         totalAmount: currentPrice + upgradeAmount,
         paymentRef,
         requestedBy,
@@ -89,6 +104,9 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json({
       upgrade,
+      fuelDisclaimer: hadFuelAddOn
+        ? `Your fuel add-on has been automatically topped up by ₦${fuelTopUpAmount.toLocaleString()} to cover the Airport rate.`
+        : null,
       payment: {
         authorizationUrl: paystackData.authorization_url,
         accessCode: paystackData.access_code,
@@ -129,10 +147,19 @@ export const requestUpgradeAsDriver = async (
     }
 
     const prices = await getPackagePrices();
-    const upgradeAmount = Math.max(
+    const FUEL_PRICES = await getFuelPrices();
+    const baseUpgradeAmount = Math.max(
       0,
       prices["Airport Schedule"] - booking.totalAmount,
     );
+
+     const hadFuelAddOn = booking.addOns?.some((a) =>
+      a.toLowerCase().includes("fuel"),
+    );
+    const fuelTopUpAmount = hadFuelAddOn
+      ? Math.max(0, FUEL_PRICES["Airport Schedule"] - (booking.fuelAddOnAmount ?? 0))
+      : 0;
+    const upgradeAmount = baseUpgradeAmount + fuelTopUpAmount;
 
     // Push notification to customer
     getIO().to(`user:${booking.customer.id}`).emit("upgrade:requested", {
@@ -160,6 +187,7 @@ export const requestUpgradeAsDriver = async (
         <p style="color:#374151">Hi <strong>${booking.customer.name}</strong>, your driver <strong>${booking.driver?.name}</strong> has suggested upgrading your trip to an Airport ride.</p>
         <div style="background:#F9F6F0;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #E4C77B">
           <p style="margin:0;color:#6B7280;font-size:13px">Upgrade cost: <strong style="color:#0B1B2B">₦${upgradeAmount.toLocaleString()}</strong></p>
+           ${fuelTopUpAmount > 0 ? `<p style="margin:4px 0 0;color:#6B7280;font-size:13px">Includes fuel top-up: <strong style="color:#0B1B2B">₦${fuelTopUpAmount.toLocaleString()}</strong></p>` : ""}
           <p style="margin:4px 0 0;color:#6B7280;font-size:13px">Booking: <strong style="color:#0B1B2B">${booking.trackingId}</strong></p>
         </div>
         <p style="color:#374151;font-size:14px">Open the app to accept and pay for the upgrade.</p>

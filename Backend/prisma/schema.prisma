@@ -113,6 +113,7 @@ model Booking {
   refundRequested     Boolean  @default(false)
   promoCode       String?
   discountAmount  Float?   @default(0)
+  fuelAddOnAmount Float?
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -146,6 +147,7 @@ model TripUpgrade {
   toPackage     String   // "Airport Schedule"
   originalAmount Float
   upgradeAmount Float    // difference paid
+  fuelTopUpAmount Float  @default(0)
   totalAmount   Float    // original + upgrade
   paymentRef    String   @unique
   paymentStatus String   @default("UNPAID")
