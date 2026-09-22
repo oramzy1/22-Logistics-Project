@@ -7,7 +7,9 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import { BookingService, BookingPayload } from "../api/booking.service";
+import { useAuth } from "./AuthContext";
 
 export type BookingStatus =
   | "PENDING"
@@ -41,6 +43,8 @@ export type Booking = {
   paymentRef: string;
   notes?: string;
   trackingId: string;
+  addOns?: string[];
+  fuelAddOnAmount?: number | null;
   driver?: {
     name: string;
     phone: string;
@@ -110,8 +114,18 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+    const {
+    token,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuth();
 
   const fetchBookings = useCallback(async () => {
+      if (isAuthLoading || !isAuthenticated || !token) {
+      setBookings([]);
+      setError(null);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -122,7 +136,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthLoading, isAuthenticated, token]);
 
   useEffect(() => {
     const { socketService } = require("../api/socket.service");
@@ -207,8 +221,26 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  useEffect(() => {
+   useEffect(() => {
+    if (isAuthLoading) return;
+
+    if (!isAuthenticated || !token) {
+      setBookings([]);
+      setError(null);
+      return;
+    }
+
     fetchBookings();
+  }, [fetchBookings, isAuthLoading, isAuthenticated, token]);
+
+    useEffect(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === "active") {
+        fetchBookings();
+      }
+    };
+    const sub = AppState.addEventListener("change", handleAppStateChange);
+    return () => sub.remove();
   }, [fetchBookings]);
 
   const activeBookings = bookings.filter((b) =>

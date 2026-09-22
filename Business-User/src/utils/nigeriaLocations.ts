@@ -9,6 +9,8 @@ export const RIVERS_LGAS = [
 export const PH_LGAS = ['Port Harcourt', 'Obio/Akpor'];
 export const OUT_OF_LGA_FEE = 3000;
 
+export const STANDARD_SERVICE_LGAS = ["Port Harcourt", "Obio/Akpor"];
+
 // All 36 states + FCT, excluding Rivers, priced by road distance from PH
 export const INTERSTATE_STATES: { label: string; price: number }[] = [
   { label: 'Abia', price: 27000 },

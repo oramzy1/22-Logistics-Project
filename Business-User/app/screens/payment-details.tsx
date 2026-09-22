@@ -74,6 +74,12 @@ export default function PaymentHistoryScreen() {
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.pickupAddress}</td></tr>
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Drop-off</td>
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.dropoffAddress}</td></tr>
+                ${
+            booking?.fuelAddOnAmount
+              ? `<tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Fueling Add-on</td>
+              <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">₦${booking.fuelAddOnAmount.toLocaleString()}</td></tr>`
+              : ""
+          }
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Driver</td>
               <td style="padding:10px 0;border-bottom:1px solid #F1F5F9;font-weight:700;text-align:right">${booking?.driver ? booking.driver.name : "Pending"}</td></tr>
           <tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;color:#6B7280">Payment Status</td>
@@ -246,6 +252,12 @@ ${
             <Row
               label="Add-ons selected"
               value={booking.notes.replace("Interstate: ", "")}
+            />
+          ) : null}
+            {booking.fuelAddOnAmount ? (
+            <Row
+              label="Fueling Add-on"
+              value={`₦${booking.fuelAddOnAmount.toLocaleString()}`}
             />
           ) : null}
           <Row

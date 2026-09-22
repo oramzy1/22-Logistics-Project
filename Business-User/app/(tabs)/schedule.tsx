@@ -1,6 +1,6 @@
 // Business-User/app/(tabs)/schedule.tsx
 
-import { Calendar, Clock, MapPinned } from "lucide-react-native";
+import { Calendar, ChevronRight, Clock, MapPinned } from "lucide-react-native";
 import React, { useMemo, useState, useEffect } from "react";
 import {
   Alert,
@@ -15,6 +15,7 @@ import { OutOfLGAModal } from "@/src/ui/OutOfLGAModal";
 import {
   INTERSTATE_STATES,
   PH_LGAS,
+  STANDARD_SERVICE_LGAS,
   OUT_OF_LGA_FEE,
 } from "@/src/utils/nigeriaLocations";
 
@@ -32,7 +33,15 @@ import { PrimaryButton } from "@/src/ui/PrimaryButton";
 import { PillSegment } from "@/src/ui/SegmentPill";
 import { ScheduleSkeleton } from "@/src/ui/skeletons/ScheduleSkeleton";
 import { colors, radius, spacing, text } from "@/src/ui/theme";
-import { generateTimeSlots } from "@/src/utils/timeSlots";
+import {
+  AirportService,
+  MultiDayTripType,
+  combinePickupDateTime,
+  calculateDropoffTime,
+  formatTime,
+  isValidPickupDateTime,
+  isWithinOperatingHours,
+} from "@/src/utils/timeSlots";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/src/ui/useAppTheme";
@@ -56,7 +65,7 @@ export default function ScheduleTabScreen() {
   const [scheduleDateTime, setScheduleDateTime] = useState<Date | null>(null);
   const [pickupDate, setPickupDate] = useState<Date | null>(null);
   const [pickupTime, setPickupTime] = useState<Date | null>(null);
-  const [timeSlot, setTimeSlot] = useState("");
+  // const [timeSlot, setTimeSlot] = useState("");
   const [interstateLocation, setInterstateLocation] = useState<{
     label: string;
     price: number;
@@ -86,6 +95,15 @@ export default function ScheduleTabScreen() {
     description: string;
   } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [airportService, setAirportService] =
+  useState<AirportService>("AIRPORT_DROPOFF");
+
+const [multiDayTripType, setMultiDayTripType] =
+  useState<MultiDayTripType>("INTRA_STATE");
+
+const [multiDayCount, setMultiDayCount] = useState(1);
+
+const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   const validatePromo = async () => {
     if (!promoCode.trim()) return;
@@ -120,7 +138,7 @@ export default function ScheduleTabScreen() {
     setDropoffStreet("");
     setDropoffLGA("");
     setInterstateLocation(null);
-    setTimeSlot("");
+    // setTimeSlot("");
     setPromoCode("");
     setPromoResult(null);
     setPickupDate(null);
@@ -260,19 +278,29 @@ const fuelPriceForPackage = () => {
   const effectiveTotal = promoResult ? promoResult.finalAmount : total;
   const totalLabel = `₦${effectiveTotal.toLocaleString()}`;
 
+  const combinedPickup = useMemo(
+  () => combinePickupDateTime(pickupDate, pickupTime),
+  [pickupDate, pickupTime],
+);
+
+const expectedDropoff = useMemo(
+  () => calculateDropoffTime(pkg, combinedPickup, multiDayCount),
+  [pkg, combinedPickup, multiDayCount],
+);
+
   const handleSchedule = async () => {
-    // if (!pickupLocation.trim()) {
-    //   return Alert.alert(
-    //     "Missing field",
-    //     "Please enter your pick-up location.",
-    //   );
-    // }
-    // if (!dropoffLocation.trim()) {
-    //   return Alert.alert(
-    //     "Missing field",
-    //     "Please enter your drop-off location.",
-    //   );
-    // }
+    const errors: Record<string, boolean> = {};
+
+    if (!pickupStreet.trim()) errors.pickupStreet = true;
+if (!pickupLGA && !isAirportSchedule) errors.pickupLGA = true;
+if (!dropoffStreet.trim()) errors.dropoffStreet = true;
+if (!interstateLocation && !dropoffLGA && !isAirportSchedule) errors.dropoffLGA = true;
+if (!pickupDate) errors.pickupDate = true;
+if (!pickupTime) errors.pickupTime = true;
+
+setFieldErrors(errors);
+
+
 
     if (!pickupStreet.trim())
       return Alert.alert(
@@ -292,7 +320,7 @@ const fuelPriceForPackage = () => {
     // if (!scheduleDateTime) {
     //   return Alert.alert("Missing field", "Please select a schedule date.");
     // }
-    if (!timeSlot && selectedPackage !== "multi") {
+    if ( selectedPackage !== "multi") {
       return Alert.alert("Missing Field", "Please select a time slot");
     }
 
@@ -303,14 +331,48 @@ const fuelPriceForPackage = () => {
       return Alert.alert("Missing field", "Please select a pick-up time.");
     }
 
-    // ✅ No more scheduleDate string check - scheduleDateTime covers it
-    const combinedPickup = new Date(
+   const combinedPickup = new Date(
       pickupDate.getFullYear(),
       pickupDate.getMonth(),
       pickupDate.getDate(),
       pickupTime.getHours(),
       pickupTime.getMinutes(),
     );
+
+
+
+if (Object.keys(errors).length > 0) {
+  return Alert.alert("Missing field", "Please complete the highlighted fields.");
+}
+
+if (!combinedPickup) {
+  return Alert.alert("Missing field", "Please select a pickup date and pickup time.");
+}
+
+if (!isValidPickupDateTime(combinedPickup)) {
+  return Alert.alert(
+    "Pickup time unavailable",
+    "Please choose a pickup time at least 2 hours from now.",
+  );
+}
+
+if (!isWithinOperatingHours(combinedPickup)) {
+  return Alert.alert(
+    "Outside operating hours",
+    "Pickup time must be between 7:00 AM and 10:00 PM.",
+  );
+}
+
+if (expectedDropoff && pkg !== "multi" && !isWithinOperatingHours(expectedDropoff)) {
+  return Alert.alert(
+    "Drop-off outside operating hours",
+    "Please choose an earlier pickup time or a shorter ride duration.",
+  );
+}
+
+
+    // ✅ No more scheduleDate string check - scheduleDateTime covers it
+ 
 
     setIsSubmitting(true);
     try {
@@ -345,9 +407,16 @@ const fuelPriceForPackage = () => {
         dropoffLat: 0,
         dropoffLng: 0,
         duration:
-          selectedPackage === "multi" ? "Multi-Day" : timeSlot || undefined,
+  selectedPackage === "multi"
+    ? `${multiDayCount} Day${multiDayCount > 1 ? "s" : ""}`
+    : expectedDropoff
+      ? `${formatTime(combinedPickup)} - ${formatTime(expectedDropoff)}`
+      : undefined,
         pickupDate: pickupDate ? pickupDate.toISOString() : undefined,
         pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
+        airportService: isAirportSchedule ? airportService : undefined,
+multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
+expectedDropoffAt: expectedDropoff?.toISOString(),
         outsidePH:
           !!interstateLocation ||
           (!!pickupLGA && !PH_LGAS.includes(pickupLGA)) ||
@@ -386,6 +455,11 @@ const fuelPriceForPackage = () => {
     ? OUT_OF_LGA_FEE
     : 0);
 
+      const fuelAmountValue =
+        extrasEnabled && extras.fueling && pkg !== "multi"
+          ? fuelPriceForPackage()
+          : 0;
+
       router.push({
         pathname: "/screens/confirmation",
         params: {
@@ -401,6 +475,7 @@ const fuelPriceForPackage = () => {
          outOfLGAFee: outOfLGAFeeValue > 0
       ? String(outOfLGAFeeValue)
       : undefined,
+          fuelAmount: fuelAmountValue > 0 ? String(fuelAmountValue) : undefined,
           pickupDate: pickupDate
             ? pickupDate.toISOString().split("T")[0]
             : undefined,
@@ -409,7 +484,7 @@ const fuelPriceForPackage = () => {
             ? pickupTime.toTimeString().split(" ")[0]
             : undefined,
           duration:
-            selectedPackage === "multi" ? "Multi-Day" : timeSlot || undefined,
+            selectedPackage === "multi" ? "Multi-Day" : undefined,
         },
       });
     } catch (err: any) {
@@ -445,7 +520,7 @@ const fuelPriceForPackage = () => {
           <Text style={styles.h1}>
             {isAirportSchedule ? "Airport Schedule" : "Schedule Your Ride"}
           </Text>
-          <ScrollView
+          {/* <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.packRow}
@@ -459,7 +534,22 @@ const fuelPriceForPackage = () => {
                 onPress={() => setSelectedPackage(p.id)}
               />
             ))}
-          </ScrollView>
+          </ScrollView> */}
+          <View style={styles.verticalPackages}>
+  {PACKAGES.map((p) => (
+    <TouchableOpacity
+      key={p.id}
+      style={[styles.packageRow, p.id === pkg && styles.packageRowActive]}
+      onPress={() => setSelectedPackage(p.id)}
+    >
+      <View>
+        <Text style={styles.packageTitle}>{p.title}</Text>
+        {!!p.price && <Text style={styles.packagePrice}>{p.price}</Text>}
+      </View>
+      <ChevronRight size={18} color={themeColors.textSecondary} />
+    </TouchableOpacity>
+  ))}
+</View>
           {!isAirportSchedule &&
             (isBusiness ? (
               <Text style={styles.h2}>
@@ -468,6 +558,50 @@ const fuelPriceForPackage = () => {
             ) : (
               <Text style={styles.h2}>Trip Details Form ({selectedTitle})</Text>
             ))}
+            {isAirportSchedule && (
+  <>
+    <Text style={styles.h2}>Airport Service</Text>
+    <DropdownInput
+      label="Airport Service"
+      placeholder="Select airport service"
+      value={airportService}
+      onSelect={setAirportService}
+      options={[
+        { label: "Airport Pickup", value: "AIRPORT_PICKUP" },
+        { label: "Airport Drop-Off", value: "AIRPORT_DROPOFF" },
+        { label: "Airport Round Trip", value: "AIRPORT_ROUND_TRIP" },
+      ]}
+    />
+
+    <InfoBanner
+      variant="info"
+      text="Fueling is automatically included for airport schedules."
+    />
+  </>
+)}
+{isMultiSchedule && (
+  <>
+    <Text style={styles.h2}>Multi-Day Trip Type</Text>
+    <DropdownInput
+      label="Trip Type"
+      placeholder="Select trip type"
+      value={multiDayTripType}
+      onSelect={setMultiDayTripType}
+      options={[
+        { label: "Intra-State", value: "INTRA_STATE" },
+        { label: "Inter-State", value: "INTER_STATE" },
+      ]}
+    />
+
+    <DropdownInput
+      label="Duration"
+      placeholder="Select number of days"
+      value={`${multiDayCount} Day${multiDayCount > 1 ? "s" : ""}`}
+      onSelect={(value: string) => setMultiDayCount(parseInt(value, 10))}
+      options={["1", "2", "3", "4", "5", "6", "7"]}
+    />
+  </>
+)}
           {(isBusiness || isAirportSchedule || isMultiSchedule) && (
             <DropdownInput
               label="Select Interstate Location (outside Rivers State)"
@@ -486,7 +620,7 @@ const fuelPriceForPackage = () => {
             minimumDate={new Date()}
             icon={<Calendar size={18} color="#9CA3AF" />}
           /> */}
-          <DropdownInput
+          {/* <DropdownInput
             label={
               pkg === "multi"
                 ? "Time slot (10+ hours)"
@@ -499,7 +633,7 @@ const fuelPriceForPackage = () => {
               setTimeSlot(val);
             }}
             options={generateTimeSlots(pkg)}
-          />
+          /> */}
           <DateTimePickerInput
             label={`${isAirportSchedule ? "Airport " : ""}Pick-up Date`}
             value={pickupDate}
@@ -517,6 +651,12 @@ const fuelPriceForPackage = () => {
             placeholder="Select Time"
             icon={<Clock size={18} color="#9CA3AF" />}
           />
+          {expectedDropoff && (
+  <InfoBanner
+    variant="info"
+    text={`Expected drop-off: ${formatTime(expectedDropoff)}`}
+  />
+)}
           {/* <FormInput
             label={`${isAirportSchedule ? "Airport" : ""} Pick-up Location`}
             placeholder="Input your pick up location"
@@ -533,7 +673,7 @@ const fuelPriceForPackage = () => {
           /> */}
 
           {/* Pickup - always Rivers State LGA */}
-          <LocationInput
+          {/* <LocationInput
             label={`${isAirportSchedule ? "Airport " : ""}Pick-up Location`}
             placeholder="Enter street / area name"
             leftIcon={<MapPinned size={18} color="#9CA3AF" />}
@@ -541,7 +681,18 @@ const fuelPriceForPackage = () => {
             lga={pickupLGA}
             onStreetChange={setPickupStreet}
             onLGASelect={(lga) => handleLGASelect("pickup", lga)}
-          />
+          /> */}
+
+          <LocationInput
+  label="Pick-up Location"
+  placeholder="Enter street / area name"
+  leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+  street={pickupStreet}
+  lga={pickupLGA}
+  options={isMultiSchedule ? PH_LGAS : STANDARD_SERVICE_LGAS}
+  onStreetChange={setPickupStreet}
+  onLGASelect={(lga) => handleLGASelect("pickup", lga)}
+/>
 
           {/* Dropoff - LGA picker only when staying within Rivers State */}
           {interstateLocation ? (
@@ -553,15 +704,16 @@ const fuelPriceForPackage = () => {
               leftIcon={<MapPinned size={18} color="#9CA3AF" />}
             />
           ) : (
-            <LocationInput
-              label={`${isAirportSchedule ? "Airport " : ""}Drop-off Location`}
-              placeholder="Enter street / area name"
-              leftIcon={<MapPinned size={18} color="#9CA3AF" />}
-              street={dropoffStreet}
-              lga={dropoffLGA}
-              onStreetChange={setDropoffStreet}
-              onLGASelect={(lga) => handleLGASelect("dropoff", lga)}
-            />
+           <LocationInput
+  label="Drop-off Location"
+  placeholder="Enter street / area name"
+  leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+  street={dropoffStreet}
+  lga={dropoffLGA}
+  options={isMultiSchedule ? PH_LGAS : STANDARD_SERVICE_LGAS}
+  onStreetChange={setDropoffStreet}
+  onLGASelect={(lga) => handleLGASelect("dropoff", lga)}
+/>
           )}
           <InfoBanner
             variant="warning"
@@ -695,10 +847,10 @@ const fuelPriceForPackage = () => {
           <View style={styles.totalBox}>
             <Text style={styles.totalText}>{totalLabel}</Text>
           </View>
-          <InfoBanner
+          {/* <InfoBanner
             variant="warning"
             text="Note: Rides arrive 2 hours after your scheduled time. For example, if you book 8 AM, your ride will arrive at 10 AM."
-          />
+          /> */}
           <PrimaryButton
             title={isSubmitting ? "Scheduling..." : "Schedule Ride"}
             onPress={handleSchedule}
@@ -768,6 +920,34 @@ const createStyles = (themeColors: any) =>
       color: colors.text,
       backgroundColor: themeColors.background,
     },
+    verticalPackages: {
+  gap: 10,
+  marginVertical: spacing.md,
+},
+packageRow: {
+  minHeight: 72,
+  borderRadius: radius.lg,
+  borderWidth: 1,
+  borderColor: themeColors.border,
+  backgroundColor: themeColors.card,
+  padding: spacing.md,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+},
+packageRowActive: {
+  borderColor: themeColors.gold,
+  backgroundColor: themeColors.cardPrimary,
+},
+packageTitle: {
+  fontSize: 15,
+  fontWeight: "700",
+  color: themeColors.text,
+},
+packagePrice: {
+  marginTop: 4,
+  color: themeColors.textSecondary,
+},
     rowBetween: {
       flexDirection: "row",
       alignItems: "center",

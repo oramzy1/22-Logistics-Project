@@ -51,6 +51,7 @@ export default function ConfirmationScreen() {
     pickupTime,
     duration,
     outOfLGAFee,
+    fuelAmount,
   } = useLocalSearchParams<{
     bookingId: string;
     packageType: string;
@@ -66,6 +67,7 @@ export default function ConfirmationScreen() {
     pickupTime?: string;
     duration?: string;
     outOfLGAFee?: string;
+    fuelAmount?: string;
   }>();
   const { colors: themeColors, isDark } = useAppTheme();
   const styles = createStyles(themeColors);
@@ -102,6 +104,12 @@ export default function ConfirmationScreen() {
           {addOns ? <Row label="Add-ons selected" value={addOns} /> : null}
           {outOfLGAFee ? (
             <Row label="Out of LGA Fee" value={outOfLGAFee} />
+          ) : null}
+          {fuelAmount ? (
+            <Row
+              label="Fueling Add-on"
+              value={`₦${Number(fuelAmount).toLocaleString()}`}
+            />
           ) : null}
           <Row
             label="Amount"

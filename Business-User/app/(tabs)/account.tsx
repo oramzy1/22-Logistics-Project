@@ -31,6 +31,8 @@ import {
   User,
   UserPlus,
   UserX,
+  Share2,
+  BriefcaseBusiness,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -48,6 +50,7 @@ import {
   TouchableOpacity,
   UIManager,
   View,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/AppText";
@@ -659,6 +662,38 @@ export default function AccountTabScreen() {
     }
   };
 
+  const handleReferFriend = async () => {
+  await Share.share({
+    message:
+      "Try 22 Logistics for reliable scheduled rides. Use my referral: 22LOGISTICS",
+  });
+};
+
+const handleSwitchToBusiness = async () => {
+  Alert.alert(
+    "Switch to Business Mode",
+    "Your account will be upgraded to Business Mode. You can complete business details afterward.",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Switch",
+        onPress: async () => {
+          showLoading("Switching account...");
+          try {
+            const data = await UserService.switchToBusiness();
+            await updateUser(data.user);
+            showToast.success("Business Mode enabled");
+          } catch (err: any) {
+            showToast.error(err?.response?.data?.message || "Could not switch mode");
+          } finally {
+            hideLoading();
+          }
+        },
+      },
+    ],
+  );
+};
+
   // if (isLoading) return <AccountSkeleton />;
 
   return (
@@ -729,6 +764,22 @@ export default function AccountTabScreen() {
             isLast
             onPress={isOAuthUser ? undefined : handleChangePassword}
           />
+          <ListItem
+  icon={Gift}
+  title="Refer a Friend"
+  subtitle="Share 22 Logistics with someone"
+  onPress={handleReferFriend}
+/>
+
+{!isBusiness && (
+  <ListItem
+    icon={BriefcaseBusiness}
+    title="Switch to Business Mode"
+    subtitle="Use business scheduling and billing"
+    onPress={handleSwitchToBusiness}
+    isLast
+  />
+)}
         </AccordionItem>
 
         <AccordionItem title="BOOKING & TRIPS" icon={Calendar}>
@@ -831,13 +882,14 @@ export default function AccountTabScreen() {
           <ListItem
             icon={Moon}
             title="Dark Mode"
+            subtitle="Switch between default dark mode and light mode"
             isLast
             rightElement={
               <Switch
-                value={darkMode}
+                value={!darkMode}
                 onValueChange={(v) => {
-                  setDarkMode(v);
-                  Appearance.setColorScheme(v ? "dark" : "light");
+                  setDarkMode(!v);
+                  Appearance.setColorScheme(v ? "light" : "dark");
                 }}
                 trackColor={{ true: "#111827" }}
               />

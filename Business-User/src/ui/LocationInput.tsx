@@ -11,6 +11,7 @@ interface LocationInputProps {
   leftIcon?: React.ReactNode;
   street: string;
   lga: string;
+  options?: string[];
   onStreetChange: (val: string) => void;
   onLGASelect: (lga: string) => void;
 }
@@ -21,6 +22,7 @@ export const LocationInput: React.FC<LocationInputProps> = ({
   leftIcon,
   street,
   lga,
+  options = RIVERS_LGAS,
   onStreetChange,
   onLGASelect,
 }) => (
@@ -35,7 +37,7 @@ export const LocationInput: React.FC<LocationInputProps> = ({
     {/* Sits visually below the address input - no label so it reads as part of the same field */}
     <DropdownInput
       placeholder="Select LGA (Rivers State)"
-      options={RIVERS_LGAS}
+      options={options}
       value={lga}
       onSelect={onLGASelect}
     />

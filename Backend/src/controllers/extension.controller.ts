@@ -21,6 +21,7 @@ export const createExtension = async (req: AuthRequest, res: Response) => {
   console.log("👤 User making extension request:", req.user);
   try {
     const { bookingId, hours } = req.body; // hours = '1-Hours' | '2-Hours' | '3-Hours'
+    
 
     const booking = await prisma.booking.findFirst({
       where: { id: bookingId, customerId: req.user!.id },
@@ -33,6 +34,33 @@ export const createExtension = async (req: AuthRequest, res: Response) => {
         .status(400)
         .json({ message: "Can only extend trips in progress" });
     }
+
+
+    const requestedHours = parseInt(String(hours), 10);
+if (!requestedHours || requestedHours < 1) {
+  return res.status(400).json({ message: "Invalid extension option" });
+}
+
+const baseMatch = booking.packageType?.match(/^(\d+)/);
+const baseHours = baseMatch ? parseInt(baseMatch[1], 10) : 0;
+
+const paidExtensions = await prisma.tripExtension.findMany({
+  where: { bookingId, paymentStatus: "PAID" },
+});
+
+const paidExtensionHours = paidExtensions.reduce((sum, ext) => sum + ext.hours, 0);
+const projectedEnd = new Date(
+  booking.scheduledAt.getTime() +
+    (baseHours + paidExtensionHours + requestedHours) * 60 * 60 * 1000,
+);
+
+const projectedMinutes = projectedEnd.getHours() * 60 + projectedEnd.getMinutes();
+
+if (projectedMinutes > 22 * 60) {
+  return res.status(400).json({
+    message: "This extension would take the ride beyond 10:00 PM.",
+  });
+}
 
     const EXTENSION_PRICES = await getExtensionPrices();
     const amount = EXTENSION_PRICES[hours];

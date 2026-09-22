@@ -28,7 +28,6 @@ export function Topnav({ onMenuClick, unreadCount = 0, onNotifClick }: TopnavPro
   const { user, logout } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? 'AD';
-
 useEffect(() => {
   const h = (e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }

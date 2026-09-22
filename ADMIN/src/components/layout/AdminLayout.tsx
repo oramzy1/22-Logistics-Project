@@ -202,7 +202,7 @@ export function AdminLayout() {
 
     return () => {
       socket.disconnect();
-    };
+    }; 
   }, []);
   return (
     <div className="min-h-screen bg-background text-foreground">

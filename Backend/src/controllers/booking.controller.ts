@@ -11,6 +11,26 @@ import { getFuelPrices, getPackagePrices } from "../lib/getPrices";
 import { sendAdminNewBookingEmail } from "../lib/email.service";
 import { checkAndGrantMilestonePromo } from "../lib/promoMilestones";
 
+
+const OPERATING_START_HOUR = 7;
+const OPERATING_END_HOUR = 22;
+const ADVANCE_BOOKING_HOURS = 2;
+
+function hoursForPackage(packageType?: string | null) {
+  if (!packageType) return null;
+  if (packageType.includes("3")) return 3;
+  if (packageType.includes("6")) return 6;
+  if (packageType.includes("10")) return 10;
+  if (packageType.toLowerCase().includes("airport")) return 3;
+  return null;
+}
+
+function withinOperatingHours(date: Date) {
+  const minutes = date.getHours() * 60 + date.getMinutes();
+  return minutes >= OPERATING_START_HOUR * 60 && minutes <= OPERATING_END_HOUR * 60;
+}
+
+
 export const archiveTripMessages = async (bookingId: string) => {
   await prisma.tripMessages.updateMany({
     where: { bookingId },
@@ -48,6 +68,34 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
     const rideType = customer.role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL";
     const FUEL_PRICES = await getFuelPrices();
+    const pickupAt = new Date(scheduledAt);
+const minPickupAt = new Date(Date.now() + ADVANCE_BOOKING_HOURS * 60 * 60 * 1000);
+
+if (Number.isNaN(pickupAt.getTime())) {
+  return res.status(400).json({ message: "Invalid pickup time" });
+}
+
+if (pickupAt < minPickupAt) {
+  return res.status(400).json({
+    message: "Pickup time must be at least 2 hours from now.",
+  });
+}
+
+if (!withinOperatingHours(pickupAt)) {
+  return res.status(400).json({
+    message: "Pickup time must be between 7:00 AM and 10:00 PM.",
+  });
+}
+
+const rideHours = hoursForPackage(packageType);
+if (rideHours) {
+  const endsAt = new Date(pickupAt.getTime() + rideHours * 60 * 60 * 1000);
+  if (!withinOperatingHours(endsAt)) {
+    return res.status(400).json({
+      message: "This ride would end after 10:00 PM. Please choose an earlier pickup time.",
+    });
+  }
+}
 
     // ── INTERSTATE PRICE EVALUATION ──
     let finalAmount = 0;

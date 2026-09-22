@@ -11,6 +11,20 @@ const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+
+let unauthorizedHandler: (() => Promise<void> | void) | null = null;
+let isHandlingUnauthorized = false;
+
+export const setUnauthorizedHandler = (
+  handler: (() => Promise<void> | void) | null,
+) => {
+  unauthorizedHandler = handler;
+  return () => {
+    if (unauthorizedHandler === handler) unauthorizedHandler = null;
+  };
+};
+
+
 apiClient.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem("token");
   if (token && config.headers) {
@@ -26,24 +40,25 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error?.response?.status === 401) {
-      // Dynamic import avoids circular dependency
-      const { clearAuthData } = await import("../context/AuthContext").then(
-        (m) => {
-          // We can't call hooks outside components, so use AsyncStorage directly
-          const AsyncStorage =
-            require("@react-native-async-storage/async-storage").default;
-          return {
-            clearAuthData: async () => {
-              await AsyncStorage.multiRemove(["token", "user"]);
-            },
-          };
-        },
-      );
-      await clearAuthData();
-      // Navigate to sign-in - works from anywhere
-      router.replace("/(auth)/sign-in");
+     const status = error?.response?.status;
+    const url = error?.config?.url ?? "";
+   
+    if (status === 401 && !url.startsWith("/auth/") && !isHandlingUnauthorized) {
+      isHandlingUnauthorized = true;
+
+      try {
+        if (unauthorizedHandler) {
+          await unauthorizedHandler();
+        } else {
+          await AsyncStorage.multiRemove(["token", "user"]);
+        }
+
+        router.replace("/(auth)/sign-in");
+      } finally {
+        isHandlingUnauthorized = false;
+      }
     }
+
     return Promise.reject(error);
   },
 );

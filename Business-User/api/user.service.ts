@@ -32,6 +32,11 @@ export const UserService = {
     return response.data;
   },
 
+  switchToBusiness: async () => {
+  const response = await apiClient.patch("/users/switch-to-business");
+  return response.data;
+},
+
   requestActionOtp: async () => {
     const response = await apiClient.post("/users/request-action-otp");
     return response.data;

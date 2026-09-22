@@ -12,6 +12,7 @@ import { socketService } from "@/api/socket.service";
 import {
   GoogleSignin,
 } from "@react-native-google-signin/google-signin";
+import { setUnauthorizedHandler } from "../api/api";
 
 type Role = "INDIVIDUAL" | "BUSINESS" | "DRIVER" | "ADMIN" | null;
 
@@ -111,6 +112,12 @@ useEffect(() => {
     setIsAuthenticated(false);
     setIsGuest(false);
   }, []);
+
+    useEffect(() => {
+    return setUnauthorizedHandler(async () => {
+      await clearAuthData();
+    });
+  }, [clearAuthData]);
 
   // Fetch fresh data from API and sync to storage + state
   const refreshUser = useCallback(async () => {

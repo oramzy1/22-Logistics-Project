@@ -75,12 +75,11 @@ export default function OnboardingScreen() {
   const handleNext = () => {
     if (currentIndex < SLIDES.length - 1) {
       scrollRef.current?.scrollToIndex({ index: currentIndex + 1 });
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex(currentIndex + 1);  
     } else {
-      router.push("/(auth)/account-type");
-      AsyncStorage.setItem("hasLaunched", "true").catch((e) =>
-        console.error("Error setting launch flag", e),
-      );
+      AsyncStorage.setItem("hasLaunched", "true")
+        .catch((e) => console.error("Error setting launch flag", e))
+        .finally(() => router.push("/(auth)/account-type"));
     }
   };
 

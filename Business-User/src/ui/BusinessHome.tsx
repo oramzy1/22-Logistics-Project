@@ -55,7 +55,7 @@ export function BusinessHome() {
   { title: "Multi-day", price: "Schedule" },
   { title: "Airport",  price: "Schedule" },
 ];
-  const { bookings, activeBookings, isLoading } = useBookings();
+  const { bookings, activeBookings, isLoading, fetchBookings } = useBookings();
   const { colors: themeColors } = useAppTheme();
   const styles = createStyles(themeColors);
 
@@ -65,18 +65,17 @@ const [refreshing, setRefreshing] = useState(false);
 const fetchData = useCallback(async () => {
   try {
     setRefreshing(true);
-    // Call whatever refetch methods your context/hooks expose
-    // e.g. await refetchBookings(); await refetchPromos(); await refetchPrices();
+    await fetchBookings();
   } catch (err: any) {
     if (err?.response?.status === 401) {
       Alert.alert("Session Expired", "Please log in again.");
-      signOut();
-      router.push("/(auth)/sign-in");
+      await signOut();
+      router.replace("/(auth)/sign-in");
     }
   } finally {
     setRefreshing(false);
   }
-}, []);
+}, [fetchBookings, signOut]);
 
 useFocusEffect(
   useCallback(() => {
