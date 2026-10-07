@@ -72,7 +72,6 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     if (!customer) return res.status(404).json({ message: "User not found" });
 
     const rideType = customer.role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL";
-    const FUEL_PRICES = await getFuelPrices();
     const pickupAt = new Date(scheduledAt);
 const minPickupAt = new Date(Date.now() + ADVANCE_BOOKING_HOURS * 60 * 60 * 1000);
 
@@ -183,7 +182,7 @@ if (rideHours) {
     try {
       paystackData = await initializeTransaction(
         customer.email,
-        finalAmount * 100, // Paystack uses Kobo
+        Math.round(finalAmount * 100),
         { customerId, packageType },
         paymentRef,
         ["card"],

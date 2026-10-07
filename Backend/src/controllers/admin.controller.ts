@@ -731,8 +731,12 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
     if (!Array.isArray(updates))
       return res.status(400).json({ message: "settings must be an array" });
 
-    if (updates.some((u) => !u.key || !Number.isFinite(parseFloat(u.value)) || parseFloat(u.value) < 0))
-      return res.status(400).json({ message: "All setting values must be non-negative numbers" });
+      const PRICE_KEY = /^(price_|ext_price_)/;
+    const bad = updates.filter(
+      (u) => !u.key || (PRICE_KEY.test(u.key) && !(Number.isFinite(parseFloat(u.value)) && parseFloat(u.value) >= 0)),
+    );
+    if (bad.length)
+      return res.status(400).json({ message: `Invalid value for: ${bad.map((b) => b.key).join(", ")}` });
 
     const results = await Promise.all(
       updates.map(({ key, value }) =>

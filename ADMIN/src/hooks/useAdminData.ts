@@ -169,7 +169,7 @@ export const usePromos = () =>
     queryKey: ["promos"],
     queryFn: () => api.get<any[]>("/admin/promos"),
   });
-
+ 
 // export const useCreatePromo = () => {
 //   const qc = useQueryClient();
 //   return useMutation({
@@ -185,6 +185,18 @@ export const useTogglePromo = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["promos"] }),
   });
 };
+
+export const useAddOns = () =>
+  useQuery({ queryKey: ["admin-addons"], queryFn: () => ( api.get("/admin/addons")) });
+
+const useAddOnMutation = <T,>(fn: (v: T) => Promise<any>) => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: fn, onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-addons"] }) });
+};
+export const useCreateAddOn = () => useAddOnMutation((b: { label: string; price: number }) => api.post("/admin/addons", b));
+export const useUpdateAddOn = () =>
+  useAddOnMutation(({ id, ...b }: { id: string; label?: string; price?: number; isActive?: boolean }) => api.patch(`/admin/addons/${id}`, b));
+export const useDeleteAddOn = () => useAddOnMutation((id: string) => api.delete(`/admin/addons/${id}`));
 
 export const useBookingStats = () =>
   useQuery({

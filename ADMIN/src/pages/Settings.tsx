@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, DollarSign, Building2, Bell, Shield, Loader2 } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, Building2, Bell, Shield, Loader2, Plane, PackagePlus, Trash2, Plus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useSettings, useUpdateSettings } from "@/hooks/useAdminData";
+import { useAddOns, useCreateAddOn, useDeleteAddOn, useSettings, useUpdateAddOn, useUpdateSettings } from "@/hooks/useAdminData";
 
 const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
   <div className="bg-surface rounded-xl border border-border p-5">
@@ -36,12 +36,62 @@ const Toggle = ({ label, desc, defaultOn = false }: { label: string; desc?: stri
   );
 };
 
+const AddOnsManager = () => {
+  const { data: addOns = [], isLoading } = useAddOns();
+  const create = useCreateAddOn(), patch = useUpdateAddOn(), remove = useDeleteAddOn();
+  const [draft, setDraft] = useState({ label: '', price: '' });
+  const [edits, setEdits] = useState<Record<string, { label?: string; price?: string }>>({});
+
+  const ok = (msg: string) => ({
+    onSuccess: () => toast.success(msg),
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? e?.message ?? 'Failed'),
+  });
+
+  if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />;
+  return (
+    <>
+      {addOns.map((a: any) => {
+        const e = edits[a.id] ?? {};
+        const dirty = e.label !== undefined || e.price !== undefined;
+        return (
+          <div key={a.id} className="flex flex-wrap items-center gap-2">
+            <input className={`${inputCls} flex-1 min-w-[140px]`} value={e.label ?? a.label}
+              onChange={(ev) => setEdits((s) => ({ ...s, [a.id]: { ...s[a.id], label: ev.target.value } }))} />
+            <div className="relative w-32">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₦</span>
+              <input className={`${inputCls} pl-7`} value={e.price ?? String(a.price)}
+                onChange={(ev) => setEdits((s) => ({ ...s, [a.id]: { ...s[a.id], price: ev.target.value } }))} />
+            </div>
+            <Switch checked={a.isActive} onCheckedChange={(v) => patch.mutate({ id: a.id, isActive: v }, ok(v ? 'Add-on enabled' : 'Add-on hidden'))} />
+            <Button size="sm" disabled={!dirty || patch.isPending}
+              onClick={() => patch.mutate({ id: a.id, label: e.label, price: e.price !== undefined ? Number(e.price) : undefined },
+                { ...ok('Add-on saved'), onSuccess: () => { toast.success('Add-on saved'); setEdits((s) => { const { [a.id]: _, ...rest } = s; return rest; }); } })}>
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => confirm(`Delete "${a.label}"?`) && remove.mutate(a.id, ok('Add-on deleted'))}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      })}
+      <div className="flex gap-2 pt-3 border-t border-border">
+        <input className={`${inputCls} flex-1`} placeholder="New add-on name" value={draft.label} onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))} />
+        <input className={`${inputCls} w-32`} placeholder="Price (₦)" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))} />
+        <Button size="sm" disabled={!draft.label.trim() || !draft.price || create.isPending}
+          onClick={() => create.mutate({ label: draft.label, price: Number(draft.price) }, { ...ok('Add-on created'), onSuccess: () => { toast.success('Add-on created'); setDraft({ label: '', price: '' }); } })}>
+          <Plus className="mr-1 h-4 w-4" /> Add
+        </Button>
+      </div>
+    </>
+  );
+};
+
 const inputCls = "h-9 w-full px-3 rounded-md border border-border bg-background text-sm";
 const PRICE_FIELDS = [
   { key: 'price_3_hours',     label: '3 Hours Rate' },
   { key: 'price_6_hours',     label: '6 Hours Rate' },
   { key: 'price_10_hours',    label: '10 Hours Rate' },
-  { key: 'price_airport',     label: 'Airport Schedule' },
+  // { key: 'price_airport',     label: 'Airport Schedule' },
   { key: 'price_multiday',    label: 'Multi-day Rate (per day)' },
   { key: 'ext_price_1_hour',  label: 'Extension - 1 Hour' },
   { key: 'ext_price_2_hours', label: 'Extension - 2 Hours' },
@@ -51,7 +101,22 @@ const PRICE_FIELDS = [
   { key: 'price_fuel_6_hours',  label: 'Fueling Add-on - 6 Hours' },
   { key: 'price_fuel_10_hours', label: 'Fueling Add-on - 10 Hours' },
   { key: 'price_fuel_airport',  label: 'Fueling Add-on - Airport Schedule' },
+  {key: 'price_custom_extra', label: "Custom Extra ('Other')" },
 ];
+
+const AIRPORT_SERVICES = [
+  { slug: 'pickup', label: 'Airport Pickup' },
+  { slug: 'dropoff', label: 'Airport Drop-off' },
+  { slug: 'roundtrip', label: 'Airport Round Trip' },
+];
+const UPGRADE_HOURS = [
+  { slug: '3_hours', label: '3-Hour' }, { slug: '6_hours', label: '6-Hour' }, { slug: '10_hours', label: '10-Hour' },
+];
+const AIRPORT_PRICE_FIELDS = AIRPORT_SERVICES.map((s) => ({ key: `price_airport_${s.slug}`, label: `${s.label} Rate` }));
+const UPGRADE_PRICE_FIELDS = AIRPORT_SERVICES.flatMap((s) =>
+  UPGRADE_HOURS.map((h) => ({ key: `price_upgrade_${s.slug}_${h.slug}`, label: `Upgrade to ${s.label} (from ${h.label} ride)` })),
+);
+
 
 const Settings = () => {
   const { data: settings, isLoading } = useSettings();
@@ -86,10 +151,18 @@ const [sessionTimeout, setSessionTimeout] = useState("30");
   const set = (key: string, value: string) => setValues(v => ({ ...v, [key]: value }));
 
   const handleSave = () => {
-    const payload = Object.entries(values).map(([key, value]) => ({ key, value }));
+       const original = Object.fromEntries((settings ?? []).map((s: any) => [s.key, s.value]));
+    const payload = Object.entries(values)
+      .map(([key, raw]) => ({ key, value: raw.trim() }))
+      .filter(({ key, value }) => value !== original[key])
+      .map(({ key, value }) =>
+        value === '' && key.startsWith('price_upgrade_') ? { key, value: '0' } : { key, value },
+      )
+      .filter(({ value }) => value !== '');
+    if (!payload.length) return toast.info('No changes to save');
     update.mutate(payload, {
       onSuccess: () => toast.success('Settings saved'),
-      onError: () => toast.error('Failed to save settings'),
+      onError: (e: any) => toast.error(e?.response?.data?.message ?? e?.message ?? 'Failed to save settings'),
     });
   };
 
@@ -97,6 +170,15 @@ const [sessionTimeout, setSessionTimeout] = useState("30");
     <div className="flex items-center justify-center h-64">
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     </div>
+  );
+
+    const renderPrice = ({ key, label }: { key: string; label: string }) => (
+    <Field key={key} label={label}>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₦</span>
+        <input className={`${inputCls} pl-7`} value={values[key] ?? ''} onChange={(e) => set(key, e.target.value)} placeholder="0" />
+      </div>
+    </Field>
   );
   
     return (
@@ -121,7 +203,7 @@ const [sessionTimeout, setSessionTimeout] = useState("30");
         </Section>
 
         <Section icon={DollarSign} title="Trip & Pricing Settings">
-          {PRICE_FIELDS.map(({ key, label }) => (
+          {/* {PRICE_FIELDS.map(({ key, label }) => (
             <Field key={key} label={label}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₦</span>
@@ -133,7 +215,23 @@ const [sessionTimeout, setSessionTimeout] = useState("30");
                 />
               </div>
             </Field>
-          ))}
+          ))} */}
+           {PRICE_FIELDS.map(renderPrice)}
+         </Section>
+
+        <Section icon={Plane} title="Airport Service Pricing">
+          {AIRPORT_PRICE_FIELDS.map(renderPrice)}
+        </Section>
+
+        <Section icon={Plane} title="Airport Upgrade Pricing">
+          <p className="text-xs text-muted-foreground">
+            Amount the customer pays on top of their original ride. Leave blank or 0 to auto-calculate (airport rate − ride base price).
+          </p>
+          {UPGRADE_PRICE_FIELDS.map(renderPrice)}
+        </Section>
+
+        <Section icon={PackagePlus} title="Ride Add-ons">
+          <AddOnsManager />
         </Section>
 
         <Section icon={Building2} title="Individual & Business Controls">

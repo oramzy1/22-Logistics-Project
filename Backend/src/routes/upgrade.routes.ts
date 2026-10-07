@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/", authenticate, createUpgrade);
 router.post("/driver-request", authenticate, requestUpgradeAsDriver);
+router.get("/quotes/:bookingId", authenticate, getUpgradeQuotes);
 router.get("/verify/:reference", verifyUpgradePayment);
-router.get("/quotes/:bookingId", getUpgradeQuotes);
 
 export default router;

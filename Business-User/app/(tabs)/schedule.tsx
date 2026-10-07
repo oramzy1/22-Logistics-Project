@@ -1,6 +1,7 @@
 // Business-User/app/(tabs)/schedule.tsx
 
 import { Calendar, ChevronRight, Clock, MapPinned, Plane } from "lucide-react-native";
+import { useAddOns } from "@/hooks/useAddOns";
 import React, { useMemo, useState, useEffect } from "react";
 import {
   Alert,
@@ -60,6 +61,12 @@ type RidePackage = {
   price?: string;
 };
 
+const AIRPORT_SLUG: Record<AirportService, string> = {
+  AIRPORT_PICKUP: "pickup", AIRPORT_DROPOFF: "dropoff", AIRPORT_ROUND_TRIP: "roundtrip",
+};
+const AIRPORT_LABEL: Record<AirportService, string> = {
+  AIRPORT_PICKUP: "AIRPORT PICKUP", AIRPORT_DROPOFF: "AIRPORT DROPOFF", AIRPORT_ROUND_TRIP: "AIRPORT ROUND TRIP",
+};
 
 
 export default function ScheduleTabScreen() {
@@ -77,16 +84,16 @@ export default function ScheduleTabScreen() {
     label: string;
     price: number;
   } | null>(null);
-  const [extras, setExtras] = useState({
-    babySeat: false,
-    extraLuggage: false,
-    wifi: false,
-    coldWater: false,
-    petFriendly: false,
-    wheelchair: false,
-    fueling: false,
-    customExtra: "",
-  });
+  // const [extras, setExtras] = useState({
+  //   babySeat: false,
+  //   extraLuggage: false,
+  //   wifi: false,
+  //   coldWater: false,
+  //   petFriendly: false,
+  //   wheelchair: false,
+  //   fueling: false,
+  //   customExtra: "",
+  // });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pickupStreet, setPickupStreet] = useState("");
   const [pickupLGA, setPickupLGA] = useState("");
@@ -102,6 +109,9 @@ export default function ScheduleTabScreen() {
     description: string;
   } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const { addOns: addOnCatalog } = useAddOns();
+  const [selectedAddOnKeys, setSelectedAddOnKeys] = useState<string[]>([]);
+ const [extras, setExtras] = useState({ fueling: false, customExtra: "" });
   const [airportService, setAirportService] =
   useState<AirportService>("AIRPORT_DROPOFF");
 
@@ -162,16 +172,8 @@ const showFreeTextDropoff = !!interstateLocation || isInterState;
     setPromoResult(null);
     setPickupDate(null);
     setPickupTime(null);
-    setExtras({
-      babySeat: false,
-      extraLuggage: false,
-      wifi: false,
-      coldWater: false,
-      petFriendly: false,
-      wheelchair: false,
-      fueling: false,
-      customExtra: "",
-    });
+   setSelectedAddOnKeys([]);
+   setExtras({ fueling: false, customExtra: "" });
   }, [selectedPackage]);
 
   const { createBooking } = useBookings();
@@ -195,7 +197,11 @@ const showFreeTextDropoff = !!interstateLocation || isInterState;
       price: `₦${(prices.price_10_hours ?? 0).toLocaleString()}`,
     },
     { id: "multi" as const, title: "Multi-day", price: undefined },
-    { id: "airport" as const, title: "Airport Schedule", price: undefined },
+    {
+      id: "airport" as const,
+      title: "Airport Schedule",
+      price: `From ₦${Math.min(...Object.values(AIRPORT_SLUG).map((s) => (prices as Record<string, number>)[`price_airport_${s}`] || Infinity)).toLocaleString()}`,
+    },
   ];
 
   const pkg = selectedPackage;
@@ -285,6 +291,13 @@ const validatePickupSelection = (
     if (!PH_LGAS.includes(lga)) setOutOfLGATarget(which); // trigger modal
   };
 
+    const selectedAddOnsTotal = useMemo(
+    () => !extrasEnabled ? 0
+      : addOnCatalog.filter((a) => selectedAddOnKeys.includes(a.key)).reduce((s, a) => s + a.price, 0),
+    [addOnCatalog, selectedAddOnKeys, extrasEnabled],
+  );
+  const customExtraUnit = (prices as Record<string, number>).price_custom_extra ?? 2000;
+
   // Replace the total useMemo base price lookup:
   const total = useMemo(() => {
     const base =
@@ -301,12 +314,15 @@ const validatePickupSelection = (
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
 
-const fuelPrice =
-  pkg === "multi"
-    ? 0
-    : isAirportSchedule
-      ? fuelPriceForPackage()       
-      : add("fueling", fuelPriceForPackage());
+// const fuelPrice =
+//   pkg === "multi"
+//     ? 0
+//     : isAirportSchedule
+//       ? fuelPriceForPackage()       
+//       : add("fueling", fuelPriceForPackage());
+
+const fuelPrice = pkg === "multi" ? 0 : isAirportSchedule ? fuelPriceForPackage()
+  : extrasEnabled && extras.fueling ? fuelPriceForPackage() : 0;
 
     const customExtraPrice =
       extrasEnabled && extras.customExtra.trim().length > 0 ? 2000 : 0;
@@ -322,14 +338,9 @@ const fuelPrice =
       base +
       interstatePrice +
       outOfLGAFee +
-      add("babySeat", 2000) +
-      add("extraLuggage", 2000) +
-      add("wifi", 4000) +
-      add("coldWater", 2000) +
-      add("petFriendly", 2000) +
-      add("wheelchair", 2000) +
-      fuelPrice +
-      customExtraPrice
+       selectedAddOnsTotal +
+       fuelPrice +
+       customExtraPrice
     );
   }, [
     extras,
@@ -339,6 +350,9 @@ const fuelPrice =
     pickupLGA,
     dropoffLGA,
     prices,
+    airportService,
+    selectedAddOnsTotal,
+    customExtraUnit,
   ]);
 
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
@@ -358,22 +372,12 @@ const expectedDropoff = useMemo(
 );
 
 
-          const addOnsTotal = useMemo(() => {
+const addOnsTotal = useMemo(() => {
   if (!extrasEnabled) return 0;
-  const add = (k: keyof typeof extras, amount: number) => (extras[k] ? amount : 0);
-  const fuelPrice = pkg !== "multi" ? add("fueling", fuelPriceForPackage()) : 0;
-  const customExtraPrice = extras.customExtra.trim().length > 0 ? 2000 : 0;
-  return (
-    add("babySeat", 2000) +
-    add("extraLuggage", 2000) +
-    add("wifi", 4000) +
-    add("coldWater", 2000) +
-    add("petFriendly", 2000) +
-    add("wheelchair", 2000) +
-    fuelPrice +
-    customExtraPrice
-  );
-}, [extras, extrasEnabled, pkg]);
+  const fuel = pkg !== "multi" && extras.fueling ? fuelPriceForPackage() : 0;
+  const custom = extras.customExtra.trim().length > 0 ? customExtraUnit : 0;
+  return selectedAddOnsTotal + fuel + custom;
+}, [extras, extrasEnabled, pkg, selectedAddOnsTotal, customExtraUnit]);
 
 const resolvedTimeSlot = useMemo(() => {
   if (pkg === "multi") return `${multiDayCount} Day${multiDayCount > 1 ? "s" : ""}`;
@@ -423,9 +427,9 @@ setFieldErrors(errors);
     // if (!scheduleDateTime) {
     //   return Alert.alert("Missing field", "Please select a schedule date.");
     // }
-    if ( selectedPackage !== "multi") {
-      return Alert.alert("Missing Field", "Please select a time slot");
-    }
+    // if ( selectedPackage !== "multi") {
+    //   return Alert.alert("Missing Field", "Please select a time slot");
+    // }
 
     if (!pickupDate) {
       return Alert.alert("Missing field", "Please select a pick-up date.");
@@ -488,13 +492,8 @@ if (expectedDropoff && pkg !== "multi" && !isWithinOperatingHours(expectedDropof
       };
 
       const addOnsList = [
-        extras.babySeat && "Baby Car Seat",
-        extras.extraLuggage && "Extra Luggage",
-        extras.wifi && "WiFi",
-        extras.coldWater && "Cold Water",
-        extras.petFriendly && "Pet Friendly",
-        extras.wheelchair && "Wheelchair Access",
-        (isAirportSchedule || extras.fueling) &&
+        ...addOnCatalog.filter((a) => selectedAddOnKeys.includes(a.key)).map((a) => a.label),
+         (isAirportSchedule || extras.fueling) && 
   (isAirportSchedule ? "Fueling (Included)" : "Fueling (Pre-paid)"),
         extrasEnabled && extras.customExtra.trim()
           ? extras.customExtra.trim()
@@ -528,6 +527,9 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
             !!dropoffLGA &&
             !PH_LGAS.includes(dropoffLGA)),
         addOns: addOnsList,
+        addOnsKeys: extrasEnabled ? selectedAddOnKeys : [],
+        fueling: extrasEnabled && extras.fueling,
+        customExtra: extrasEnabled ? extras.customExtra.trim() || undefined : undefined,
         scheduledAt: combinedPickup.toISOString(),
         pickupAt: combinedPickup.toISOString(),
         packageType: packageTypeMap[pkg],
@@ -708,11 +710,10 @@ multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
       placeholder="Select airport service"
       value={airportService}
       onSelect={setAirportService}
-      options={[
-        { label: "AIRPORT PICKUP", value: "AIRPORT_PICKUP" },
-        { label: "AIRPORT DROPOFF", value: "AIRPORT_DROPOFF" },
-        { label: "AIRPORT ROUND TRIP", value: "AIRPORT_ROUND_TRIP" },
-      ]}
+       options={(Object.keys(AIRPORT_SLUG) as AirportService[]).map((svc) => ({
+        label: `${AIRPORT_LABEL[svc]} - ₦${((prices as Record<string, number>)[`price_airport_${AIRPORT_SLUG[svc]}`] ?? 0).toLocaleString()}`,
+        value: svc,
+      }))}
     />
 
     {/* <InfoBanner
@@ -872,52 +873,18 @@ multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
           </View>
          {extrasEnabled && (
            <View style={styles.extrasWrap}>
-            <AppCheckboxRow
-              label="Baby Car Seat"
-              price="(₦2,000)"
-              value={extras.babySeat}
-              onValueChange={(v) => setExtras((s) => ({ ...s, babySeat: v }))}
-              disabled={!extrasEnabled}
-            />
-            <AppCheckboxRow
-              label="Extra Luggage"
-              price="(₦2,000)"
-              value={extras.extraLuggage}
-              onValueChange={(v) =>
-                setExtras((s) => ({ ...s, extraLuggage: v }))
-              }
-              disabled={!extrasEnabled}
-            />
-            <AppCheckboxRow
-              label="WiFi"
-              price="(₦4,000)"
-              value={extras.wifi}
-              onValueChange={(v) => setExtras((s) => ({ ...s, wifi: v }))}
-              disabled={!extrasEnabled}
-            />
-            <AppCheckboxRow
-              label="Cold Water"
-              price="(₦2,000)"
-              value={extras.coldWater}
-              onValueChange={(v) => setExtras((s) => ({ ...s, coldWater: v }))}
-              disabled={!extrasEnabled}
-            />
-            <AppCheckboxRow
-              label="Pet Friendly"
-              price="(₦2,000)"
-              value={extras.petFriendly}
-              onValueChange={(v) =>
-                setExtras((s) => ({ ...s, petFriendly: v }))
-              }
-              disabled={!extrasEnabled}
-            />
-            <AppCheckboxRow
-              label="Wheelchair Access"
-              price="(₦2,000)"
-              value={extras.wheelchair}
-              onValueChange={(v) => setExtras((s) => ({ ...s, wheelchair: v }))}
-              disabled={!extrasEnabled}
-            />
+           {addOnCatalog.map((a) => (
+  <AppCheckboxRow
+    key={a.key}
+    label={a.label}
+    price={`(₦${a.price.toLocaleString()})`}
+    value={selectedAddOnKeys.includes(a.key)}
+    onValueChange={(v) =>
+      setSelectedAddOnKeys((s) => (v ? [...s, a.key] : s.filter((k) => k !== a.key)))
+    }
+    disabled={!extrasEnabled}
+  />
+))}
 {pkg !== "multi" && !isAirportSchedule && (
   <>
     <AppCheckboxRow

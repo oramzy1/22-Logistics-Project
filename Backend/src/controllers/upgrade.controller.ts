@@ -3,7 +3,6 @@ import crypto from "crypto";
 import prisma from "../lib/prisma"; 
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
-import { getFuelPrices, getPackagePrices } from "../lib/getPrices";
 import { createNotification, notifyAdmins } from "../lib/notifications";
 import { emitToAdmin, getIO } from "../lib/socket";
 import { sendEmail } from "../lib/email.service";
@@ -45,18 +44,18 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "This upgrade isn't available right now. Please contact support." });
 
 
-    const prices = await getPackagePrices();
-    const airportPrice = prices["Airport Schedule"];
+    // const prices = await getPackagePrices();
+    // const airportPrice = prices["Airport Schedule"];
 
-    if (!airportPrice)
-      return res.status(500).json({ message: "Airport price not configured" });
+    // if (!airportPrice)
+    //   return res.status(500).json({ message: "Airport price not configured" });
 
-    if (upgradeAmount <= 0) {
-      return res.status(400).json({
-        message:
-          "No upgrade amount needed - current price exceeds airport rate",
-      });
-    }
+    // if (upgradeAmount <= 0) {
+    //   return res.status(400).json({
+    //     message:
+    //       "No upgrade amount needed - current price exceeds airport rate",
+    //   });
+    // }
 
     const paymentRef = `22LOG-UPG-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 
@@ -237,11 +236,13 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
     });
 
     if (!upgrade) return res.status(404).json({ message: "Upgrade not found" });
-    if (upgrade.paymentStatus === "PAID")
-      return res.json({ message: "Already paid", upgrade });
 
     if (upgrade.booking.customerId !== req.user!.id)
       return res.status(403).json({ message: "Not allowed" });
+    
+    if (upgrade.paymentStatus === "PAID")
+      return res.json({ message: "Already paid", upgrade });
+
 
     let paystackData: any = null;
     for (let attempt = 1; attempt <= 5; attempt++) {

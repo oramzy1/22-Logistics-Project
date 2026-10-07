@@ -24,6 +24,7 @@ import {
   deleteAddOn,
   updateAddOn,
   getPublicAddOns,
+  getAdminAddOns,
   createAddOn,
 } from "../controllers/admin.controller";
 import {
@@ -39,7 +40,8 @@ const router = Router();
 
 // Public - no auth
 router.post("/auth/login", loginLimiter, adminLogin);
-router.get("/public/prices", getPublicPrices); // frontend price fetch
+router.get("/public/prices", getPublicPrices);
+router.get("/public/addons", getPublicAddOns);
 
 // All routes below require admin JWT
 router.use(authenticate, authorize(["ADMIN"]));
@@ -78,7 +80,7 @@ router.patch("/promos/:id/toggle", togglePromo);
 router.delete("/promos/:id", deletePromo);
 
 // Add Ons
-router.get("/addons", getPublicAddOns);
+router.get("/addons", getAdminAddOns);
 router.post("/addons", createAddOn);
 router.patch("/addons/:id", updateAddOn);
 router.delete("/addons/:id", deleteAddOn);

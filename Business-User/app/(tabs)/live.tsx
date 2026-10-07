@@ -33,6 +33,7 @@ import {
   StyleSheet,
   Switch,
   TouchableOpacity,
+  ActivityIndicator,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -51,6 +52,18 @@ import { socketService } from "@/api/socket.service";
 import { useCall } from "@/context/CallContext";
 import apiClient from "@/api/api";
 import { addHours, formatTime, isExtensionAllowed } from "@/src/utils/timeSlots";
+
+type AirportServiceKey = "AIRPORT_PICKUP" | "AIRPORT_DROPOFF" | "AIRPORT_ROUND_TRIP";
+type UpgradeOption = {
+  airportService: AirportServiceKey;
+  upgradeAmount: number;
+  fuelTopUpAmount: number;
+};
+const AIRPORT_SERVICE_LABEL: Record<AirportServiceKey, string> = {
+  AIRPORT_PICKUP: "Airport Pickup",
+  AIRPORT_DROPOFF: "Airport Drop-off",
+  AIRPORT_ROUND_TRIP: "Airport Round Trip",
+};
 
 export default function LiveTabScreen() {
   const { colors: themeColors } = useAppTheme();
@@ -75,6 +88,11 @@ export default function LiveTabScreen() {
     "audio",
   );
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [showUpgradeSheet, setShowUpgradeSheet] = useState(false);
+  const [upgradeOptions, setUpgradeOptions] = useState<UpgradeOption[]>([]);
+  const [selectedService, setSelectedService] = useState<AirportServiceKey | null>(null);
+  const [quotesLoading, setQuotesLoading] = useState(false);
+
 
   const webrtc = useCall();
   const [ratingStats, setRatingStats] = useState({
@@ -106,10 +124,10 @@ export default function LiveTabScreen() {
     activeBooking?.id ?? null,
     user?.id ?? "",
   );
-  const upgradeAmount = Math.max(
-    0,
-    (prices.price_airport ?? 0) - (activeBooking?.totalAmount ?? 0),
-  );
+  // const upgradeAmount = Math.max(
+  //   0,
+  //   (prices.price_airport ?? 0) - (activeBooking?.totalAmount ?? 0),
+  // );
 
   const [timeResult, setTimeResult] = useState(() =>
     getRideTimeRemaining(
@@ -159,18 +177,41 @@ const currentEndAt =
     extensionMinutes: paidExtensionMinutes,
   };
 
+  const openUpgradeSheet = async (bookingIdArg?: string) => {
+    const id = bookingIdArg ?? activeBooking?.id;
+    if (!id) return;
+    setShowUpgradeSheet(true);
+    setQuotesLoading(true);
+    setSelectedService(null);
+    setUpgradeOptions([]);
+    try {
+      const res = await apiClient.get(`/upgrade/quotes/${id}`);
+      setUpgradeOptions(res.data.options ?? []);
+    } catch (err: any) {
+      setShowUpgradeSheet(false);
+      Alert.alert(
+        "Upgrade unavailable",
+        err?.response?.data?.message ?? "Could not load upgrade options",
+      );
+    } finally {
+      setQuotesLoading(false);
+    }
+  };
+
   const handleUpgrade = async () => {
-    if (!activeBooking) return;
+    if (!activeBooking || !selectedService) return;
     setIsUpgrading(true);
     try {
       const res = await apiClient.post("/upgrade", {
         bookingId: activeBooking.id,
+        airportService: selectedService,
       });
+      setShowUpgradeSheet(false);
       router.push({
         pathname: "/screens/payment",
         params: {
           bookingId: activeBooking.id,
-          packageType: "Upgrade: Airport Schedule",
+          packageType: `Upgrade: ${AIRPORT_SERVICE_LABEL[selectedService]}`,
           scheduledAt: activeBooking.scheduledAt,
           pickupAddress: activeBooking.pickupAddress,
           dropoffAddress: activeBooking.dropoffAddress,
@@ -189,6 +230,8 @@ const currentEndAt =
       setIsUpgrading(false);
     }
   };
+
+  const selectedOption = upgradeOptions.find((o) => o.airportService === selectedService);
 
 useBookingSocket({
   onBookingUpdated: (updatedBooking) => {
@@ -224,10 +267,10 @@ useBookingSocket({
 
     Alert.alert(
       "✈️ Airport Upgrade",
-      `Your driver suggests upgrading to an Airport ride.\nYou'll pay an additional ${formatPrice(data.upgradeAmount)}.`,
+      `Your driver suggests upgrading to an Airport ride, starting from ${formatPrice(data.upgradeAmount)}.`,
       [
         { text: "Not now", style: "cancel" },
-        { text: "Upgrade", onPress: handleUpgrade },
+        { text: "View options", onPress: () => openUpgradeSheet(data.bookingId) },
       ],
     );
   },
@@ -785,7 +828,7 @@ useBookingSocket({
                     ["3 Hours", "6 Hours", "10 Hours"].includes(
                       activeBooking?.packageType,
                     ) &&
-                    !activeBooking?.upgrade && (
+                    activeBooking?.upgrade?.paymentStatus !== "PAID" && (
                       // <TouchableOpacity
                       //   style={styles.upgradeBtn}
                       //   onPress={handleUpgrade}
@@ -797,11 +840,9 @@ useBookingSocket({
                       //   </Text>
                       // </TouchableOpacity>
                       <PrimaryButton variant="dark"
-                        onPress={handleUpgrade}
-                        style={styles.upgradeBtn}
-                        disabled={isUpgrading}
-                        loading={isUpgrading}
-                        title={`Upgrade to Airport Ride - ${formatPrice(upgradeAmount)}`}
+                        onPress={() => openUpgradeSheet()}
+                        style={styles.upgradeBtn}   
+                        title="Upgrade to Airport Ride"
                        />
                     )}
 
@@ -1012,6 +1053,74 @@ useBookingSocket({
           )}
         </View>
       </SafeAreaView>
+            <Modal
+        visible={showUpgradeSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowUpgradeSheet(false)}
+      >
+        <View style={styles.sheetBackdrop}>
+          <View style={styles.upgradeSheet}>
+            <View style={styles.drawerHandle} />
+            <Text style={styles.sectionTitle}>Upgrade to Airport Ride</Text>
+            <Text style={styles.sheetSub}>
+              Choose a service. Prices shown are for your current{" "}
+              {activeBooking?.packageType} ride.
+            </Text>
+
+            {quotesLoading ? (
+              <ActivityIndicator style={{ marginVertical: 24 }} color={themeColors.text} />
+            ) : upgradeOptions.length === 0 ? (
+              <Text style={styles.sheetSub}>
+                No upgrade options are available for this trip right now.
+              </Text>
+            ) : (
+              upgradeOptions.map((o) => {
+                const active = o.airportService === selectedService;
+                return (
+                  <TouchableOpacity
+                    key={o.airportService}
+                    activeOpacity={0.85}
+                    style={[styles.optionRow, active && styles.optionRowActive]}
+                    onPress={() => setSelectedService(o.airportService)}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.optionTitle}>
+                        {AIRPORT_SERVICE_LABEL[o.airportService]}
+                      </Text>
+                      {o.fuelTopUpAmount > 0 && (
+                        <Text style={styles.optionNote}>
+                          Includes {formatPrice(o.fuelTopUpAmount)} fuel top-up
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={styles.optionPrice}>{formatPrice(o.upgradeAmount)}</Text>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+
+            <PrimaryButton
+              marginTop
+              title={
+                isUpgrading
+                  ? "Processing..."
+                  : selectedOption
+                    ? `Pay ${formatPrice(selectedOption.upgradeAmount)}`
+                    : "Select a service"
+              }
+              onPress={handleUpgrade}
+              disabled={!selectedService || isUpgrading}
+            />
+            <TouchableOpacity
+              style={{ alignItems: "center", paddingVertical: 14 }}
+              onPress={() => setShowUpgradeSheet(false)}
+            >
+              <Text style={{ color: themeColors.textSecondary }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       {showEndFlow && (
         <EndTripFlow
           bookingId={activeBooking.id}
@@ -1395,6 +1504,28 @@ const createStyles = (themeColors: any) =>
       paddingVertical: 14,
       borderRadius: 24,
     },
+        sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+    upgradeSheet: {
+      backgroundColor: themeColors.card,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      padding: 24,
+      paddingBottom: 36,
+    },
+    sheetSub: { fontSize: 13, color: themeColors.textSecondary, marginBottom: 16 },
+    optionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 10,
+    },
+    optionRowActive: { borderColor: themeColors.gold, backgroundColor: themeColors.cardPrimary },
+    optionTitle: { fontSize: 14, fontWeight: "700", color: themeColors.text },
+    optionNote: { fontSize: 11, color: themeColors.textSecondary, marginTop: 2 },
+    optionPrice: { fontSize: 15, fontWeight: "800", color: themeColors.text },
     actionTextDef: { fontSize: 13, fontWeight: "600", color: "#4B5563" },
     cancelTripBtn: {
       borderWidth: 1,

@@ -263,7 +263,7 @@ const fetchStops = async (bookingId: string) => {
             ["3 Hours", "6 Hours", "10 Hours"].includes(
               activeTrip.packageType,
             ) &&
-            !activeTrip.upgrade &&
+            activeTrip.upgrade?.paymentStatus === "PAID" &&
             (activeTrip.status === "ARRIVED" ||
               activeTrip.status === "IN_PROGRESS") && (
                <TouchableOpacity
