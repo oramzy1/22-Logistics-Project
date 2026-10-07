@@ -731,7 +731,7 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
     if (!Array.isArray(updates))
       return res.status(400).json({ message: "settings must be an array" });
 
-    if (updates.some((u) => !u.key || !Number.isFinite(parseFloat(u.value)) || parseFloat(u.value) < ))
+    if (updates.some((u) => !u.key || !Number.isFinite(parseFloat(u.value)) || parseFloat(u.value) < 0))
       return res.status(400).json({ message: "All setting values must be non-negative numbers" });
 
     const results = await Promise.all(
