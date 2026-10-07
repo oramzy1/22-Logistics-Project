@@ -7,6 +7,7 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { createNotification } from "../lib/notifications";
 import { sendPromoEmail } from "../lib/email.service";
 import { cacheDel, cacheGet, cacheSet } from "../lib/redis";
+import { calculatePromoDiscount, PromoError } from "../lib/promo";
 
 // import { Prisma } from "@prisma/client";
 
@@ -730,6 +731,9 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
     if (!Array.isArray(updates))
       return res.status(400).json({ message: "settings must be an array" });
 
+    if (updates.some((u) => !u.key || !Number.isFinite(parseFloat(u.value)) || parseFloat(u.value) < ))
+      return res.status(400).json({ message: "All setting values must be non-negative numbers" });
+
     const results = await Promise.all(
       updates.map(({ key, value }) =>
         prisma.appSettings.upsert({
@@ -867,82 +871,99 @@ export const deletePromo = async (req: AuthRequest, res: Response) => {
 };
 
 // ── PROMO VALIDATION (called from booking flow) ───────────────
+// export const validatePromoCode = async (req: AuthRequest, res: Response) => {
+//   try {
+//     const { code, bookingAmount } = req.body;
+//     const userId = req.user!.id;
+
+//     const user = await prisma.user.findUnique({
+//       where: { id: userId },
+//       select: { role: true },
+//     });
+//     const promo = await prisma.promoCode.findUnique({
+//       where: { code: code.toUpperCase() },
+//     });
+
+//     if (!promo || !promo.isActive)
+//       return res
+//         .status(404)
+//         .json({ message: "Invalid or inactive promo code" });
+//     if (promo.expiresAt && new Date() > promo.expiresAt)
+//       return res.status(400).json({ message: "Promo code has expired" });
+//     if (promo.usageLimit && promo.usedCount >= promo.usageLimit)
+//       return res
+//         .status(400)
+//         .json({ message: "Promo code usage limit reached" });
+//     if (promo.minBookingAmount && bookingAmount < promo.minBookingAmount) {
+//       return res.status(400).json({
+//         message: `Minimum booking amount is ₦${promo.minBookingAmount.toLocaleString()}`,
+//       });
+//     }
+
+//     // Check targeting
+//     if (
+//       promo.targetType === "USER_SPECIFIC" &&
+//       !promo.targetUserIds.includes(userId)
+//     ) {
+//       return res
+//         .status(403)
+//         .json({ message: "This promo code is not available for your account" });
+//     }
+//     if (promo.targetType === "INDIVIDUAL" && user?.role !== "INDIVIDUAL") {
+//       return res
+//         .status(403)
+//         .json({ message: "This promo is for individual customers only" });
+//     }
+//     if (promo.targetType === "BUSINESS" && user?.role !== "BUSINESS") {
+//       return res
+//         .status(403)
+//         .json({ message: "This promo is for business customers only" });
+//     }
+
+//     // Check if user already used this promo
+//     const alreadyUsed = await prisma.promoUsage.findFirst({
+//       where: { promoId: promo.id, userId },
+//     });
+//     if (alreadyUsed)
+//       return res
+//         .status(400)
+//         .json({ message: "You have already used this promo code" });
+
+//     // Calculate discount
+//     let discountAmount = 0;
+//     if (promo.discountType === "PERCENTAGE") {
+//       discountAmount = (bookingAmount * promo.discountValue) / 100;
+//       if (promo.maxDiscount)
+//         discountAmount = Math.min(discountAmount, promo.maxDiscount);
+//     } else {
+//       discountAmount = Math.min(promo.discountValue, bookingAmount);
+//     }
+
+//     const finalAmount = bookingAmount - discountAmount;
+//     res.json({
+//       valid: true,
+//       discountAmount,
+//       finalAmount,
+//       promo: { code: promo.code, description: promo.description },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
+
 export const validatePromoCode = async (req: AuthRequest, res: Response) => {
   try {
     const { code, bookingAmount } = req.body;
-    const userId = req.user!.id;
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-    const promo = await prisma.promoCode.findUnique({
-      where: { code: code.toUpperCase() },
-    });
-
-    if (!promo || !promo.isActive)
-      return res
-        .status(404)
-        .json({ message: "Invalid or inactive promo code" });
-    if (promo.expiresAt && new Date() > promo.expiresAt)
-      return res.status(400).json({ message: "Promo code has expired" });
-    if (promo.usageLimit && promo.usedCount >= promo.usageLimit)
-      return res
-        .status(400)
-        .json({ message: "Promo code usage limit reached" });
-    if (promo.minBookingAmount && bookingAmount < promo.minBookingAmount) {
-      return res.status(400).json({
-        message: `Minimum booking amount is ₦${promo.minBookingAmount.toLocaleString()}`,
-      });
-    }
-
-    // Check targeting
-    if (
-      promo.targetType === "USER_SPECIFIC" &&
-      !promo.targetUserIds.includes(userId)
-    ) {
-      return res
-        .status(403)
-        .json({ message: "This promo code is not available for your account" });
-    }
-    if (promo.targetType === "INDIVIDUAL" && user?.role !== "INDIVIDUAL") {
-      return res
-        .status(403)
-        .json({ message: "This promo is for individual customers only" });
-    }
-    if (promo.targetType === "BUSINESS" && user?.role !== "BUSINESS") {
-      return res
-        .status(403)
-        .json({ message: "This promo is for business customers only" });
-    }
-
-    // Check if user already used this promo
-    const alreadyUsed = await prisma.promoUsage.findFirst({
-      where: { promoId: promo.id, userId },
-    });
-    if (alreadyUsed)
-      return res
-        .status(400)
-        .json({ message: "You have already used this promo code" });
-
-    // Calculate discount
-    let discountAmount = 0;
-    if (promo.discountType === "PERCENTAGE") {
-      discountAmount = (bookingAmount * promo.discountValue) / 100;
-      if (promo.maxDiscount)
-        discountAmount = Math.min(discountAmount, promo.maxDiscount);
-    } else {
-      discountAmount = Math.min(promo.discountValue, bookingAmount);
-    }
-
-    const finalAmount = bookingAmount - discountAmount;
+    const r = await calculatePromoDiscount(code, req.user!.id, bookingAmount);
     res.json({
       valid: true,
-      discountAmount,
-      finalAmount,
-      promo: { code: promo.code, description: promo.description },
+      discountAmount: r.discountAmount,
+      finalAmount: r.finalAmount,
+      description: r.promo.description ?? "Promo applied", // ← what the app reads
+      promo: { code: r.code, description: r.promo.description },
     });
   } catch (error) {
+    if (error instanceof PromoError) return res.status(error.status).json({ message: error.message });
     res.status(500).json({ message: "Server error", error });
   }
 };
@@ -1112,4 +1133,76 @@ export const assignPromoToUsers = async (req: AuthRequest, res: Response) => {
     console.error("assignPromoToUsers error:", error);
     res.status(500).json({ message: "Server error", error });
   }
+};
+
+
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+const bustAddOns = async () => { await cacheDel("public:addons"); getIO().emit("addons:updated"); };
+
+export const getAdminAddOns = async (_req: AuthRequest, res: Response) => {
+  try {
+    res.json(await prisma.addOn.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }));
+  } catch (error) { res.status(500).json({ message: "Server error", error }); }
+};
+
+export const createAddOn = async (req: AuthRequest, res: Response) => {
+  try {
+    const { label, price, sortOrder = 0 } = req.body;
+    const p = Number(price);
+    const key = slugify(label ?? "");
+    if (!key || !Number.isFinite(p) || p < 0)
+      return res.status(400).json({ message: "A label and a non-negative price are required" });
+    if (await prisma.addOn.findUnique({ where: { key } }))
+      return res.status(400).json({ message: "An add-on with this name already exists" });
+
+    const addOn = await prisma.addOn.create({ data: { key, label: label.trim(), price: p, sortOrder } });
+    await bustAddOns();
+    await audit(req.user!.id, "CREATE_ADDON", "SETTINGS", addOn.id, { key, price: p });
+    res.status(201).json(addOn);
+  } catch (error) { res.status(500).json({ message: "Server error", error }); }
+};
+
+export const updateAddOn = async (req: AuthRequest, res: Response) => {
+  try {
+    const { label, price, isActive, sortOrder } = req.body;
+    const data: any = {};
+    if (label !== undefined) data.label = String(label).trim();
+    if (price !== undefined) {
+      const p = Number(price);
+      if (!Number.isFinite(p) || p < 0) return res.status(400).json({ message: "Invalid price" });
+      data.price = p;
+    }
+    if (isActive !== undefined) data.isActive = !!isActive;
+    if (sortOrder !== undefined) data.sortOrder = Number(sortOrder);
+
+    const addOn = await prisma.addOn.update({ where: { id: req.params.id }, data });
+    await bustAddOns();
+    await audit(req.user!.id, "UPDATE_ADDON", "SETTINGS", addOn.id, data);
+    res.json(addOn);
+  } catch (error) { res.status(500).json({ message: "Server error", error }); }
+};
+
+export const deleteAddOn = async (req: AuthRequest, res: Response) => {
+  try {
+    // Safe to hard-delete: bookings store add-on labels as strings, not FK references.
+    await prisma.addOn.delete({ where: { id: req.params.id } });
+    await bustAddOns();
+    await audit(req.user!.id, "DELETE_ADDON", "SETTINGS", req.params.id);
+    res.json({ message: "Add-on deleted" });
+  } catch (error) { res.status(500).json({ message: "Server error", error }); }
+};
+
+// Public: mobile apps
+export const getPublicAddOns = async (_req: any, res: Response) => {
+  try {
+    const cached = await cacheGet<any[]>("public:addons");
+    if (cached) return res.json(cached);
+    const addOns = await prisma.addOn.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { key: true, label: true, price: true },
+    });
+    await cacheSet("public:addons", addOns, 300);
+    res.json(addOns);
+  } catch (error) { res.status(500).json({ message: "Server error", error }); }
 };

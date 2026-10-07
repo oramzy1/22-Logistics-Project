@@ -98,7 +98,7 @@ model Booking {
   pickupTime    String?
   outsidePH     Boolean?      @default(false)
   addOns        String[]
-  rideType      Role
+  rideType      Role 
   acceptedByDriverAt  DateTime?
   airportService  String?
 multiDayTripType String?
@@ -148,6 +148,7 @@ model TripUpgrade {
   booking       Booking  @relation(fields: [bookingId], references: [id])
   fromPackage   String   // e.g. "3 Hours"
   toPackage     String   // "Airport Schedule"
+  airportService String?  // AIRPORT_PICKUP | AIRPORT_DROPOFF | AIRPORT_ROUND_TRIP
   originalAmount Float
   upgradeAmount Float    // difference paid
   fuelTopUpAmount Float  @default(0)
@@ -158,6 +159,17 @@ model TripUpgrade {
   requestedBy   String   // "CUSTOMER" | "DRIVER"
   requestedAt   DateTime @default(now())
   createdAt     DateTime @default(now())
+}
+
+model AddOn {
+  id        String   @id @default(uuid())
+  key       String   @unique        // immutable slug, e.g. "baby_seat"
+  label     String
+  price     Float
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model DriverReview {

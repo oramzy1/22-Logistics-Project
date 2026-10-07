@@ -62,7 +62,7 @@ export default function AccountTypeScreen() {
             </View>
             {selectedType === 'individual' ? <CheckCircle2 size={24} color="#3E2723" /> : <Circle size={24} color="#D1D5DB" />}
           </View>
-          <Text style={styles.cardDesc}>Book rides as an Individual easily</Text>
+          <Text style={styles.cardDesc}>Schedule rides as an Individual easily</Text>
           
           {selectedType === 'individual' && (
             <TouchableOpacity style={styles.continueBtn} onPress={handleContinue}>

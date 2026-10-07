@@ -70,7 +70,7 @@ const features = [
   {
     Icon: Users,
     t: "Delegate Management",
-    d: "Authorize team members to book on behalf of your organization.",
+    d: "Authorize team members to schedule on behalf of your organization.",
   },
   {
     Icon: BarChart3,

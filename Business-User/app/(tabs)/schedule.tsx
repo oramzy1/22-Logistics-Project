@@ -1,6 +1,6 @@
 // Business-User/app/(tabs)/schedule.tsx
 
-import { Calendar, ChevronRight, Clock, MapPinned } from "lucide-react-native";
+import { Calendar, ChevronRight, Clock, MapPinned, Plane } from "lucide-react-native";
 import React, { useMemo, useState, useEffect } from "react";
 import {
   Alert,
@@ -17,6 +17,7 @@ import {
   PH_LGAS,
   STANDARD_SERVICE_LGAS,
   OUT_OF_LGA_FEE,
+  RIVERS_LGAS
 } from "@/src/utils/nigeriaLocations";
 
 import { useAuth } from "@/context/AuthContext";
@@ -41,6 +42,9 @@ import {
   formatTime,
   isValidPickupDateTime,
   isWithinOperatingHours,
+  getMinimumPickupDateTime,
+  OPERATING_START_HOUR,
+  OPERATING_END_HOUR,
 } from "@/src/utils/timeSlots";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -48,12 +52,15 @@ import { useAppTheme } from "@/src/ui/useAppTheme";
 import { usePrices, formatPrice } from "@/hooks/usePrices";
 import apiClient from "@/api/api";
 import { showToast } from "../utils/toast";
+import { TimeSlotPicker } from "@/src/ui/TimeSlotPicker";
 
 type RidePackage = {
   id: "3h" | "6h" | "10h" | "multi" | "airport";
   title: string;
   price?: string;
 };
+
+
 
 export default function ScheduleTabScreen() {
   const { selectedPackage, setSelectedPackage } = useSchedule();
@@ -105,6 +112,11 @@ const [multiDayCount, setMultiDayCount] = useState(1);
 
 const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
+  const isAirportSchedule = selectedPackage === "airport";
+  const isMultiSchedule = selectedPackage === "multi";
+  const isInterState = isMultiSchedule && multiDayTripType === "INTER_STATE";
+const showFreeTextDropoff = !!interstateLocation || isInterState;
+
   const validatePromo = async () => {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
@@ -131,6 +143,13 @@ const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
       pickupTime?.getMinutes(),
     );
   }, [pickupTime]);
+
+  useEffect(() => {
+  if (!isMultiSchedule) return;
+  setInterstateLocation(null);
+  setDropoffStreet("");
+  setDropoffLGA("");
+}, [multiDayTripType, isMultiSchedule]);
 
   useEffect(() => {
     setPickupStreet("");
@@ -191,6 +210,51 @@ const fuelPriceForPackage = () => {
   }
 };
 
+
+const formatHourLabel = (hour: number) => {
+  const period = hour < 12 ? "AM" : "PM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:00 ${period}`;
+};
+
+const validatePickupSelection = (
+  candidateDate: Date | null,
+  candidateTime: Date | null,
+) => {
+  const combined = combinePickupDateTime(candidateDate, candidateTime);
+  if (!combined) return true; // one of the two hasn't been picked yet
+
+  if (!isValidPickupDateTime(combined)) {
+    const minAllowed = getMinimumPickupDateTime();
+     Alert.alert(
+        "Restricted Time Slot",
+        `Please pick a time after ${formatTime(minAllowed)} - rides need 2 hours' notice for same day booking.`,
+      );
+    return false;
+  }
+
+  if (!isWithinOperatingHours(combined)) {
+     Alert.alert(
+        "Restricted Time Slot",
+        `Pickup time must be between ${formatHourLabel(OPERATING_START_HOUR)} and ${formatHourLabel(OPERATING_END_HOUR)}.`,
+      );
+    return false;
+  }
+
+  if (pkg !== "multi") {
+    const dropoff = calculateDropoffTime(pkg, combined, multiDayCount);
+    if (dropoff && !isWithinOperatingHours(dropoff)) {
+      Alert.alert(
+        "Restricted Time Slot",
+        `This trip would end at ${formatTime(dropoff)}, after ${formatHourLabel(OPERATING_END_HOUR)}. Choose an earlier pick-up time or a shorter package.`,
+      );
+      return false;
+    }
+  }
+
+  return true;
+};
+
   const getInterstatePrice = (value: string) => {
     if (!value) return 0;
 
@@ -237,8 +301,12 @@ const fuelPriceForPackage = () => {
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
 
-    const fuelPrice = 
-      pkg !== "multi" ? add("fueling", fuelPriceForPackage()) : 0;
+const fuelPrice =
+  pkg === "multi"
+    ? 0
+    : isAirportSchedule
+      ? fuelPriceForPackage()       
+      : add("fueling", fuelPriceForPackage());
 
     const customExtraPrice =
       extrasEnabled && extras.customExtra.trim().length > 0 ? 2000 : 0;
@@ -283,10 +351,45 @@ const fuelPriceForPackage = () => {
   [pickupDate, pickupTime],
 );
 
+
 const expectedDropoff = useMemo(
   () => calculateDropoffTime(pkg, combinedPickup, multiDayCount),
   [pkg, combinedPickup, multiDayCount],
 );
+
+
+          const addOnsTotal = useMemo(() => {
+  if (!extrasEnabled) return 0;
+  const add = (k: keyof typeof extras, amount: number) => (extras[k] ? amount : 0);
+  const fuelPrice = pkg !== "multi" ? add("fueling", fuelPriceForPackage()) : 0;
+  const customExtraPrice = extras.customExtra.trim().length > 0 ? 2000 : 0;
+  return (
+    add("babySeat", 2000) +
+    add("extraLuggage", 2000) +
+    add("wifi", 4000) +
+    add("coldWater", 2000) +
+    add("petFriendly", 2000) +
+    add("wheelchair", 2000) +
+    fuelPrice +
+    customExtraPrice
+  );
+}, [extras, extrasEnabled, pkg]);
+
+const resolvedTimeSlot = useMemo(() => {
+  if (pkg === "multi") return `${multiDayCount} Day${multiDayCount > 1 ? "s" : ""}`;
+  if (!combinedPickup || !expectedDropoff) return undefined;
+  return `${formatTime(combinedPickup)} – ${formatTime(expectedDropoff)}`;
+}, [pkg, combinedPickup, expectedDropoff, multiDayCount]);
+
+const handlePickupTimeChange = (time: Date) => {
+  if (!validatePickupSelection(pickupDate, time)) return;
+  setPickupTime(time);
+};
+
+const handlePickupDateChange = (date: Date) => {
+  if (!validatePickupSelection(date, pickupTime)) return;
+  setPickupDate(date);
+};
 
   const handleSchedule = async () => {
     const errors: Record<string, boolean> = {};
@@ -391,7 +494,8 @@ if (expectedDropoff && pkg !== "multi" && !isWithinOperatingHours(expectedDropof
         extras.coldWater && "Cold Water",
         extras.petFriendly && "Pet Friendly",
         extras.wheelchair && "Wheelchair Access",
-        extras.fueling && "Fueling (Pre-paid)",
+        (isAirportSchedule || extras.fueling) &&
+  (isAirportSchedule ? "Fueling (Included)" : "Fueling (Pre-paid)"),
         extrasEnabled && extras.customExtra.trim()
           ? extras.customExtra.trim()
           : null,
@@ -456,9 +560,14 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
     : 0);
 
       const fuelAmountValue =
-        extrasEnabled && extras.fueling && pkg !== "multi"
-          ? fuelPriceForPackage()
-          : 0;
+  pkg === "multi"
+    ? 0
+    : isAirportSchedule
+      ? fuelPriceForPackage()
+      : extrasEnabled && extras.fueling
+        ? fuelPriceForPackage()
+        : 0;
+
 
       router.push({
         pathname: "/screens/confirmation",
@@ -472,6 +581,13 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
           authorizationUrl: payment.authorizationUrl,
           reference: payment.reference,
           addOns: addOnsList,
+                  airportService: isAirportSchedule ? airportService : undefined,
+multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
+          addOnsTotal: addOnsTotal > 0 ? String(addOnsTotal) : undefined,
+          timeSlot: resolvedTimeSlot,
+          fuelIncluded: isAirportSchedule ? "true" : undefined,
+          promoCode: promoResult ? promoCode.toUpperCase() : undefined,
+          promoDiscount: promoResult ? String(promoResult.discountAmount) : undefined,
          outOfLGAFee: outOfLGAFeeValue > 0
       ? String(outOfLGAFeeValue)
       : undefined,
@@ -503,8 +619,6 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
     }
   };
 
-  const isAirportSchedule = selectedPackage === "airport";
-  const isMultiSchedule = selectedPackage === "multi";
 
   // if (isSubmitting) return <ScheduleSkeleton />;
 
@@ -535,20 +649,48 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
               />
             ))}
           </ScrollView> */}
-          <View style={styles.verticalPackages}>
-  {PACKAGES.map((p) => (
-    <TouchableOpacity
-      key={p.id}
-      style={[styles.packageRow, p.id === pkg && styles.packageRowActive]}
-      onPress={() => setSelectedPackage(p.id)}
-    >
-      <View>
-        <Text style={styles.packageTitle}>{p.title}</Text>
-        {!!p.price && <Text style={styles.packagePrice}>{p.price}</Text>}
-      </View>
-      <ChevronRight size={18} color={themeColors.textSecondary} />
-    </TouchableOpacity>
-  ))}
+<View style={styles.packageGrid}>
+  {PACKAGES.map((p) => {
+    const Icon =
+      p.id === "airport" ? Plane : p.id === "multi" ? Calendar : Clock;
+    const active = p.id === pkg;
+    return (
+      <TouchableOpacity
+        key={p.id}
+        style={[styles.packageCard, active && styles.packageCardActive]}
+        activeOpacity={0.85}
+        onPress={() => setSelectedPackage(p.id)}
+      >
+        <View
+          style={[
+            styles.packageIconWrap,
+            active && styles.packageIconWrapActive,
+          ]}
+        >
+          <Icon
+            size={16}
+            color={active ? "#3E2723" : themeColors.textSecondary}
+          />
+        </View>
+        <Text
+          style={[
+            styles.packageCardTitle,
+            active && styles.packageCardTitleActive,
+          ]}
+        >
+          {p.title}
+        </Text>
+        <Text
+          style={[
+            styles.packageCardPrice,
+            !p.price && styles.packageCardPriceMuted,
+          ]}
+        >
+          {p.price ?? "Custom quote"}
+        </Text>
+      </TouchableOpacity>
+    );
+  })}
 </View>
           {!isAirportSchedule &&
             (isBusiness ? (
@@ -567,16 +709,16 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
       value={airportService}
       onSelect={setAirportService}
       options={[
-        { label: "Airport Pickup", value: "AIRPORT_PICKUP" },
-        { label: "Airport Drop-Off", value: "AIRPORT_DROPOFF" },
-        { label: "Airport Round Trip", value: "AIRPORT_ROUND_TRIP" },
+        { label: "AIRPORT PICKUP", value: "AIRPORT_PICKUP" },
+        { label: "AIRPORT DROPOFF", value: "AIRPORT_DROPOFF" },
+        { label: "AIRPORT ROUND TRIP", value: "AIRPORT_ROUND_TRIP" },
       ]}
     />
 
-    <InfoBanner
+    {/* <InfoBanner
       variant="info"
       text="Fueling is automatically included for airport schedules."
-    />
+    /> */}
   </>
 )}
 {isMultiSchedule && (
@@ -588,8 +730,8 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
       value={multiDayTripType}
       onSelect={setMultiDayTripType}
       options={[
-        { label: "Intra-State", value: "INTRA_STATE" },
-        { label: "Inter-State", value: "INTER_STATE" },
+        { label: "INTRA-STATE", value: "INTRA_STATE" },
+        { label: "INTER-STATE", value: "INTER_STATE" },
       ]}
     />
 
@@ -598,11 +740,11 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
       placeholder="Select number of days"
       value={`${multiDayCount} Day${multiDayCount > 1 ? "s" : ""}`}
       onSelect={(value: string) => setMultiDayCount(parseInt(value, 10))}
-      options={["1", "2", "3", "4", "5", "6", "7"]}
+      options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]}
     />
   </>
 )}
-          {(isBusiness || isAirportSchedule || isMultiSchedule) && (
+          {isInterState && (
             <DropdownInput
               label="Select Interstate Location (outside Rivers State)"
               placeholder="Choose your destination"
@@ -637,7 +779,7 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
           <DateTimePickerInput
             label={`${isAirportSchedule ? "Airport " : ""}Pick-up Date`}
             value={pickupDate}
-            onChange={setPickupDate}
+            onChange={handlePickupDateChange}
             mode="date"
             placeholder="Select Date"
             minimumDate={new Date()}
@@ -646,17 +788,17 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
           <DateTimePickerInput
             label={`${isAirportSchedule ? "Airport " : ""}Pick-up Time`}
             value={pickupTime}
-            onChange={setPickupTime}
+            onChange={handlePickupTimeChange}
             mode="time"
             placeholder="Select Time"
             icon={<Clock size={18} color="#9CA3AF" />}
           />
-          {expectedDropoff && (
-  <InfoBanner
-    variant="info"
-    text={`Expected drop-off: ${formatTime(expectedDropoff)}`}
-  />
-)}
+                  {combinedPickup && expectedDropoff && pkg !== "multi" && (
+            <InfoBanner
+              variant="info"
+              text={`Time Slot: ${formatTime(combinedPickup)} – ${formatTime(expectedDropoff)}`}
+            />
+          )}
           {/* <FormInput
             label={`${isAirportSchedule ? "Airport" : ""} Pick-up Location`}
             placeholder="Input your pick up location"
@@ -689,19 +831,24 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
   leftIcon={<MapPinned size={18} color="#9CA3AF" />}
   street={pickupStreet}
   lga={pickupLGA}
-  options={isMultiSchedule ? PH_LGAS : STANDARD_SERVICE_LGAS}
+  options={isMultiSchedule ? RIVERS_LGAS : STANDARD_SERVICE_LGAS}
   onStreetChange={setPickupStreet}
   onLGASelect={(lga) => handleLGASelect("pickup", lga)}
 />
 
           {/* Dropoff - LGA picker only when staying within Rivers State */}
-          {interstateLocation ? (
+          {showFreeTextDropoff ? (
             <FormInput
               label={`${isAirportSchedule ? "Airport " : ""}Drop-off Location`}
-              placeholder={`Enter address in ${interstateLocation.label}`}
+               placeholder={
+      interstateLocation
+        ? `Enter address in ${interstateLocation.label}`
+        : "Select an interstate location above first"
+    }
               value={dropoffStreet}
               onChangeText={setDropoffStreet}
-              leftIcon={<MapPinned size={18} color="#9CA3AF" />}
+              leftIcon={<MapPinned size={18} color="#9CA3AF" />} 
+              editable={!isInterState || !!interstateLocation}
             />
           ) : (
            <LocationInput
@@ -710,7 +857,7 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
   leftIcon={<MapPinned size={18} color="#9CA3AF" />}
   street={dropoffStreet}
   lga={dropoffLGA}
-  options={isMultiSchedule ? PH_LGAS : STANDARD_SERVICE_LGAS}
+  options={isMultiSchedule ? RIVERS_LGAS : STANDARD_SERVICE_LGAS}
   onStreetChange={setDropoffStreet}
   onLGASelect={(lga) => handleLGASelect("dropoff", lga)}
 />
@@ -771,7 +918,7 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
               onValueChange={(v) => setExtras((s) => ({ ...s, wheelchair: v }))}
               disabled={!extrasEnabled}
             />
-              {pkg !== "multi" && (
+{pkg !== "multi" && !isAirportSchedule && (
   <>
     <AppCheckboxRow
       label="Fueling (Pre-paid)"
@@ -781,12 +928,17 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
       disabled={!extrasEnabled}
     />
     {extrasEnabled && extras.fueling && (
-      <InfoBanner
-        variant="warning"
-        text="If you later upgrade this ride to an Airport Schedule, this fuel add-on won't carry over — you may need to fuel again."
-      />
+      <InfoBanner variant="warning" text="If you later upgrade this ride to an Airport Schedule, this fuel add-on won't carry over — you may need to fuel again." />
     )}
   </>
+)}
+{isAirportSchedule && (
+  <View style={styles.includedFuelRow}>
+    <Text style={styles.includedFuelText}>Fueling</Text>
+    <Text style={styles.includedFuelValue}>
+      Included (₦{fuelPriceForPackage().toLocaleString()})
+    </Text>
+  </View>
 )}
             {/* Custom extra */}
             <View style={styles.customExtraRow}>
@@ -985,6 +1137,14 @@ packagePrice: {
       textAlign: "right",
       marginTop: 2,
     },
+    includedFuelRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  paddingVertical: 10,
+  paddingHorizontal: 4,
+},
+includedFuelText: { fontSize: 13, color: themeColors.text, fontWeight: "600" },
+includedFuelValue: { fontSize: 13, color: themeColors.textSecondary },
     totalBox: {
       height: 56,
       borderRadius: radius.md,
@@ -999,4 +1159,52 @@ packagePrice: {
       fontWeight: "700",
       color: themeColors.text,
     },
+    packageGrid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  gap: 10,
+  marginVertical: spacing.md,
+},
+packageCard: {
+  width: "48%",
+  minHeight: 88,
+  borderRadius: radius.lg,
+  borderWidth: 1,
+  borderColor: themeColors.border,
+  backgroundColor: themeColors.card,
+  padding: spacing.sm,
+  justifyContent: "space-between",
+},
+packageCardActive: {
+  borderColor: themeColors.gold,
+  backgroundColor: themeColors.cardPrimary,
+},
+packageIconWrap: {
+  width: 28,
+  height: 28,
+  borderRadius: 8,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: themeColors.cardSecondary,
+  marginBottom: 8,
+},
+packageIconWrapActive: {
+  backgroundColor: themeColors.gold,
+},
+packageCardTitle: {
+  fontSize: 14,
+  fontWeight: "700",
+  color: themeColors.text,
+},
+packageCardTitleActive: {
+  color: themeColors.text,
+},
+packageCardPrice: {
+  marginTop: 2,
+  fontSize: 12,
+  color: themeColors.textSecondary,
+},
+packageCardPriceMuted: {
+  fontStyle: "italic",
+},
   });

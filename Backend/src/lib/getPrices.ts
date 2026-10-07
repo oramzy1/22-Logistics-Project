@@ -13,8 +13,11 @@ export async function getPackagePrices(): Promise<Record<string, number>> {
       price_airport: 'Airport Schedule',
       price_multiday: 'Multi-day',
     };
-    map[labels[s.key]] = parseFloat(s.value);
+    if (s.key === 'price_airport_upgrade_discount'){
     map['airport_upgrade_discount'] = parseFloat(s.value);
+      continue;
+    }
+    map[labels[s.key]] = parseFloat(s.value);
   }
   return map;
 }
@@ -50,4 +53,31 @@ export const getFuelPrices = async () => {
   };
   settings.forEach((s) => { map[keyToPackage[s.key]] = parseFloat(s.value) || 0; });
   return map;
+};
+
+
+export const AIRPORT_SLUG: Record<string, string> = {
+  AIRPORT_PICKUP: "pickup", AIRPORT_DROPOFF: "dropoff", AIRPORT_ROUND_TRIP: "roundtrip",
+};
+const HOURS_SLUG: Record<string, string> = { "3 Hours": "3_hours", "6 Hours": "6_hours", "10 Hours": "10_hours" };
+
+export const getAirportPrices = async (): Promise<Record<string, number>> => {
+  const keys = Object.values(AIRPORT_SLUG).map((s) => `price_airport_${s}`);
+  const rows = await prisma.appSettings.findMany({ where: { key: { in: [...keys, "price_airport"] } } });
+  const byKey = Object.fromEntries(rows.map((r) => [r.key, parseFloat(r.value) || 0]));
+  return Object.fromEntries(
+    Object.entries(AIRPORT_SLUG).map(([svc, slug]) => [svc, byKey[`price_airport_${slug}`] || byKey["price_airport"] || 0]),
+  );
+};
+
+export const getUpgradePrice = async (service: string, fromPackage: string) => {
+  const slug = AIRPORT_SLUG[service], h = HOURS_SLUG[fromPackage];
+  if (!slug || !h) return 0;
+  const s = await prisma.appSettings.findUnique({ where: { key: `price_upgrade_${slug}_${h}` } });
+  return s ? parseFloat(s.value) || 0 : 0;
+};
+
+export const getCustomExtraPrice = async () => {
+  const s = await prisma.appSettings.findUnique({ where: { key: "price_custom_extra" } });
+  return s ? parseFloat(s.value) || 2000 : 2000;
 };

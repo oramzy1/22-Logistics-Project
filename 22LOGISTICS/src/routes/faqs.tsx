@@ -21,11 +21,11 @@ export const Route = createFileRoute("/faqs")({
 
 const FAQS = [
   {
-    q: "How do I book a ride with 22 Logistics?",
+    q: "How do I schedule a ride with 22 Logistics?",
     a: "Download the app or sign in on the web, choose your service, enter your itinerary, and submit. Our operations team will assign a driver and confirm your schedule.",
   },
   {
-    q: "How far in advance should I book?",
+    q: "How far in advance should I schedule?",
     a: "As a general operating rule, please schedule at least two (2) hours before your intended pickup time. Earlier scheduling improves availability.",
   },
   {

@@ -21,6 +21,10 @@ import {
   getAuditLog,
   getChartData,
   assignPromoToUsers,
+  deleteAddOn,
+  updateAddOn,
+  getPublicAddOns,
+  createAddOn,
 } from "../controllers/admin.controller";
 import {
   verifyDriverLicense,
@@ -72,6 +76,12 @@ router.get("/promos", getAllPromos);
 router.post("/promos/assign", assignPromoToUsers);
 router.patch("/promos/:id/toggle", togglePromo);
 router.delete("/promos/:id", deletePromo);
+
+// Add Ons
+router.get("/addons", getPublicAddOns);
+router.post("/addons", createAddOn);
+router.patch("/addons/:id", updateAddOn);
+router.delete("/addons/:id", deleteAddOn);
 
 // Promo validation (also usable by authenticated users at checkout)
 router.post("/promos/validate", authenticate, validatePromoCode);

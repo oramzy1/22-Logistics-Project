@@ -252,7 +252,7 @@ function Features() {
     {
       Icon: Building2,
       title: "Corporate Transportation",
-      text: "Centralized booking, billing, and reporting for teams of any size.",
+      text: "Centralized scheduling, billing, and reporting for teams of any size.",
     },
     {
       Icon: ShieldCheck,
@@ -428,7 +428,7 @@ function Testimonials() {
     {
       name: "Daniel Okafor",
       stars: 4,
-      body: "I book daily commutes through the app - drivers are punctual and tracking is flawless.",
+      body: "I schedule daily commutes through the app - drivers are punctual and tracking is flawless.",
     },
     {
       name: "Priya Shah",
@@ -482,7 +482,7 @@ function Testimonials() {
 function FAQ() {
   const faqs = [
     {
-      q: "How do I book a ride with 22 Logistics?",
+      q: "How do I schedule a ride with 22 Logistics?",
       a: "Download the app or sign in on the web, choose your service, enter your itinerary, and submit. Our operations team assigns a driver and confirms your schedule.",
     },
     {
@@ -545,7 +545,7 @@ function DownloadCTA() {
             Download the 22 Logistics App Today
           </h2>
           <p className="mt-3 max-w-md text-white/85">
-            Book, track, and manage every trip from one beautifully simple mobile experience.
+            Schedule, track, and manage every trip from one beautifully simple mobile experience.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a

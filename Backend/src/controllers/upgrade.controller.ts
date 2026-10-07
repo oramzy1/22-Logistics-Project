@@ -1,19 +1,22 @@
 import { Response } from "express";
 import crypto from "crypto";
-import prisma from "../lib/prisma";
+import prisma from "../lib/prisma"; 
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { initializeTransaction, verifyTransaction } from "../lib/paystack";
 import { getFuelPrices, getPackagePrices } from "../lib/getPrices";
 import { createNotification, notifyAdmins } from "../lib/notifications";
 import { emitToAdmin, getIO } from "../lib/socket";
 import { sendEmail } from "../lib/email.service";
+import { AIRPORT_SERVICES, getUpgradeQuote, isAirportService } from "../lib/pricing";
 
 const UPGRADEABLE_FROM = ["3 Hours", "6 Hours", "10 Hours"];
 
 export const createUpgrade = async (req: AuthRequest, res: Response) => {
   try {
-    const { bookingId, requestedBy = "CUSTOMER" } = req.body;
-
+    const { bookingId, airportService } = req.body;
+    const requestedBy = "CUSTOMER";
+    if (!isAirportService(airportService))
+      return res.status(400).json({ message: "Please choose an airport service" });
     const booking = await prisma.booking.findFirst({
       where: { id: bookingId, customerId: req.user!.id },
       include: {
@@ -31,40 +34,22 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
         message: "Only 3, 6, or 10-hour rides can be upgraded to airport",
       });
     }
-    if (booking.upgrade) {
-      return res
-        .status(400)
-        .json({ message: "This trip has already been upgraded" });
-    }
+         if (booking.upgrade?.paymentStatus === "PAID")
+      return res.status(400).json({ message: "This trip has already been upgraded" });
+    // an unpaid earlier attempt (bookingId is unique) must not block a retry / different service
+    if (booking.upgrade) await prisma.tripUpgrade.delete({ where: { id: booking.upgrade.id } });
+
+    const { fuelTopUpAmount, upgradeAmount, hadFuelAddOn } = await getUpgradeQuote(booking, airportService);
+    const currentPrice = booking.totalAmount;
+    if (upgradeAmount <= 0)
+      return res.status(400).json({ message: "This upgrade isn't available right now. Please contact support." });
 
 
     const prices = await getPackagePrices();
-    const FUEL_PRICES = await getFuelPrices();
     const airportPrice = prices["Airport Schedule"];
-    const currentPrice = booking.totalAmount;
-    const discountSetting = await prisma.appSettings.findUnique({
-      where: { key: "price_airport_upgrade_discount" },
-    });
 
     if (!airportPrice)
       return res.status(500).json({ message: "Airport price not configured" });
-
-    const discountPct = parseFloat(discountSetting?.value ?? "0");
-    const baseUpgradeAmount = Math.max(
-      0,
-      Math.round((airportPrice - currentPrice) * (1 - discountPct / 100)),
-    );
-
-     const hadFuelAddOn = booking.addOns?.some((a) =>
-      a.toLowerCase().includes("fuel"),
-    );
-    const originalFuelAmount = booking.fuelAddOnAmount ?? 0;
-    const airportFuelPrice = FUEL_PRICES["Airport Schedule"] ?? 0;
-    const fuelTopUpAmount = hadFuelAddOn
-      ? Math.max(0, airportFuelPrice - originalFuelAmount)
-      : 0;
-
-    const upgradeAmount = baseUpgradeAmount + fuelTopUpAmount;
 
     if (upgradeAmount <= 0) {
       return res.status(400).json({
@@ -85,6 +70,7 @@ export const createUpgrade = async (req: AuthRequest, res: Response) => {
         fuelTopUpAmount,
         totalAmount: currentPrice + upgradeAmount,
         paymentRef,
+        airportService,
         requestedBy,
       },
     });
@@ -144,28 +130,40 @@ export const requestUpgradeAsDriver = async (
     }
     if (booking.upgrade?.paymentStatus === "PAID") {
       return res.status(400).json({ message: "Already upgraded" });
-    }
+    } 
 
-    const prices = await getPackagePrices();
-    const FUEL_PRICES = await getFuelPrices();
-    const baseUpgradeAmount = Math.max(
-      0,
-      prices["Airport Schedule"] - booking.totalAmount,
-    );
+    // const prices = await getPackagePrices();
+    // const FUEL_PRICES = await getFuelPrices();
+    // const baseUpgradeAmount = Math.max(
+    //   0,
+    //   prices["Airport Schedule"] - booking.totalAmount,
+    // );
 
-     const hadFuelAddOn = booking.addOns?.some((a) =>
-      a.toLowerCase().includes("fuel"),
+    //  const hadFuelAddOn = booking.addOns?.some((a) =>
+    //   a.toLowerCase().includes("fuel"),
+    // );
+    // const fuelTopUpAmount = hadFuelAddOn
+    //   ? Math.max(0, FUEL_PRICES["Airport Schedule"] - (booking.fuelAddOnAmount ?? 0))
+    //   : 0;
+    // const upgradeAmount = baseUpgradeAmount + fuelTopUpAmount;
+
+
+        if (!["ACCEPTED", "ARRIVED", "IN_PROGRESS"].includes(booking.status))
+      return res.status(400).json({ message: "Can only upgrade active trips" });
+
+    const quotes = await Promise.all(
+      AIRPORT_SERVICES.map(async (airportService) => ({ airportService, ...(await getUpgradeQuote(booking, airportService)) })),
     );
-    const fuelTopUpAmount = hadFuelAddOn
-      ? Math.max(0, FUEL_PRICES["Airport Schedule"] - (booking.fuelAddOnAmount ?? 0))
-      : 0;
-    const upgradeAmount = baseUpgradeAmount + fuelTopUpAmount;
+    const valid = quotes.filter((q) => q.upgradeAmount > 0).sort((a, b) => a.upgradeAmount - b.upgradeAmount);
+    if (!valid.length) return res.status(400).json({ message: "Upgrade pricing isn't configured" });
+    const { upgradeAmount, fuelTopUpAmount } = valid[0]; // "from" price
 
     // Push notification to customer
     getIO().to(`user:${booking.customer.id}`).emit("upgrade:requested", {
       bookingId,
       upgradeAmount,
-      airportPrice: prices["Airport Schedule"],
+      // airportPrice: prices["Airport Schedule"],
+      quotes: valid,
       driverName: booking.driver?.name,
     });
 
@@ -242,6 +240,9 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
     if (upgrade.paymentStatus === "PAID")
       return res.json({ message: "Already paid", upgrade });
 
+    if (upgrade.booking.customerId !== req.user!.id)
+      return res.status(403).json({ message: "Not allowed" });
+
     let paystackData: any = null;
     for (let attempt = 1; attempt <= 5; attempt++) {
       paystackData = await verifyTransaction(upgrade.paymentRef);
@@ -267,6 +268,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
         where: { id: upgrade.bookingId },
         data: {
           packageType: "Airport Schedule",
+          airportService: upgrade.airportService ?? undefined,
           totalAmount: upgrade.totalAmount,
         },
         // ADD this include so driver info isn't lost on frontend patch:
@@ -379,6 +381,28 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("verifyUpgradePayment error:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const getUpgradeQuotes = async (req: AuthRequest, res: Response) => {
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: { id: req.params.bookingId, customerId: req.user!.id },
+      include: { upgrade: true },
+    });
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (!UPGRADEABLE_FROM.includes(booking.packageType ?? "") || booking.upgrade?.paymentStatus === "PAID")
+      return res.status(400).json({ message: "This trip can't be upgraded" });
+
+    const options = await Promise.all(
+      AIRPORT_SERVICES.map(async (airportService) => {
+        const q = await getUpgradeQuote(booking, airportService);
+        return { airportService, upgradeAmount: q.upgradeAmount, fuelTopUpAmount: q.fuelTopUpAmount };
+      }),
+    );
+    res.json({ packageType: booking.packageType, options: options.filter((o) => o.upgradeAmount > 0) });
+  } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };

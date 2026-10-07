@@ -1,15 +1,15 @@
 export const RIVERS_LGAS = [
+  'Port Harcourt', 'Obio/Akpor',
   'Abua/Odual', 'Ahoada East', 'Ahoada West', 'Akuku-Toru',
   'Andoni', 'Asari-Toru', 'Bonny', 'Degema', 'Eleme', 'Emohua',
-  'Etche', 'Gokana', 'Ikwerre', 'Khana', 'Obio/Akpor',
+  'Etche', 'Gokana', 'Ikwerre', 'Khana',
   'Ogba/Egbema/Ndoni', 'Ogu/Bolo', 'Okrika', 'Omuma',
-  'Opobo/Nkoro', 'Oyigbo', 'Port Harcourt', 'Tai',
+  'Opobo/Nkoro', 'Oyigbo', 'Tai',
 ];
-
 export const PH_LGAS = ['Port Harcourt', 'Obio/Akpor'];
 export const OUT_OF_LGA_FEE = 3000;
 
-export const STANDARD_SERVICE_LGAS = ["Port Harcourt", "Obio/Akpor"];
+export const STANDARD_SERVICE_LGAS = PH_LGAS;
 
 // All 36 states + FCT, excluding Rivers, priced by road distance from PH
 export const INTERSTATE_STATES: { label: string; price: number }[] = [

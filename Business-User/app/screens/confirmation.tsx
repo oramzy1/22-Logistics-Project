@@ -52,6 +52,9 @@ export default function ConfirmationScreen() {
     duration,
     outOfLGAFee,
     fuelAmount,
+    airportService,
+    multiDayTripType,
+    fuelIncluded,
   } = useLocalSearchParams<{
     bookingId: string;
     packageType: string;
@@ -68,6 +71,10 @@ export default function ConfirmationScreen() {
     duration?: string;
     outOfLGAFee?: string;
     fuelAmount?: string;
+    airportService?: string;
+    multiDayTripType?: string;
+    fuelIncluded?: string;  
+
   }>();
   const { colors: themeColors, isDark } = useAppTheme();
   const styles = createStyles(themeColors);
@@ -105,12 +112,12 @@ export default function ConfirmationScreen() {
           {outOfLGAFee ? (
             <Row label="Out of LGA Fee" value={outOfLGAFee} />
           ) : null}
-          {fuelAmount ? (
-            <Row
-              label="Fueling Add-on"
-              value={`₦${Number(fuelAmount).toLocaleString()}`}
-            />
-          ) : null}
+{fuelAmount ? (
+  <Row
+    label={fuelIncluded ? "Fueling (Included)" : "Fueling Add-on"}
+    value={`₦${Number(fuelAmount).toLocaleString()}`}
+  />
+) : null}
           <Row
             label="Amount"
             value={`₦${Number(totalAmount ?? 0).toLocaleString()}`}
@@ -123,6 +130,19 @@ export default function ConfirmationScreen() {
             />
           ) : null}
         </View>
+
+        {airportService ? (
+            <Row
+              label="Airport Service"
+              value={airportService}
+            />
+          ) : null}
+        {multiDayTripType ? (
+            <Row
+              label="Multi-Day Trip Type"
+              value={multiDayTripType}
+            />
+          ) : null}
 
         <View style={styles.driverPending}>
           <Text style={{ fontWeight: "800", color: "#1D4ED8" }}>

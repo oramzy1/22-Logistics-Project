@@ -43,16 +43,16 @@ const SUBJECTS = [
 
 const FAQS = [
   {
-    q: "How do I book a ride?",
-    a: 'Tap the "Book" tab, select your package, set pickup/dropoff locations, choose a date & time, then proceed to payment.',
+    q: "How do I schedule a ride?",
+    a: 'Tap the "Schedule" tab, select your package, set pickup/dropoff locations, choose a date & time, then proceed to payment.',
   },
   {
-    q: "Can I cancel a booking?",
-    a: 'Yes. Go to your active booking and tap "Cancel Booking". Cancellations after driver assignment may incur a fee.',
+    q: "Can I cancel a schedule?",
+    a: 'Yes. Go to your active schedule and tap "Cancel Schedule". Cancellations after driver assignment may incur a fee.',
   },
   {
     q: "How do I extend my trip?",
-    a: 'While your trip is in progress, tap "Extend Trip" on the active booking screen and choose additional hours.',
+    a: 'While your trip is in progress, tap "Extend Trip" on the active schedule screen and choose additional hours.',
   },
   {
     q: "What payment methods are accepted?",

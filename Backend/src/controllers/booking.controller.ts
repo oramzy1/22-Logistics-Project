@@ -10,6 +10,9 @@ import { getIO, emitToAdmin } from "../lib/socket";
 import { getFuelPrices, getPackagePrices } from "../lib/getPrices";
 import { sendAdminNewBookingEmail } from "../lib/email.service";
 import { checkAndGrantMilestonePromo } from "../lib/promoMilestones";
+import { computeBookingPrice, PricingError } from "../lib/pricing";
+import { calculatePromoDiscount, PromoError } from "../lib/promo";
+import { recordPromoUsage } from "./admin.controller";
 
 
 const OPERATING_START_HOUR = 7;
@@ -55,7 +58,9 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       pickupDate,
       pickupTime,
       outsidePH,
-      addOns,
+       addOnKeys, fueling, customExtra, airportService,
+       multiDayTripType, expectedDropoffAt, promoCode,
+      addOns: legacyAddOns,
     } = req.body;
 
     const customerId = req.user!.id;
@@ -98,33 +103,74 @@ if (rideHours) {
 }
 
     // ── INTERSTATE PRICE EVALUATION ──
-    let finalAmount = 0;
+    // let finalAmount = 0;
+    // if (outsidePH) {
+    //   // If interstate, we trust the dynamic price passed by the frontend
+    //   if (!clientTotal)
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Interstate trips require a dynamic total amount" });
+    //   // finalAmount = clientTotal;
+    // } else {
+    //   // Local PH pricing evaluation
+    //   const PACKAGE_PRICES = await getPackagePrices();
+    //   // const FUEL_PRICES = await getFuelPrices();
+    //   const basePrice = PACKAGE_PRICES[packageType] ?? 0;
+    //   if (!basePrice)
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Invalid package type or custom pricing required" });
+
+
+    //   // const fuelAllowance = FUEL_PRICES[packageType] ?? 0;
+    //   // const MAX_EXTRAS = 20000 + fuelAllowance;
+    //   // finalAmount =
+    //   //   clientTotal &&
+    //   //   clientTotal >= basePrice &&
+    //   //   clientTotal <= basePrice + MAX_EXTRAS
+    //   //     ? clientTotal
+    //   //     : basePrice;
+    // }
+
+        // ── SERVER-SIDE PRICING ──
+    // Legacy app builds send add-on labels only; map them to catalogue keys.
+    let keys: string[] = Array.isArray(addOnKeys) ? addOnKeys : [];
+    let wantsFuel = !!fueling;
+    if (!Array.isArray(addOnKeys) && Array.isArray(legacyAddOns)) {
+      const found = await prisma.addOn.findMany({ where: { label: { in: legacyAddOns }, isActive: true } });
+      keys = found.map((a) => a.key);
+      wantsFuel = legacyAddOns.some((a: string) => a.toLowerCase().includes("fuel"));
+    }
+
+    let price;
+    try {
+      price = await computeBookingPrice({ packageType, airportService, addOnKeys: keys, fueling: wantsFuel, customExtra });
+    } catch (e) {
+      if (e instanceof PricingError) return res.status(400).json({ message: e.message });
+      throw e;
+    }
+
+    let discountAmount = 0;
+    let appliedPromo: string | null = null;
+    if (promoCode) {
+      try {
+        const r = await calculatePromoDiscount(promoCode, customerId, price.subtotal);
+        discountAmount = r.discountAmount;
+        appliedPromo = r.code;
+      } catch (e) {
+        if (e instanceof PromoError) return res.status(e.status).json({ message: e.message });
+        throw e;
+      }
+    }
+
+    const serverTotal = price.subtotal - discountAmount;
+    let finalAmount = serverTotal;
     if (outsidePH) {
-      // If interstate, we trust the dynamic price passed by the frontend
-      if (!clientTotal)
-        return res
-          .status(400)
-          .json({ message: "Interstate trips require a dynamic total amount" });
+      // Interstate / out-of-LGA fees are still client-supplied (see "other issues" below),
+      // but the client can no longer go below what the server knows it costs.
+      if (!clientTotal || clientTotal < serverTotal)
+        return res.status(400).json({ message: "Price mismatch. Please refresh prices and try again." });
       finalAmount = clientTotal;
-    } else {
-      // Local PH pricing evaluation
-      const PACKAGE_PRICES = await getPackagePrices();
-      const FUEL_PRICES = await getFuelPrices();
-      const basePrice = PACKAGE_PRICES[packageType] ?? 0;
-      if (!basePrice)
-        return res
-          .status(400)
-          .json({ message: "Invalid package type or custom pricing required" });
-
-
-      const fuelAllowance = FUEL_PRICES[packageType] ?? 0;
-      const MAX_EXTRAS = 20000 + fuelAllowance;
-      finalAmount =
-        clientTotal &&
-        clientTotal >= basePrice &&
-        clientTotal <= basePrice + MAX_EXTRAS
-          ? clientTotal
-          : basePrice;
     }
 
     const paymentRef = `22LOG-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
@@ -147,12 +193,12 @@ if (rideHours) {
       return res.status(502).json({ message: "Payment gateway unavailable." });
     }
 
-    const safeAddOns: string[] = Array.isArray(addOns)
-      ? addOns.filter((item) => typeof item === "string")
-      : [];
+    // const safeAddOns: string[] = Array.isArray(addOns)
+    //   ? addOns.filter((item) => typeof item === "string")
+    //   : [];
 
-      const hasFuelAddOn = safeAddOns.some((a) => a.toLowerCase().includes("fuel"));
-      const fuelAddOnAmount = hasFuelAddOn ? (FUEL_PRICES[packageType] ?? 0) : null;
+      // const hasFuelAddOn = safeAddOns.some((a) => a.toLowerCase().includes("fuel"));
+      // const fuelAddOnAmount = hasFuelAddOn ? (FUEL_PRICES[packageType] ?? 0) : null;
 
 
     // Create booking
@@ -177,9 +223,14 @@ if (rideHours) {
         pickupDate,
         pickupTime,
         outsidePH: outsidePH || false,
-        addOns: safeAddOns,
+        addOns: price.labels,
         rideType,
-        fuelAddOnAmount,
+        fuelAddOnAmount: price.fuelAddOnAmount,
+        airportService: packageType === "Airport Schedule" ? airportService : null,
+        multiDayTripType: multiDayTripType ?? null,
+        expectedDropoffAt: expectedDropoffAt ? new Date(expectedDropoffAt) : null,
+        promoCode: appliedPromo,
+        discountAmount,
       },
     });
 
@@ -382,6 +433,8 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
           customer: { select: { name: true, email: true } },
         },
       });
+            if (updated.promoCode)
+        await recordPromoUsage(updated.promoCode, updated.customerId, updated.id, updated.discountAmount ?? 0);
 
       try {
         getIO()

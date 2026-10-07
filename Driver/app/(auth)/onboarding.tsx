@@ -23,7 +23,7 @@ const SLIDES = [
     title: "Simple Scheduling\nMade Easy",
     highlight: "Scheduling",
     description:
-      "Easily book your ride for any occasion, whether it's a quick trip or a day out.",
+      "Easily schedule your ride for any occasion, whether it's a quick trip or a day out.",
     image: require("../../assets/images/slides/Slide1.png"),
   },
   {

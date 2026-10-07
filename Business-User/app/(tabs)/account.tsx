@@ -662,10 +662,11 @@ export default function AccountTabScreen() {
     }
   };
 
-  const handleReferFriend = async () => {
+const handleReferFriend = async () => {
+  const firstName = user?.name?.trim().split(" ")[0] || "A friend";
   await Share.share({
-    message:
-      "Try 22 Logistics for reliable scheduled rides. Use my referral: 22LOGISTICS",
+    title: "Join me on 22 Logistics",
+    message: `Hi! 👋 ${firstName} is inviting you to try 22 Logistics for reliable scheduled rides! Download the app here: https://play.google.com/store/apps/details?id=com.vendoramarketplace.logistics`,
   });
 };
 
@@ -761,13 +762,12 @@ const handleSwitchToBusiness = async () => {
                 ? "Change your email first to set a password"
                 : undefined
             }
-            isLast
             onPress={isOAuthUser ? undefined : handleChangePassword}
           />
           <ListItem
   icon={Gift}
   title="Refer a Friend"
-  subtitle="Share 22 Logistics with someone"
+  subtitle="Share 22 Logistics with a friend"
   onPress={handleReferFriend}
 />
 

@@ -50,6 +50,7 @@ import { useWebRTCCall } from "@/hooks/useWebRTCCall";
 import { socketService } from "@/api/socket.service";
 import { useCall } from "@/context/CallContext";
 import apiClient from "@/api/api";
+import { addHours, formatTime, isExtensionAllowed } from "@/src/utils/timeSlots";
 
 export default function LiveTabScreen() {
   const { colors: themeColors } = useAppTheme();
@@ -118,11 +119,11 @@ export default function LiveTabScreen() {
     ),
   );
 
-  const extensions = [
-    { h: "1-Hours", p: formatPrice(prices.ext_price_1_hour) },
-    { h: "2-Hours", p: formatPrice(prices.ext_price_2_hours) },
-    { h: "3-Hours", p: formatPrice(prices.ext_price_3_hours) },
-  ];
+const extensions = [
+  { h: "1-Hours", p: formatPrice(prices.ext_price_1_hour), hours: 1 },
+  { h: "2-Hours", p: formatPrice(prices.ext_price_2_hours), hours: 2 },
+  { h: "3-Hours", p: formatPrice(prices.ext_price_3_hours), hours: 3 },
+];
 
   const paidExtensionMinutes =
     activeBooking?.extensions
@@ -131,6 +132,24 @@ export default function LiveTabScreen() {
         // extension hours stored as e.hours
         return sum + (e.hours ?? 0) * 60;
       }, 0) ?? 0;
+
+      const PACKAGE_BASE_HOURS: Record<string, number> = {
+  "3 Hours": 3,
+  "6 Hours": 6,
+  "10 Hours": 10,
+  "Airport Schedule": 3,
+};
+
+const baseDurationHours =
+  PACKAGE_BASE_HOURS[activeBooking?.packageType ?? ""] ?? null;
+
+const currentEndAt =
+  activeBooking && baseDurationHours !== null
+    ? addHours(
+        new Date(activeBooking.scheduledAt),
+        baseDurationHours + paidExtensionMinutes / 60,
+      )
+    : null;
 
   const timerOptions = {
     tripStartedAt:
@@ -357,7 +376,7 @@ useBookingSocket({
         />
         <PrimaryButton
           marginTop
-          title="Book a Ride"
+          title="Schedule a Ride"
           onPress={() => router.replace("/(tabs)/schedule")}
           style={{ width: 100 }}
         />
@@ -666,7 +685,7 @@ useBookingSocket({
                     </Text>
                   </View>
 
-                  {/* Extend Trip Section */}
+                  {/* Extend Trip Section */} 
                   {bookingStatus !== "ACCEPTED" && (
                     <View style={styles.extendSection}>
                       <View style={styles.extendHeaderRow}>
@@ -691,7 +710,16 @@ useBookingSocket({
                                     styles.extPill,
                                     isSelected && styles.extPillSelected,
                                   ]}
-                                  onPress={() => setSelectedExtension(ext.h)}
+                                  onPress={() => {
+  if (currentEndAt && !isExtensionAllowed(currentEndAt, ext.hours)) {
+    Alert.alert(
+      "Extension unavailable",
+      `Extending by ${ext.h.replace("-", " ")} would push your trip past 10:00 PM. Please choose a shorter extension.`,
+    );
+    return;
+  }
+  setSelectedExtension(ext.h);
+}}
                                 >
                                   <View
                                     style={{

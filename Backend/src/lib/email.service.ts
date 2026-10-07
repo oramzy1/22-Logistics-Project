@@ -175,8 +175,8 @@ export const sendWelcomeEmail = async (
   const roleMsg = isDriver
     ? "Complete your profile and upload your driver's license to start receiving ride requests."
     : isBusiness
-      ? "Set up your business profile and start booking rides for your team."
-      : "Book your first ride and experience seamless logistics.";
+      ? "Set up your business profile and start scheduling rides for your team."
+      : "Schedule your first ride and experience seamless logistics.";
 
   sendEmail(
     email,

@@ -28,6 +28,21 @@ interface DropdownInputProps {
 const ITEM_HEIGHT = 50;
 const MAX_HEIGHT = 250;
 
+const formatEnumLabel = (str: string) => str.replace(/_/g, " ");
+
+const getOptionLabel = (item: any): string => {
+  if (item === null || item === undefined) return "";
+  if (typeof item !== "object") {
+    return typeof item === "string" ? formatEnumLabel(item) : String(item);
+  }
+  const base =
+    item.label ??
+    (typeof item.value === "string" ? formatEnumLabel(item.value) : "");
+  return item.price !== undefined && item.price !== null
+    ? `${base} (₦${item.price.toLocaleString()})`
+    : base;
+};
+
 export const DropdownInput: React.FC<DropdownInputProps> = ({
   label,
   placeholder,
@@ -76,8 +91,7 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
   });
 
   const filteredOptions = options.filter((item: any) => {
-    const label = typeof item === "object" ? item.label : item;
-
+    const label = getOptionLabel(item);
     return label.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -91,11 +105,7 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
         onPress={toggle}
       >
         <Text style={[styles.value, !value && styles.placeholder]}>
-          {value
-            ? typeof value === "object"
-              ? value.label
-              : value
-            : placeholder}
+          {value ? getOptionLabel(value) : placeholder}
         </Text>
 
         <Animated.View style={chevronStyle}>
@@ -111,37 +121,34 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
             onPress={toggle}
           />
 
-         
-
           <Animated.ScrollView
             style={[styles.dropdown, dropdownStyle, styles.dropdownBody]}
             showsVerticalScrollIndicator={true}
             nestedScrollEnabled={true}
             contentContainerStyle={{ paddingVertical: 4 }}
-          > 
-          
-          <TextInput
-            placeholder="Search..."
-            value={search}
-            onChangeText={setSearch}
-            style={styles.searchInput}
-          />
-          {value && (
-  <TouchableOpacity
-    style={styles.clearOption}
-    onPress={() => {
-      onSelect(null);
-      setSearch("");
-      toggle();
-    }}
-  >
-    <Text style={styles.clearText}>Clear selection</Text>
-  </TouchableOpacity>
-)}
+          >
+            <TextInput
+              placeholder="Search..."
+              value={search}
+              onChangeText={setSearch}
+              style={styles.searchInput}
+            />
+            {value && (
+              <TouchableOpacity
+                style={styles.clearOption}
+                onPress={() => {
+                  onSelect(null);
+                  setSearch("");
+                  toggle();
+                }}
+              >
+                <Text style={styles.clearText}>Clear selection</Text>
+              </TouchableOpacity>
+            )}
             {filteredOptions.map((item: any, index: any) => {
               const isSelected =
-                typeof item === "object"
-                  ? value?.label === item.label
+                typeof item === "object" && item !== null && "value" in item
+                  ? value === item.value
                   : value === item;
 
               return (
@@ -149,7 +156,13 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
                   key={index}
                   style={[styles.option, isSelected && styles.selectedOption]}
                   onPress={() => {
-                    onSelect(item);
+                    const resolved =
+                      typeof item === "object" &&
+                      item !== null &&
+                      "value" in item
+                        ? item.value
+                        : item;
+                    onSelect(resolved);
                     toggle();
                   }}
                 >
@@ -159,9 +172,7 @@ export const DropdownInput: React.FC<DropdownInputProps> = ({
                       isSelected && styles.selectedText,
                     ]}
                   >
-                    {typeof item === "object"
-                      ? `${item.label} (₦${item.price.toLocaleString()})`
-                      : item}
+                    {getOptionLabel(item)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -241,16 +252,16 @@ const createStyles = (themeColors: any) =>
       fontWeight: "600",
     },
     clearOption: {
-  height: ITEM_HEIGHT,
-  justifyContent: "center",
-  paddingHorizontal: 16,
-  borderBottomWidth: 1,
-  borderColor: themeColors.border,
-},
+      height: ITEM_HEIGHT,
+      justifyContent: "center",
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderColor: themeColors.border,
+    },
 
-clearText: {
-  fontSize: 14,
-  color: "red", // or themeColors.error if you have one
-  fontWeight: "500",
-},
+    clearText: {
+      fontSize: 14,
+      color: "red", // or themeColors.error if you have one
+      fontWeight: "500",
+    },
   });
