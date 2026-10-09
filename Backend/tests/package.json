@@ -1,0 +1,37 @@
+{
+  "name": "22-logistics-tests",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "seed": "prisma generate --schema=../Backend/prisma/schema.prisma && tsx scripts/seed-test-data.ts",
+    "tokens": "tsx scripts/mint-tokens.ts",
+    "smoke": "vitest run",
+    "smoke:watch": "vitest",
+    "load:health": "bash scripts/k6.sh k6/load/01-health.js",
+    "load:login": "bash scripts/k6.sh k6/load/02-login.js",
+    "load:customer": "bash scripts/k6.sh k6/load/03-customer-reads.js",
+    "load:admin": "bash scripts/k6.sh k6/load/04-admin-dashboard.js",
+    "load:journey": "bash scripts/k6.sh k6/load/05-user-journey.js",
+    "stress:ramp": "bash scripts/k6.sh k6/stress/01-ramp-to-break.js",
+    "stress:spike": "bash scripts/k6.sh k6/stress/02-spike-public.js",
+    "stress:ratelimit": "bash scripts/k6.sh k6/stress/03-rate-limit-storm.js",
+    "stress:db": "bash scripts/k6.sh k6/stress/04-db-list-stress.js",
+    "stress:write": "bash scripts/k6.sh k6/stress/05-write-storm.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^22.7.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

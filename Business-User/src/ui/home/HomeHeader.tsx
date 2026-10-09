@@ -21,7 +21,7 @@ export function HomeHeader({ name, unread, onBellPress, onAvatarPress }: Props) 
     const { user, isBusiness } = useAuth();
      const avatarUri = isBusiness
       ? user?.businessProfile?.logoUrl ?? null
-      : user?.avatarUrl ?? null;
+      : user?.avatarUrl ?? null; 
 
   return (
     <View style={s.row}>

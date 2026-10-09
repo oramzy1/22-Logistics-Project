@@ -3,12 +3,15 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { StatusBar } from "react-native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { AuthProvider } from "../context/AuthContext";
+import * as SystemUI from "expo-system-ui";
+import * as NavigationBar from "expo-navigation-bar";
 
 import { toastConfig } from "@/components/Toast";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -29,6 +32,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import { CallProvider } from "@/context/CallContext";
 import { GlobalCallUI } from "@/components/GlobalCallUI";
 import { useSocketNotifications } from "@/hooks/useSocketNotification";
+import { useAppTheme } from "@/src/ui/useAppTheme";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -89,11 +93,11 @@ export default function RootLayout() {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  // useEffect(() => {
+  //   if (loaded) {
+  //     SplashScreen.hideAsync();
+  //   }
+  // }, [loaded]);
 
   useEffect(() => {
     registerPushToken();
@@ -150,9 +154,23 @@ function AppLayout() {
 }
 
 function RootLayoutNav() {
+  const { isDark, colors } = useAppTheme();
+    useEffect(() => {
+    NavigationBar.setVisibilityAsync("visible");
+    NavigationBar.setBackgroundColorAsync(
+      isDark ? colors.background : "#ffffff",
+    );
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+    NavigationBar.setBehaviorAsync("overlay-swipe");
+    SystemUI.setBackgroundColorAsync(isDark ? colors.background : "#ffffff");
+  }, [colors.background, isDark]);
+
   return (
     <GestureHandlerRootView>
       <I18nextProvider i18n={i18n}>
+        <StatusBar
+          hidden={false}
+        />
         <NetworkProvider>
           <AuthProvider>
             <AppLayout />

@@ -766,9 +766,14 @@ export const getPublicPrices = async (req: any, res: Response) => {
     const cached = await cacheGet<Record<string, number>>("public:prices");
     if (cached) return res.json(cached);
 
-    const settings = await prisma.appSettings.findMany();
+    const settings = await prisma.appSettings.findMany({
+      select: { key: true, value: true },
+    });
     const prices: Record<string, number> = {};
     for (const s of settings) prices[s.key] = parseFloat(s.value);
+
+res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+res.json(prices);
     await cacheSet("public:prices", prices, 300);
     res.json(prices);
   } catch (error) {

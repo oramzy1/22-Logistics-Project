@@ -10,6 +10,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { AuthProvider } from "../context/AuthContext";
+import * as SystemUI from "expo-system-ui";
 
 import { toastConfig } from "@/components/Toast";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -28,6 +29,8 @@ import OfflineBanner from "@/components/OfflineBanner";
 import { CallProvider } from "@/context/CallContext";
 import { GlobalCallUI } from "@/components/GlobalCallUI";
 import { useSocketNotifications } from "@/hooks/useSocketNotification";
+import { useAppTheme } from "@/src/ui/useAppTheme";
+import * as NavigationBar from "expo-navigation-bar";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -90,11 +93,11 @@ export default function RootLayout() {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  // useEffect(() => {
+  //   if (loaded) {
+  //     SplashScreen.hideAsync();
+  //   }
+  // }, [loaded]);
 
   useEffect(() => {
     registerPushToken();
@@ -149,13 +152,27 @@ function AppLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { colors } = useAppTheme();
+
+
+    useEffect(() => {
+    NavigationBar.setVisibilityAsync("visible");
+    NavigationBar.setBackgroundColorAsync(
+      isDark ? colors.background : "#ffffff",
+    );
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+    NavigationBar.setBehaviorAsync("overlay-swipe");
+    SystemUI.setBackgroundColorAsync(isDark ? colors.background : "#ffffff");
+  }, [colors.background, isDark]);
+
 
   return (
     <GestureHandlerRootView>
       <I18nextProvider i18n={i18n}>
         <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor={isDark ? "#060F18" : "#0B1B2B"}
+          // barStyle={isDark ? "light-content" : "dark-content"}
+          // backgroundColor={isDark ? "#060F18" : "#0B1B2B"}
+          hidden={false}
         />
         <NetworkProvider>
         <AuthProvider>

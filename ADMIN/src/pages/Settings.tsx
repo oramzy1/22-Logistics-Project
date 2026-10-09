@@ -74,9 +74,13 @@ const AddOnsManager = () => {
           </div>
         );
       })}
-      <div className="flex gap-2 pt-3 border-t border-border">
-        <input className={`${inputCls} flex-1`} placeholder="New add-on name" value={draft.label} onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))} />
-        <input className={`${inputCls} w-32`} placeholder="Price (₦)" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))} />
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border">
+        <div className="flex-1 min-w-[100px]">
+          <input className={inputCls} placeholder="New add-on name" value={draft.label} onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))} />
+        </div>
+        <div className="w-52">
+          <input className={inputCls} placeholder="Price (₦)" inputMode="numeric" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))} />
+        </div>
         <Button size="sm" disabled={!draft.label.trim() || !draft.price || create.isPending}
           onClick={() => create.mutate({ label: draft.label, price: Number(draft.price) }, { ...ok('Add-on created'), onSuccess: () => { toast.success('Add-on created'); setDraft({ label: '', price: '' }); } })}>
           <Plus className="mr-1 h-4 w-4" /> Add

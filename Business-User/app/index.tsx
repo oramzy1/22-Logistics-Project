@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
+import * as ExpoSplash from "expo-splash-screen";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function SplashScreen() {
 
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={() => ExpoSplash.hideAsync().catch(() => {})}>
       <Image
         source={require("../assets/images/22LogisticsLogo.png")}
         style={styles.logo}

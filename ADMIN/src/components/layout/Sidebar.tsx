@@ -32,6 +32,10 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+const LOGO_LIGHT = ("./22logo-light.png");
+const LOGO_DARK = ("./22logo-Dark.png");
+
+
 export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <>
@@ -52,12 +56,16 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="flex h-16 items-center justify-between px-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-warning flex items-center justify-center text-warning-foreground font-bold text-sm">
-             22
-            </div>
-            <span className="font-semibold text-sidebar-accent-foreground">
-              22-Logistics
-            </span>
+            <img
+              src={LOGO_LIGHT}
+              alt="Logo"
+              className="h-10 w-auto lg:hidden"
+            />
+            <img
+              src={LOGO_DARK}
+              alt="Logo"
+              className="hidden h-10 w-auto lg:block"
+            />
           </div>
           <button
             onClick={onClose}

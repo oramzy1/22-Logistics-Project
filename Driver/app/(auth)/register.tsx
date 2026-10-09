@@ -220,7 +220,7 @@ export default function RegisterDriverScreen() {
 
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
-      <View style={styles.headerBar}></View>
+      {/* <View style={styles.headerBar}></View> */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
