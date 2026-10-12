@@ -104,7 +104,7 @@ const PRICE_FIELDS = [
   { key: 'price_fuel_3_hours',  label: 'Fueling Add-on - 3 Hours' },
   { key: 'price_fuel_6_hours',  label: 'Fueling Add-on - 6 Hours' },
   { key: 'price_fuel_10_hours', label: 'Fueling Add-on - 10 Hours' },
-  { key: 'price_fuel_airport',  label: 'Fueling Add-on - Airport Schedule' },
+  // { key: 'price_fuel_airport',  label: 'Fueling Add-on - Airport Schedule' },
   {key: 'price_custom_extra', label: "Custom Extra ('Other')" },
 ];
 
@@ -117,6 +117,7 @@ const UPGRADE_HOURS = [
   { slug: '3_hours', label: '3-Hour' }, { slug: '6_hours', label: '6-Hour' }, { slug: '10_hours', label: '10-Hour' },
 ];
 const AIRPORT_PRICE_FIELDS = AIRPORT_SERVICES.map((s) => ({ key: `price_airport_${s.slug}`, label: `${s.label} Rate` }));
+const AIRPORT_FUEL_FIELDS = AIRPORT_SERVICES.map((s) => ({ key: `price_fuel_airport_${s.slug}`, label: `${s.label} Fueling (included)` }));
 const UPGRADE_PRICE_FIELDS = AIRPORT_SERVICES.flatMap((s) =>
   UPGRADE_HOURS.map((h) => ({ key: `price_upgrade_${s.slug}_${h.slug}`, label: `Upgrade to ${s.label} (from ${h.label} ride)` })),
 );
@@ -225,6 +226,7 @@ const [sessionTimeout, setSessionTimeout] = useState("30");
 
         <Section icon={Plane} title="Airport Service Pricing">
           {AIRPORT_PRICE_FIELDS.map(renderPrice)}
+          {AIRPORT_FUEL_FIELDS.map(renderPrice)}
         </Section>
 
         <Section icon={Plane} title="Airport Upgrade Pricing">

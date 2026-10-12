@@ -211,7 +211,10 @@ const fuelPriceForPackage = () => {
     case "3h": return prices.price_fuel_3_hours ?? 0;
     case "6h": return prices.price_fuel_6_hours ?? 0;
     case "10h": return prices.price_fuel_10_hours ?? 0;
-    case "airport": return prices.price_fuel_airport ?? 0;
+    case "airport": {
+      const p = prices as Record<string, number>;
+      return p[`price_fuel_airport_${AIRPORT_SLUG[airportService]}`] ?? p.price_fuel_airport ?? 0;
+    }
     default: return 0; // multi-day: no fueling add-on
   }
 };
@@ -308,7 +311,7 @@ const validatePickupSelection = (
           : pkg === "10h"
             ? prices.price_10_hours
             : pkg === "airport"
-              ? prices.price_airport
+              ? (prices as Record<string, number>)[`price_airport_${AIRPORT_SLUG[airportService]}`] ?? 0
               : /* multi/airport */ prices.price_multiday;
 
     const add = (k: keyof typeof extras, amount: number) =>
@@ -325,7 +328,7 @@ const fuelPrice = pkg === "multi" ? 0 : isAirportSchedule ? fuelPriceForPackage(
   : extrasEnabled && extras.fueling ? fuelPriceForPackage() : 0;
 
     const customExtraPrice =
-      extrasEnabled && extras.customExtra.trim().length > 0 ? 2000 : 0;
+      extrasEnabled && extras.customExtra.trim().length > 0 ? customExtraUnit : 0;
 
     const interstatePrice = interstateLocation?.price || 0;
     const outOfLGAFee =

@@ -772,9 +772,8 @@ export const getPublicPrices = async (req: any, res: Response) => {
     const prices: Record<string, number> = {};
     for (const s of settings) prices[s.key] = parseFloat(s.value);
 
-res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-res.json(prices);
     await cacheSet("public:prices", prices, 300);
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     res.json(prices);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

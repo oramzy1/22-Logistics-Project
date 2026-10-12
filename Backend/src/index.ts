@@ -19,6 +19,17 @@ import publicRoutes from './routes/public.routes';
 import { checkTripDelays } from './lib/tripDelayMonitor';
 import { startKeepAlive } from './lib/keepAlive';
 import { runReminderCheck } from './lib/reminderSchedule';
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
+const safe = (fn: () => Promise<unknown>) => () =>
+  Promise.resolve(fn()).catch((e) => console.error('Background task failed:', e));
+
 dotenv.config();
 
 const SERVER_URL = process.env.API_URL ?? 'https://two2-logistics-project.onrender.com';
@@ -26,16 +37,16 @@ const SERVER_URL = process.env.API_URL ?? 'https://two2-logistics-project.onrend
 const app = express();
 const httpServer = createServer(app);
 const io = initSocket(httpServer);
-setInterval(checkTripDelays, 60 * 1000);
+setInterval(safe(checkTripDelays), 60 * 1000);
 startKeepAlive(SERVER_URL);
-runReminderCheck();
-setInterval(runReminderCheck, 60 * 1000);
+runReminderCheck().catch((e) => console.error('runReminderCheck failed:', e));
+setInterval(safe(runReminderCheck), 60 * 1000);
 app.use(cors());
 
 app.use('/api/payments', paymentRoutes);
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);``
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/bookings/webhook', express.raw({ type: 'application/json' }));
@@ -52,9 +63,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Logistics API is running' });
 });
 
-cleanupStaleBookings();
-setInterval(cleanupStaleBookings, 60 * 60 * 1000);
-setInterval(expireRideRequests, 10 * 1000);
+cleanupStaleBookings().catch((e) => console.error('cleanupStaleBookings failed:', e));
+setInterval(safe(cleanupStaleBookings), 60 * 60 * 1000);
+setInterval(safe(expireRideRequests), 10 * 1000);
 
 const PORT = process.env.PORT || 5000;
 
@@ -66,6 +77,7 @@ httpServer.listen(PORT, () => {
 // Add at the very bottom of index.ts, after all routes:
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Global error:', err);
+  if (res.headersSent) return next(err);
   res.status(500).json({ 
     message: err.message || 'Internal server error',
     details: err.toString()

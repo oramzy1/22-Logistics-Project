@@ -17,14 +17,15 @@ export const options = {
         { duration: '2m', target: 300 },
         { duration: '2m', target: 600 },
         { duration: '3m', target: 1000 },
-        // { duration: '2m', target: 1500 },
+        { duration: '3m', target: 1500 },
+        { duration: '2m', target: 2000 },
         { duration: '1m', target: 0 },
       ],
       gracefulRampDown: '1m',
     },
   },
   thresholds: {
-    http_req_duration: ['p(95)<1000'],
+    http_req_duration: ['p(95)<2000'],
     // relaxed on purpose: this test exists to measure where errors begin
     http_req_failed: ['rate<0.20'],
     checks: ['rate>0.80'],

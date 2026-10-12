@@ -1,5 +1,5 @@
 import prisma from "./prisma";
-import { getAirportPrices, getCustomExtraPrice, getFuelPrices, getPackagePrices, getUpgradePrice } from "./getPrices";
+import { getAirportPrices, getCustomExtraPrice, getFuelPrices, getPackagePrices, getUpgradePrice, getAirportFuelPrices } from "./getPrices";
 
 export const AIRPORT_SERVICES = ["AIRPORT_PICKUP", "AIRPORT_DROPOFF", "AIRPORT_ROUND_TRIP"] as const;
 export type AirportService = (typeof AIRPORT_SERVICES)[number];
@@ -29,7 +29,11 @@ export async function computeBookingPrice(i: {
   const addOnsTotal = catalog.reduce((s, a) => s + a.price, 0);
 
   const includeFuel = !isMulti && (isAirport || !!i.fueling);
-  const fuel = includeFuel ? ((await getFuelPrices())[i.packageType] ?? 0) : 0;
+  const fuel = !includeFuel
+    ? 0
+    : isAirport
+      ? ((await getAirportFuelPrices())[i.airportService!] ?? 0)
+      : ((await getFuelPrices())[i.packageType] ?? 0);
 
   const custom = i.customExtra?.trim().slice(0, 15) ?? "";
   const customPrice = custom ? await getCustomExtraPrice() : 0;
@@ -51,8 +55,8 @@ export async function getUpgradeQuote(
   service: AirportService,
 ) {
   const pkg = booking.packageType ?? "";
-  const [pkgPrices, airportPrices, fuelPrices, configured, discountRow] = await Promise.all([
-    getPackagePrices(), getAirportPrices(), getFuelPrices(), getUpgradePrice(service, pkg),
+  const [pkgPrices, airportPrices, airportFuel, configured, discountRow] = await Promise.all([
+    getPackagePrices(), getAirportPrices(), getAirportFuelPrices(), getUpgradePrice(service, pkg),
     prisma.appSettings.findUnique({ where: { key: "price_airport_upgrade_discount" } }),
   ]);
 
@@ -66,7 +70,7 @@ export async function getUpgradeQuote(
 
   const hadFuelAddOn = booking.addOns.some((a) => a.toLowerCase().includes("fuel"));
   const fuelTopUpAmount = hadFuelAddOn
-    ? Math.max(0, (fuelPrices["Airport Schedule"] ?? 0) - (booking.fuelAddOnAmount ?? 0))
+    ? Math.max(0, (airportFuel[service] ?? 0) - (booking.fuelAddOnAmount ?? 0))
     : 0;
 
   return { baseUpgradeAmount, fuelTopUpAmount, upgradeAmount: baseUpgradeAmount + fuelTopUpAmount, hadFuelAddOn };

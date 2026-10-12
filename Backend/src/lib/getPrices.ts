@@ -70,6 +70,16 @@ export const getAirportPrices = async (): Promise<Record<string, number>> => {
   );
 };
 
+export const getAirportFuelPrices = async (): Promise<Record<string, number>> => {
+  const keys = Object.values(AIRPORT_SLUG).map((s) => `price_fuel_airport_${s}`);
+  const rows = await prisma.appSettings.findMany({ where: { key: { in: [...keys, "price_fuel_airport"] } } });
+  const byKey: Record<string, number> = {};
+  for (const r of rows) { const n = parseFloat(r.value); if (Number.isFinite(n)) byKey[r.key] = n; }
+  return Object.fromEntries(
+    Object.entries(AIRPORT_SLUG).map(([svc, slug]) => [svc, byKey[`price_fuel_airport_${slug}`] ?? byKey["price_fuel_airport"] ?? 0]),
+  );
+};
+
 export const getUpgradePrice = async (service: string, fromPackage: string) => {
   const slug = AIRPORT_SLUG[service], h = HOURS_SLUG[fromPackage];
   if (!slug || !h) return 0;

@@ -1,3 +1,6 @@
 .env
 .env.*
 !.env.example
+tests/.env.example
+tests/k6/stress/01-ramp-to-break.js
+tests/k6/stress/02-spike-public.js
