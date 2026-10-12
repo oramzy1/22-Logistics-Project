@@ -60,6 +60,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       outsidePH,
        addOnKeys, fueling, customExtra, airportService,
        multiDayTripType, expectedDropoffAt, promoCode,
+       multiDayCount,
       addOns: legacyAddOns,
     } = req.body;
 
@@ -143,7 +144,10 @@ if (rideHours) {
 
     let price;
     try {
-      price = await computeBookingPrice({ packageType, airportService, addOnKeys: keys, fueling: wantsFuel, customExtra });
+         price = await computeBookingPrice({
+        packageType, airportService, addOnKeys: keys, fueling: wantsFuel, customExtra,
+        multiDayCount: multiDayCount ?? parseInt(String(duration), 10),
+      });
     } catch (e) {
       if (e instanceof PricingError) return res.status(400).json({ message: e.message });
       throw e;

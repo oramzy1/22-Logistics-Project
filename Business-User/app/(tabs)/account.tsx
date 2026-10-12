@@ -33,6 +33,14 @@ import {
   UserX,
   Share2,
   BriefcaseBusiness,
+  ScrollText,
+  CalendarClock,
+  MapPin,
+  BadgeCheck,
+  ShieldCheck,
+  Building2,
+  BookOpen,
+  Receipt,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -922,8 +930,56 @@ const handleSwitchToBusiness = async () => {
         </AccordionItem>
 
         <AccordionItem title="LEGAL" icon={Shield}>
-          <ListItem icon={FileText} title="Terms & Condition" />
-          <ListItem icon={Shield} title="Privacy Policy" isLast />
+          {[
+            { icon: FileText, title: "Terms & Condition", id: "terms" },
+            { icon: Shield, title: "Privacy Policy", id: "privacy" },
+            { icon: ScrollText, title: "Platform Use Policy", id: "platform-use" },
+            {
+              icon: Receipt,
+              title: "Cancellation & Refund Policy",
+              id: "cancellation-refund",
+            },
+            {
+              icon: BriefcaseBusiness,
+              title: "Business Account Agreement",
+              id: "business-account",
+            },
+            {
+              icon: CalendarClock,
+              title: "Customer Scheduling Policy",
+              id: "customer-scheduling",
+            },
+            {
+              icon: MapPin,
+              title: "Service Area & Pricing Disclosure",
+              id: "service-area-pricing",
+            },
+            { icon: BadgeCheck, title: "Service Charter", id: "service-charter" },
+            {
+              icon: ShieldCheck,
+              title: "Customer Bill of Rights",
+              id: "bill-of-rights",
+            },
+            {
+              icon: Building2,
+              title: "Corporate Account Handbook",
+              id: "corporate-handbook",
+            },
+            { icon: BookOpen, title: "How It Works", id: "how-it-works" },
+          ].map((item, index, all) => (
+            <ListItem
+              key={item.id}
+              icon={item.icon}
+              title={item.title}
+              isLast={index === all.length - 1}
+              onPress={() =>
+                router.push({
+                  pathname: "/screens/legal",
+                  params: { doc: item.id },
+                })
+              }
+            />
+          ))}
         </AccordionItem>
 
         <Text style={styles.sectionLabel}>DANGER ZONE</Text>

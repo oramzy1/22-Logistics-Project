@@ -7,12 +7,12 @@ export const isAirportService = (v: any): v is AirportService => AIRPORT_SERVICE
 export class PricingError extends Error {}
 
 export async function computeBookingPrice(i: {
-  packageType: string; airportService?: string; addOnKeys?: string[]; fueling?: boolean; customExtra?: string;
+  packageType: string; airportService?: string; addOnKeys?: string[]; fueling?: boolean; customExtra?: string; multiDayCount?: number;
 }) {
   const isAirport = i.packageType === "Airport Schedule";
   const isMulti = i.packageType === "Multi-day";
 
-  let base = 0;
+  let base = 0; 
   if (isAirport) {
     if (!isAirportService(i.airportService)) throw new PricingError("Please select an airport service");
     base = (await getAirportPrices())[i.airportService] ?? 0;
@@ -20,6 +20,13 @@ export async function computeBookingPrice(i: {
     base = (await getPackagePrices())[i.packageType] ?? 0;
   }
   if (!base) throw new PricingError("Invalid package type or custom pricing required");
+
+    if (isMulti) {
+      const days = Number(i.multiDayCount);
+      if (!Number.isInteger(days) || days < 1 || days > 14)
+        throw new PricingError("Please select a valid number of days (1-14)");
+      base *= days;
+    }
 
   const keys = Array.from(new Set(i.addOnKeys ?? []));
   const catalog = keys.length

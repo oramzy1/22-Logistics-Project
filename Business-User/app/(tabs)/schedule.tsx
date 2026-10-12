@@ -68,6 +68,9 @@ const AIRPORT_LABEL: Record<AirportService, string> = {
   AIRPORT_PICKUP: "AIRPORT PICKUP", AIRPORT_DROPOFF: "AIRPORT DROPOFF", AIRPORT_ROUND_TRIP: "AIRPORT ROUND TRIP",
 };
 
+const isAirportStopover = (a: { key: string; label: string }) =>
+  /airport.*stop/i.test(a.key) || /airport.*stop/i.test(a.label);
+
 
 export default function ScheduleTabScreen() {
   const { selectedPackage, setSelectedPackage } = useSchedule();
@@ -196,7 +199,7 @@ const showFreeTextDropoff = !!interstateLocation || isInterState;
       title: "10-Hours",
       price: `₦${(prices.price_10_hours ?? 0).toLocaleString()}`,
     },
-    { id: "multi" as const, title: "Multi-day", price: undefined },
+    { id: "multi" as const, title: "Multi-day", price: `₦${(prices.price_multiday ?? 0).toLocaleString()}/day` },
     {
       id: "airport" as const,
       title: "Airport Schedule",
@@ -294,10 +297,15 @@ const validatePickupSelection = (
     if (!PH_LGAS.includes(lga)) setOutOfLGATarget(which); // trigger modal
   };
 
+  const visibleAddOns = useMemo(
+    () => (isAirportSchedule ? addOnCatalog.filter((a) => !isAirportStopover(a)) : addOnCatalog),
+    [addOnCatalog, isAirportSchedule],
+  );
+
     const selectedAddOnsTotal = useMemo(
     () => !extrasEnabled ? 0
-      : addOnCatalog.filter((a) => selectedAddOnKeys.includes(a.key)).reduce((s, a) => s + a.price, 0),
-    [addOnCatalog, selectedAddOnKeys, extrasEnabled],
+      : visibleAddOns.filter((a) => selectedAddOnKeys.includes(a.key)).reduce((s, a) => s + a.price, 0),
+    [visibleAddOns, selectedAddOnKeys, extrasEnabled],
   );
   const customExtraUnit = (prices as Record<string, number>).price_custom_extra ?? 2000;
 
@@ -312,7 +320,7 @@ const validatePickupSelection = (
             ? prices.price_10_hours
             : pkg === "airport"
               ? (prices as Record<string, number>)[`price_airport_${AIRPORT_SLUG[airportService]}`] ?? 0
-              : /* multi/airport */ prices.price_multiday;
+              : /* multi/airport */ (prices.price_multiday ?? 0) * multiDayCount;
 
     const add = (k: keyof typeof extras, amount: number) =>
       extrasEnabled && extras[k] ? amount : 0;
@@ -356,6 +364,7 @@ const fuelPrice = pkg === "multi" ? 0 : isAirportSchedule ? fuelPriceForPackage(
     airportService,
     selectedAddOnsTotal,
     customExtraUnit,
+    multiDayCount
   ]);
 
   const selectedTitle = PACKAGES.find((p) => p.id === pkg)?.title ?? "3-Hours";
@@ -522,6 +531,7 @@ if (expectedDropoff && pkg !== "multi" && !isWithinOperatingHours(expectedDropof
         pickupTime: pickupTime ? pickupTime.toISOString() : undefined,
         airportService: isAirportSchedule ? airportService : undefined,
 multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
+multiDayCount: isMultiSchedule ? multiDayCount : undefined,
 expectedDropoffAt: expectedDropoff?.toISOString(),
         outsidePH:
           !!interstateLocation ||
@@ -588,6 +598,7 @@ expectedDropoffAt: expectedDropoff?.toISOString(),
           addOns: addOnsList,
                   airportService: isAirportSchedule ? airportService : undefined,
 multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
+multiDayCount: isMultiSchedule ? multiDayCount : undefined,
           addOnsTotal: addOnsTotal > 0 ? String(addOnsTotal) : undefined,
           timeSlot: resolvedTimeSlot,
           fuelIncluded: isAirportSchedule ? "true" : undefined,
@@ -876,7 +887,7 @@ multiDayTripType: isMultiSchedule ? multiDayTripType : undefined,
           </View>
          {extrasEnabled && (
            <View style={styles.extrasWrap}>
-           {addOnCatalog.map((a) => (
+           {visibleAddOns.map((a) => (
   <AppCheckboxRow
     key={a.key}
     label={a.label}

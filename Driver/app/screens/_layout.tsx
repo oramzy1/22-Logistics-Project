@@ -13,6 +13,7 @@ export default function ScreensLayout() {
       <Stack.Screen name="payment-details" />
       <Stack.Screen name="support-tickets" />
       <Stack.Screen name="support-chat" />
+      <Stack.Screen name="legal" />
     </Stack>
   );
 }

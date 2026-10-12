@@ -31,6 +31,8 @@ import {
   Trash2,
   User,
   UserX,
+  ScrollText,
+  BadgeCheck,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -937,8 +939,30 @@ export default function AccountTabScreen() {
         </AccordionItem>
 
         <AccordionItem title="LEGAL" icon={Shield}>
-          <ListItem icon={FileText} title="Terms & Condition" />
-          <ListItem icon={Shield} title="Privacy Policy" isLast />
+          {[
+            { icon: FileText, title: "Terms & Condition", id: "terms" },
+            { icon: Shield, title: "Privacy Policy", id: "privacy" },
+            { icon: ScrollText, title: "Platform Use Policy", id: "platform-use" },
+            { icon: BadgeCheck, title: "Service Charter", id: "service-charter" },
+            {
+              icon: Car,
+              title: "Driver Code of Conduct & Terms",
+              id: "driver-conduct",
+            },
+          ].map((item, index, all) => (
+            <ListItem
+              key={item.id}
+              icon={item.icon}
+              title={item.title}
+              isLast={index === all.length - 1}
+              onPress={() =>
+                router.push({
+                  pathname: "/screens/legal",
+                  params: { doc: item.id },
+                })
+              }
+            />
+          ))}
         </AccordionItem>
 
         <Text style={styles.sectionLabel}>DANGER ZONE</Text>
